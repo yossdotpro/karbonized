@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+### 🚀 Features
+
+- **New interface** — neutral design tokens (light/dark), Geist typography and compact controls across menus, panels, dialogs and the status bar
+- **Command palette** (`Ctrl/⌘+K`) listing every available action with its shortcut
+- **Session autosave** — workspaces and block properties are stored in IndexedDB and restored on startup
+- **Block editor** redesigned as a code editor: activity bar, explorer, file tabs with unsaved state, resizable preview panel and Monaco themes that match the app
+
+### ⌨️ Shortcuts
+
+- Shortcuts are handled in one place and no longer fire while typing in inputs or the code editor
+- Tools: `V` select, `H` pan, `C` crop, `W` warp (were `Ctrl+W/E/Y/G`)
+- `Ctrl+Shift+L` lock aspect ratio (was `Ctrl+R`), `Shift+1` zoom to fit (was `Ctrl+Space`)
+- `Ctrl++` / `Ctrl+−` / `Shift+0` zoom in / out / reset
+- `Alt+N` new project (was `Ctrl+N`), `Ctrl+O` open project, `Ctrl+Shift+E` export (was `Ctrl+P`)
+- `Ctrl+.` cycle workspace mode (was `Ctrl+Tab`)
+- Block editor: `Ctrl+J` toggle preview panel (was `Ctrl+\`), `Ctrl+Enter` refresh preview (was `Ctrl+R`)
+
+### 🐛 Fixes
+
+- `Ctrl+Y` triggered both redo and crop
+- The editor crashed on load when the properties panel tried to expand before it was registered
+- Block editor preview stayed blank after hiding and showing it, and did not match the canvas rendering
+
 ## v 2.0.0 - Beta 3
 
 ### 🐛 Fixes

@@ -143,6 +143,7 @@ export const CommandPalette: React.FC = () => {
 
 				<Command loop>
 					<CommandInput
+						autoFocus
 						value={search}
 						onValueChange={setSearch}
 						placeholder='Type a command or search…'

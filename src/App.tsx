@@ -13,6 +13,7 @@ import { useTheme } from './hooks/useTheme';
 import './utils.css';
 import { isElectron } from './utils/isElectron';
 import { Spinner } from '@/components/ui/spinner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { KarbonizedLogoFlat } from './components/Icons/Icons';
 import {
 	CommandPalette,
@@ -160,27 +161,29 @@ const App: React.FC = () => {
 
 	return (
 		<Router>
-			<AppContext.Provider
-				value={{
-					viewerRef,
-					theme,
-					toggleTheme,
-				}}
-			>
-				<div
-					onContextMenu={(event) => {
-						event.preventDefault();
+			<TooltipProvider delayDuration={400} skipDelayDuration={200}>
+				<AppContext.Provider
+					value={{
+						viewerRef,
+						theme,
+						toggleTheme,
 					}}
-					className='flex h-screen w-screen flex-auto flex-col overflow-hidden bg-background text-foreground'
 				>
-					<SessionGate>
-						<AppShell isHorizontal={isHorizontal} />
-					</SessionGate>
-				</div>
+					<div
+						onContextMenu={(event) => {
+							event.preventDefault();
+						}}
+						className='flex h-screen w-screen flex-auto flex-col overflow-hidden bg-background text-foreground'
+					>
+						<SessionGate>
+							<AppShell isHorizontal={isHorizontal} />
+						</SessionGate>
+					</div>
 
-				<ShortcutManager />
-				<CommandPalette />
-			</AppContext.Provider>
+					<ShortcutManager />
+					<CommandPalette />
+				</AppContext.Provider>
+			</TooltipProvider>
 		</Router>
 	);
 };

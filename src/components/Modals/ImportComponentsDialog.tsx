@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
 import {
 	Dialog,
+	DialogBar,
+	DialogBody,
 	DialogContent,
 	DialogDescription,
-	DialogFooter,
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog';
@@ -12,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, Plus, Download, Info } from 'lucide-react';
+import { CircleAlert, CircleCheck, Download, Plus, Upload } from 'lucide-react';
 import { useKComponentStore } from '@/stores/kcomponent-store';
 import {
 	parseKComponent,
@@ -117,126 +118,114 @@ export const ImportComponentsDialog: React.FC<ImportComponentsDialogProps> = ({
 		URL.revokeObjectURL(url);
 	};
 
+	const manifest = parsedComponent?.manifest;
+
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className='max-w-2xl'>
+			<DialogContent className='flex max-h-[85vh] flex-col overflow-hidden sm:max-w-xl'>
 				<DialogHeader>
-					<DialogTitle>Import Custom Components</DialogTitle>
+					<DialogTitle>Import components</DialogTitle>
 					<DialogDescription>
-						Import .kcomponent files (YAML format) to add custom HTML/CSS/JS
-						components to your canvas.
+						Add <code className='font-mono text-xs'>.kcomponent</code> files
+						(YAML) to your component library.
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className='space-y-4 max-h-[65vh] overflow-y-auto'>
-					{/* File Upload */}
-					<div className='space-y-2'>
-						<Label>Upload .kcomponent File</Label>
-						<div className='flex gap-2'>
-							<label htmlFor='kcomponent-file' className='flex-1'>
-								<Button
-									type='button'
-									variant='outline'
-									className='w-full'
-									asChild
-								>
-									<span>
-										<Upload className='mr-2 h-4 w-4' />
-										Choose File
-									</span>
-								</Button>
-							</label>
-							<Input
-								id='kcomponent-file'
-								ref={fileInputRef}
-								type='file'
-								accept='.kcomponent,.yaml,.yml'
-								onChange={handleFileUpload}
-								className='hidden'
-							/>
-							<Button
-								type='button'
-								variant='ghost'
-								onClick={handleDownloadExample}
-							>
-								<Download className='mr-2 h-4 w-4' />
-								Download Example
-							</Button>
+				<DialogBody className='flex flex-col gap-4'>
+					{/* File */}
+					<button
+						type='button'
+						onClick={() => fileInputRef.current?.click()}
+						className='flex w-full items-center gap-3 rounded-surface border border-dashed border-border px-4 py-4 text-left transition-colors hover:border-ring/50 hover:bg-accent/40'
+					>
+						<div className='flex size-8 shrink-0 items-center justify-center rounded-control border border-border bg-card'>
+							<Upload className='size-4 text-muted-foreground' />
 						</div>
-					</div>
+						<div className='min-w-0'>
+							<p className='text-[13px] text-foreground'>Choose a file</p>
+							<p className='text-xs text-muted-foreground'>
+								.kcomponent, .yaml or .yml
+							</p>
+						</div>
+					</button>
+					<Input
+						id='kcomponent-file'
+						ref={fileInputRef}
+						type='file'
+						accept='.kcomponent,.yaml,.yml'
+						onChange={(event) => {
+							handleFileUpload(event);
+							event.target.value = '';
+						}}
+						className='hidden'
+					/>
 
-					{/* YAML Editor */}
-					<div className='space-y-2'>
-						<Label>Or Paste YAML Content</Label>
+					{/* YAML */}
+					<div className='flex flex-col gap-1.5'>
+						<Label className='text-xs font-normal text-muted-foreground'>
+							Or paste the YAML
+						</Label>
 						<Textarea
 							value={yamlContent}
 							onChange={(e) => handleYamlChange(e.target.value)}
-							placeholder='Paste your .kcomponent YAML content here...'
-							className='font-mono text-xs min-h-50'
+							placeholder={
+								'manifest:\n  name: My component\nhtml: |\n  <div>…</div>'
+							}
+							spellCheck={false}
+							className='min-h-44 resize-y font-mono text-xs leading-relaxed'
 						/>
 					</div>
 
-					{/* Validation Status */}
+					{/* Validation */}
 					{parseError && (
 						<Alert variant='destructive'>
-							<Info className='h-4 w-4' />
+							<CircleAlert />
 							<AlertDescription>{parseError}</AlertDescription>
 						</Alert>
 					)}
 
-					{parsedComponent && (
-						<Alert>
-							<Info className='h-4 w-4' />
-							<AlertDescription>
-								Valid component:{' '}
-								<strong>{parsedComponent.manifest.name}</strong>
-								{parsedComponent.manifest.description && (
-									<> - {parsedComponent.manifest.description}</>
-								)}
-							</AlertDescription>
-						</Alert>
-					)}
-
-					{/* Preview */}
-					{parsedComponent && (
-						<div className='space-y-2'>
-							<Label>Preview</Label>
-							<div className='border rounded-lg p-4 bg-muted'>
-								<div className='space-y-1'>
-									<p className='font-semibold'>
-										{parsedComponent.manifest.name}
+					{manifest && !parseError && (
+						<div className='flex items-start gap-3 rounded-surface border border-border bg-muted/40 px-3 py-2.5'>
+							<CircleCheck className='mt-0.5 size-4 shrink-0 text-emerald-500' />
+							<div className='min-w-0 flex-1'>
+								<div className='flex items-center gap-2'>
+									<p className='truncate text-[13px] font-medium text-foreground'>
+										{manifest.name}
 									</p>
-									{parsedComponent.manifest.author && (
-										<p className='text-sm text-muted-foreground'>
-											By {parsedComponent.manifest.author}
-										</p>
-									)}
-									{parsedComponent.manifest.description && (
-										<p className='text-sm text-muted-foreground'>
-											{parsedComponent.manifest.description}
-										</p>
-									)}
-									{parsedComponent.manifest.category && (
-										<Badge variant='secondary'>
-											{parsedComponent.manifest.category}
-										</Badge>
+									{manifest.category && (
+										<Badge variant='secondary'>{manifest.category}</Badge>
 									)}
 								</div>
+								{manifest.author && (
+									<p className='text-xs text-muted-foreground'>
+										by {manifest.author}
+									</p>
+								)}
+								{manifest.description && (
+									<p className='mt-1 text-xs text-muted-foreground'>
+										{manifest.description}
+									</p>
+								)}
 							</div>
 						</div>
 					)}
+				</DialogBody>
 
-					<DialogFooter>
-						<Button
-							onClick={handleImport}
-							disabled={!parsedComponent || !!parseError}
-							className='w-full'
-						>
-							<Plus className='mr-2 h-4 w-4' />
-							Add to Library
-						</Button>
-					</DialogFooter>
-				</div>
+				<DialogBar>
+					<Button variant='ghost' size='sm' onClick={handleDownloadExample}>
+						<Download className='size-3.5' />
+						Download example
+					</Button>
+					<Button
+						size='sm'
+						className='ml-auto'
+						onClick={handleImport}
+						disabled={!parsedComponent || !!parseError}
+					>
+						<Plus className='size-3.5' />
+						Add to library
+					</Button>
+				</DialogBar>
 			</DialogContent>
 		</Dialog>
 	);

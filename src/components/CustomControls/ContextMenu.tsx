@@ -55,7 +55,7 @@ export const ContextMenu: React.FC<Props> = ({
 							initial={{ scale: 0.5, opacity: 0.94 }}
 							animate={{ scale: 1, opacity: 1 }}
 							exit={{ scale: 0, opacity: 0 }}
-							className='z-50 flex w-52 flex-auto flex-col gap-2 rounded-2xl bg-base-100 p-2 shadow-2xl dark:text-neutral-400'
+							className='z-50 flex w-52 flex-auto flex-col gap-0.5 rounded-surface border border-border bg-popover p-1 text-[13px] text-popover-foreground shadow-xl shadow-black/20'
 							ref={floating}
 							style={{ position: strategy, top: y ?? 0, left: x ?? 0 }}
 							onMouseLeave={() => {

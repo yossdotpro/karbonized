@@ -6,7 +6,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Spinner } from '@/components/ui/spinner';
-import { IconBrush, IconZoomIn } from '@tabler/icons-react';
 import React, {
 	Suspense,
 	useContext,
@@ -28,6 +27,7 @@ import {
 import { getRandomNumber } from '../utils/getRandom';
 import { useCommands } from '@/lib/commands/registry';
 import {
+	Brush,
 	Copy,
 	Focus,
 	Lock,
@@ -274,10 +274,10 @@ export const Editor: React.FC = () => {
 						<div className=' absolute flex h-full w-full'>
 							<div className='z-50 mb-12 ml-auto mr-4 mt-auto flex flex-row items-center gap-1 rounded-[10px] border border-border bg-popover px-2 py-1 shadow-lg shadow-black/20'>
 								{/* Stroke Range */}
-								<IconBrush
+								<Brush
 									size={16}
 									className='mx-1 my-auto text-muted-foreground'
-								></IconBrush>
+								></Brush>
 								<Slider
 									className='my-auto flex flex-auto p-1'
 									min={0}
@@ -308,10 +308,7 @@ export const Editor: React.FC = () => {
 											setZoom(zoom + 0.2);
 										}}
 									>
-										<IconZoomIn
-											size={15}
-											className='text-foreground'
-										></IconZoomIn>
+										<ZoomIn size={15} className='text-foreground'></ZoomIn>
 									</Button>
 								</Tooltip>
 							</div>

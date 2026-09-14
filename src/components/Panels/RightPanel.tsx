@@ -17,7 +17,6 @@ import { Separator } from '../ui/separator';
 import { HierarchyPanel } from './HierarchyPanel';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { useCommands } from '@/lib/commands/registry';
-import { shortcutLabel } from '@/lib/commands/shortcuts';
 
 export const RightPanel: React.FC = () => {
 	/* App Store */
@@ -116,7 +115,8 @@ export const RightPanel: React.FC = () => {
 				{/* Selectors */}
 				<div className='flex shrink-0 flex-col gap-0.5'>
 					<Tooltip
-						message={`${showMenu ? 'Collapse panel' : 'Expand panel'}  ${shortcutLabel('Mod+B')}`}
+						message={showMenu ? 'Collapse panel' : 'Expand panel'}
+						shortcut='Mod+B'
 						placement='left'
 					>
 						<Button

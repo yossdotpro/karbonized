@@ -76,9 +76,7 @@ export const ArrayEditor: React.FC<Props> = ({
 	return (
 		<div className='space-y-3'>
 			{label && (
-				<Label className='text-xs text-muted-foreground'>
-					{label}
-				</Label>
+				<Label className='text-xs text-muted-foreground'>{label}</Label>
 			)}
 
 			{/* Add new item */}
@@ -137,7 +135,7 @@ export const ArrayEditor: React.FC<Props> = ({
 								) : (
 									<span className='text-xs'>{item}</span>
 								)}
-								
+
 								<div className='flex items-center gap-1 ml-1'>
 									{editingIndex === index ? (
 										<>
@@ -145,17 +143,17 @@ export const ArrayEditor: React.FC<Props> = ({
 												onClick={saveEdit}
 												size='sm'
 												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-green-100'
+												className='h-4 w-4 p-0 hover:bg-emerald-500/15'
 											>
-												<Check className='h-3 w-3 text-green-600' />
+												<Check className='h-3 w-3 text-emerald-500' />
 											</Button>
 											<Button
 												onClick={cancelEdit}
 												size='sm'
 												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-red-100'
+												className='h-4 w-4 p-0 hover:bg-destructive/15'
 											>
-												<X className='h-3 w-3 text-red-600' />
+												<X className='h-3 w-3 text-destructive' />
 											</Button>
 										</>
 									) : (
@@ -164,17 +162,17 @@ export const ArrayEditor: React.FC<Props> = ({
 												onClick={() => startEditing(index)}
 												size='sm'
 												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-blue-100'
+												className='h-4 w-4 p-0 hover:bg-accent'
 											>
-												<Edit2 className='h-3 w-3 text-blue-600' />
+												<Edit2 className='h-3 w-3 text-muted-foreground' />
 											</Button>
 											<Button
 												onClick={() => removeItem(index)}
 												size='sm'
 												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-red-100'
+												className='h-4 w-4 p-0 hover:bg-destructive/15'
 											>
-												<X className='h-3 w-3 text-red-600' />
+												<X className='h-3 w-3 text-destructive' />
 											</Button>
 										</>
 									)}
@@ -186,7 +184,7 @@ export const ArrayEditor: React.FC<Props> = ({
 			)}
 
 			{value.length === 0 && (
-				<div className='text-center text-xs text-muted-foreground py-4 border-2 border-dashed border-border rounded'>
+				<div className='text-center text-xs text-muted-foreground py-4 border border-dashed border-border rounded-control'>
 					No items yet. Add your first item above.
 				</div>
 			)}

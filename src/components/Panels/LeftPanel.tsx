@@ -47,7 +47,6 @@ import { useKComponentStore } from '../../stores/kcomponent-store';
 import { KComponent } from '../../models/KComponent';
 import { Package } from 'lucide-react';
 import { useCommands } from '@/lib/commands/registry';
-import { shortcutLabel } from '@/lib/commands/shortcuts';
 
 export const LeftPanel: React.FC = () => {
 	/* App Store */
@@ -477,9 +476,7 @@ export const LeftPanel: React.FC = () => {
 			<div className='flex w-fit flex-col items-center gap-0.5 rounded-[10px] border border-border bg-popover p-1 text-foreground shadow-lg shadow-black/5 dark:shadow-black/30'>
 				{visibleTools.map((tool, index) => (
 					<React.Fragment key={tool.id}>
-						<Tooltip
-							message={`${tool.label}${tool.shortcut ? `  ${shortcutLabel(tool.shortcut)}` : ''}`}
-						>
+						<Tooltip message={tool.label} shortcut={tool.shortcut}>
 							<Button
 								onClick={tool.action}
 								variant='ghost'

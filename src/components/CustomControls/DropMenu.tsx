@@ -42,8 +42,8 @@ export const DropMenu: React.FC<Props> = ({ id, position, label, menu }) => {
 			value={{ isOpen: show, setIsOpen: setShow, setIsInside }}
 		>
 			<button
-				className={`btn btn-ghost btn-xs my-auto rounded ${
-					show && 'bg-base-100'
+				className={`my-auto flex h-6 items-center rounded-[5px] px-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
+					show && 'bg-accent text-foreground'
 				}`}
 				tabIndex={1}
 				onBlur={() => {
@@ -56,9 +56,7 @@ export const DropMenu: React.FC<Props> = ({ id, position, label, menu }) => {
 				}}
 				ref={reference}
 			>
-				<label className='poppins-font-family-regular my-auto text-xs hover:cursor-pointer '>
-					{label}
-				</label>
+				<label className='my-auto text-xs hover:cursor-pointer '>{label}</label>
 			</button>
 
 			{show && (
@@ -74,8 +72,7 @@ export const DropMenu: React.FC<Props> = ({ id, position, label, menu }) => {
 						onMouseLeave={() => {
 							setIsInside(false);
 						}}
-						className={`poppins-font-family-regular z-30 
-							 flex w-52 flex-auto flex-col gap-2 overflow-x-hidden rounded-xl border border-base-300 bg-base-200 px-1.5 py-2 text-base-content shadow-2xl`}
+						className='z-30 flex w-52 flex-auto flex-col gap-0.5 overflow-x-hidden rounded-surface border border-border bg-popover p-1 text-popover-foreground shadow-xl shadow-black/20'
 						ref={floating}
 						style={{ position: strategy, top: y ?? 0, left: x ?? 0 }}
 					>
@@ -104,7 +101,7 @@ export const MenuItem: React.FC<MenuItemProps> = ({
 
 	return (
 		<button
-			className='flex flex-auto cursor-pointer select-none rounded p-2 text-xs text-base-content hover:cursor-pointer hover:bg-base-300 active:bg-base-300'
+			className='flex flex-auto cursor-pointer select-none rounded-[5px] px-2 py-1.5 text-[13px] text-foreground hover:bg-accent active:bg-accent'
 			onMouseDown={() => {
 				click();
 				setIsOpen(false);
@@ -120,5 +117,5 @@ export const MenuItem: React.FC<MenuItemProps> = ({
 };
 
 export const MenuSeparator: React.FC = () => {
-	return <div className='mx-6 flex w-full rounded bg-base-100/30 p-0.5'></div>;
+	return <div className='mx-6 flex w-full rounded bg-muted/40 p-0.5'></div>;
 };

@@ -143,7 +143,7 @@ export const FileInput: React.FC<FileInputProps> = ({
           {files.map((file) => (
             <div
               key={file.id}
-              className="flex items-center gap-2 p-2 border rounded-md bg-background/50"
+              className="flex items-center gap-2 p-2 border rounded-control bg-background/50"
             >
               {/* File Preview */}
               {getFilePreview(file)}
@@ -305,7 +305,7 @@ export const ImageInput: React.FC<ImageInputProps> = ({
           {files.map((file) => (
             <div
               key={file.id}
-              className="relative group border rounded-md overflow-hidden bg-background/50"
+              className="relative group border rounded-control overflow-hidden bg-background/50"
             >
               {/* Image Preview */}
               {file.dataUrl ? (

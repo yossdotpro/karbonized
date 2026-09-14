@@ -51,6 +51,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onOpenAutoFocus,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -60,6 +61,16 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onOpenAutoFocus={
+          onOpenAutoFocus ??
+          ((event) => {
+            // Focus the dialog itself instead of its first button (usually
+            // the close button). A field that took focus via autoFocus keeps it.
+            event.preventDefault()
+            const content = event.currentTarget as HTMLElement
+            if (!content.contains(document.activeElement)) content.focus()
+          })
+        }
         className={cn(
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-5 rounded-[12px] border border-border bg-popover p-5 text-[13px] text-popover-foreground shadow-2xl shadow-black/30 duration-100 outline-none sm:max-w-md data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
@@ -90,6 +101,31 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-header"
       className={cn("flex flex-col gap-1.5", className)}
+      {...props}
+    />
+  )
+}
+
+/** Scrollable content area that bleeds to the dialog edges. */
+function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn("-mx-5 min-h-0 overflow-y-auto px-5", className)}
+      {...props}
+    />
+  )
+}
+
+/** Footer bar with a top border, pinned to the bottom edge of the dialog. */
+function DialogBar({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="dialog-bar"
+      className={cn(
+        "-mx-5 -mb-5 flex items-center gap-2 rounded-b-[12px] border-t border-border bg-muted/40 px-5 py-3",
+        className
+      )}
       {...props}
     />
   )
@@ -156,6 +192,8 @@ function DialogDescription({
 
 export {
   Dialog,
+  DialogBar,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,

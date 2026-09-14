@@ -1,4 +1,4 @@
-import { IconChevronDown } from '@tabler/icons-react';
+import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, type ReactNode } from 'react';
 
@@ -29,7 +29,7 @@ export const CustomCollapse: React.FC<Props> = ({
 						animate={{ rotate: open ? 0 : -90 }}
 						transition={{ duration: 0.15, ease: 'easeOut' }}
 					>
-						<IconChevronDown size={12}></IconChevronDown>
+						<ChevronDown size={12}></ChevronDown>
 					</motion.div>
 				</div>
 			</button>

@@ -1,4 +1,4 @@
-import { IconCircleDashed, IconReload, IconSearch } from '@tabler/icons-react';
+import { CircleDashed, RotateCw, Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Input } from 'react-daisyui';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -85,7 +85,7 @@ export const ExtensionPanel: React.FC = () => {
 						);
 					}}
 				>
-					<IconReload className='my-auto h-full' size={16}></IconReload>
+					<RotateCw className='my-auto h-full' size={16}></RotateCw>
 				</div>
 			</div>
 
@@ -101,7 +101,7 @@ export const ExtensionPanel: React.FC = () => {
 
 			{/* Search */}
 			<div className='flex h-12 shrink-0 flex-row gap-2'>
-				<IconSearch className='my-auto ml-2 h-full' size={18}></IconSearch>
+				<Search className='my-auto ml-2 h-full' size={18}></Search>
 				<Input
 					className='my-auto mb-2 flex  h-full w-full'
 					onChange={(ev) => {
@@ -113,10 +113,10 @@ export const ExtensionPanel: React.FC = () => {
 
 			{loading && extensions.length === 0 ? (
 				<div className=' my-auto  dark:text-neutral-300'>
-					<IconCircleDashed
+					<CircleDashed
 						size={56}
 						className='mx-auto my-auto animate-spin text-neutral-600'
-					></IconCircleDashed>
+					></CircleDashed>
 				</div>
 			) : (
 				<>
@@ -165,10 +165,10 @@ export const ExtensionPanel: React.FC = () => {
 
 			{loading && extensions.length > 0 && (
 				<div className='mt-2 dark:text-neutral-300'>
-					<IconCircleDashed
+					<CircleDashed
 						size={26}
 						className='mx-auto my-auto animate-spin text-neutral-600'
-					></IconCircleDashed>
+					></CircleDashed>
 				</div>
 			)}
 		</div>

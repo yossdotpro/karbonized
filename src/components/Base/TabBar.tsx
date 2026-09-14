@@ -1,12 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useWorkspaceStore } from '../../stores';
-import {
-	IconSquareRotated,
-	IconX,
-	IconX as IconClose,
-	IconChevronRight,
-	IconChevronLeft,
-} from '@tabler/icons-react';
+import { ChevronLeft, ChevronRight, Diamond, X } from 'lucide-react';
 import { Scrollbars } from 'react-custom-scrollbars-2';
 import {
 	ContextMenu,
@@ -97,10 +91,7 @@ export const TabBar: React.FC = () => {
 										: 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
 								}`}
 							>
-								<IconSquareRotated
-									className='shrink-0 opacity-70'
-									size={13}
-								></IconSquareRotated>
+								<Diamond className='shrink-0 opacity-70' size={13}></Diamond>
 								<label className='select-none whitespace-nowrap'>
 									{item.workspaceName}
 								</label>
@@ -114,7 +105,7 @@ export const TabBar: React.FC = () => {
 										currentWorkspaceID === item.id ? 'opacity-60' : 'opacity-0'
 									}`}
 								>
-									<IconX size={12}></IconX>
+									<X size={12}></X>
 								</div>
 							</button>
 						</ContextMenuTrigger>
@@ -123,7 +114,7 @@ export const TabBar: React.FC = () => {
 								onClick={() => deleteWorkspace(item.id)}
 								className='text-destructive focus:bg-destructive/10 focus:text-destructive'
 							>
-								<IconClose className='size-4' />
+								<X className='size-4' />
 								Close
 							</ContextMenuItem>
 							<ContextMenuSeparator />
@@ -137,14 +128,14 @@ export const TabBar: React.FC = () => {
 								onClick={() => closeWorkspacesToRight(item.id)}
 								disabled={!canCloseRight}
 							>
-								<IconChevronRight className='size-4' />
+								<ChevronRight className='size-4' />
 								Close to the right
 							</ContextMenuItem>
 							<ContextMenuItem
 								onClick={() => closeWorkspacesToLeft(item.id)}
 								disabled={!canCloseLeft}
 							>
-								<IconChevronLeft className='size-4' />
+								<ChevronLeft className='size-4' />
 								Close to the left
 							</ContextMenuItem>
 						</ContextMenuContent>

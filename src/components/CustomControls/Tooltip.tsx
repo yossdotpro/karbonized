@@ -1,81 +1,48 @@
+import type { Placement } from '@floating-ui/react-dom';
+import React, { type ReactNode } from 'react';
 import {
-	type Placement,
-	flip,
-	offset,
-	shift,
-	useFloating,
-} from '@floating-ui/react-dom';
-import React, { type ReactNode, useEffect, useState } from 'react';
-import { Portal } from 'react-portal';
-import { useScreenDirection } from '../../hooks/useScreenDirection';
-import { AnimatePresence, motion } from 'framer-motion';
+	Tooltip as TooltipRoot,
+	TooltipContent,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Kbd } from '@/components/ui/kbd';
 
 interface Props {
 	message?: string;
+	/** Shortcut shown as key caps, e.g. `Mod+B`. */
+	shortcut?: string | string[];
 	className?: string;
 	children: ReactNode;
 	placement?: Placement;
 }
 
+type Side = 'top' | 'right' | 'bottom' | 'left';
+type Align = 'start' | 'center' | 'end';
+
+/**
+ * Simple message tooltip. Kept for its compact API; renders the shared Radix
+ * tooltip so every tooltip in the app looks and behaves the same.
+ */
 export const Tooltip: React.FC<Props> = ({
 	children,
 	message,
+	shortcut,
 	className,
 	placement = 'right',
 }) => {
-	const isHorizontal = useScreenDirection();
-	const [showTooltip, setShowTooltip] = useState(false);
-	const { x, y, reference, floating, strategy } = useFloating({
-		middleware: [offset(8), flip(), shift()],
-		placement,
-	});
+	const [side, align = 'center'] = placement.split('-') as [Side, Align?];
 
-	useEffect(() => {
-		if (showTooltip)
-			setTimeout(() => {
-				setShowTooltip(false);
-			}, 1000);
-	}, [showTooltip]);
+	if (!message) return <div className={className}>{children}</div>;
 
 	return (
-		<>
-			<>
-				<div
-					onMouseLeave={() => {
-						setShowTooltip(false);
-					}}
-					onMouseEnter={() => isHorizontal && setShowTooltip(true)}
-					onContextMenu={() => {
-						!isHorizontal && setShowTooltip(true);
-					}}
-					ref={reference}
-					className={className}
-				>
-					{children}
-				</div>
-
-				{/* Tooltip */}
-				<AnimatePresence>
-					{showTooltip && (
-						// @ts-ignore
-						<Portal>
-							<motion.div
-								initial={{ scale: 0.96, opacity: 0 }}
-								animate={{ scale: 1, opacity: 1 }}
-								exit={{ scale: 0.96, opacity: 0 }}
-								transition={{ duration: 0.12 }}
-								className='z-50'
-								ref={floating}
-								style={{ position: strategy, top: y ?? 0, left: x ?? 0 }}
-							>
-								<div className='flex flex-auto select-none flex-col whitespace-nowrap rounded-control border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-lg shadow-black/20'>
-									{message}
-								</div>
-							</motion.div>
-						</Portal>
-					)}
-				</AnimatePresence>
-			</>
-		</>
+		<TooltipRoot>
+			<TooltipTrigger asChild>
+				<div className={className}>{children}</div>
+			</TooltipTrigger>
+			<TooltipContent side={side} align={align}>
+				{message}
+				{shortcut && <Kbd shortcut={shortcut} className='ml-1' />}
+			</TooltipContent>
+		</TooltipRoot>
 	);
 };

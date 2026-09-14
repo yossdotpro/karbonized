@@ -53,18 +53,12 @@ export const NewProject: React.FC = () => {
 		addWorkspace(workspaceId, projectName);
 		setCurrentWorkspace(workspaceId);
 
-		// Update workspace with custom dimensions
-		const currentWorkspace = useWorkspaceStore.getState().currentWorkspace;
-		if (currentWorkspace) {
-			useWorkspaceStore.setState((state) => ({
-				...state,
-				currentWorkspace: {
-					...currentWorkspace,
-					workspaceWidth: width.toString(),
-					workspaceHeight: height.toString(),
-				},
-			}));
-		}
+		// Update the workspace in the list too, so the size survives switching
+		// workspaces and session restores.
+		useWorkspaceStore.getState().setWorkspaceSize({
+			width: width.toString(),
+			height: height.toString(),
+		});
 
 		navigate('/editor');
 	};

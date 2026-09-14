@@ -108,9 +108,7 @@ export const ObjectEditor: React.FC<Props> = ({
 	return (
 		<div className='space-y-3'>
 			{label && (
-				<Label className='text-xs text-muted-foreground'>
-					{label}
-				</Label>
+				<Label className='text-xs text-muted-foreground'>{label}</Label>
 			)}
 
 			{!showJsonView ? (
@@ -174,17 +172,21 @@ export const ObjectEditor: React.FC<Props> = ({
 								{entries.map(([key, val]) => (
 									<div
 										key={key}
-										className='flex items-center gap-2 p-2 border rounded'
+										className='flex items-center gap-2 p-2 border rounded-control'
 									>
 										<span className='text-xs font-mono text-muted-foreground min-w-0 truncate'>
 											{key}:
 										</span>
-										
+
 										{editingKey === key ? (
 											<div className='flex-1 flex gap-1'>
 												{typeof val === 'object' ? (
 													<Textarea
-														value={typeof editingValue === 'string' ? editingValue : JSON.stringify(editingValue, null, 2)}
+														value={
+															typeof editingValue === 'string'
+																? editingValue
+																: JSON.stringify(editingValue, null, 2)
+														}
 														onChange={(e) => {
 															try {
 																const parsed = JSON.parse(e.target.value);
@@ -214,7 +216,7 @@ export const ObjectEditor: React.FC<Props> = ({
 												{formatValue(val)}
 											</span>
 										)}
-										
+
 										<div className='flex items-center gap-1'>
 											{editingKey === key ? (
 												<>
@@ -222,17 +224,17 @@ export const ObjectEditor: React.FC<Props> = ({
 														onClick={saveEdit}
 														size='sm'
 														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-green-100'
+														className='h-4 w-4 p-0 hover:bg-emerald-500/15'
 													>
-														<Check className='h-3 w-3 text-green-600' />
+														<Check className='h-3 w-3 text-emerald-500' />
 													</Button>
 													<Button
 														onClick={cancelEdit}
 														size='sm'
 														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-red-100'
+														className='h-4 w-4 p-0 hover:bg-destructive/15'
 													>
-														<X className='h-3 w-3 text-red-600' />
+														<X className='h-3 w-3 text-destructive' />
 													</Button>
 												</>
 											) : (
@@ -241,17 +243,17 @@ export const ObjectEditor: React.FC<Props> = ({
 														onClick={() => startEditing(key)}
 														size='sm'
 														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-blue-100'
+														className='h-4 w-4 p-0 hover:bg-accent'
 													>
-														<Edit2 className='h-3 w-3 text-blue-600' />
+														<Edit2 className='h-3 w-3 text-muted-foreground' />
 													</Button>
 													<Button
 														onClick={() => removePair(key)}
 														size='sm'
 														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-red-100'
+														className='h-4 w-4 p-0 hover:bg-destructive/15'
 													>
-														<X className='h-3 w-3 text-red-600' />
+														<X className='h-3 w-3 text-destructive' />
 													</Button>
 												</>
 											)}
@@ -263,7 +265,7 @@ export const ObjectEditor: React.FC<Props> = ({
 					)}
 
 					{entries.length === 0 && (
-						<div className='text-center text-xs text-muted-foreground py-4 border-2 border-dashed border-border rounded'>
+						<div className='text-center text-xs text-muted-foreground py-4 border border-dashed border-border rounded-control'>
 							No properties yet. Add your first key-value pair above.
 						</div>
 					)}
@@ -273,9 +275,7 @@ export const ObjectEditor: React.FC<Props> = ({
 					{/* JSON View */}
 					<div className='space-y-2'>
 						<div className='flex items-center justify-between'>
-							<span className='text-xs text-muted-foreground'>
-								JSON View
-							</span>
+							<span className='text-xs text-muted-foreground'>JSON View</span>
 							<Button
 								onClick={toggleJsonView}
 								size='sm'

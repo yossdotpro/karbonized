@@ -60,7 +60,7 @@ export const WorkspacePanel: React.FC = () => {
 	}
 
 	return (
-		<div className='flex flex-col mt-1 gap-3 bg-background border border-border shadow-md rounded-lg p-3'>
+		<div className='flex flex-col'>
 			{/* Background Settings */}
 			<CustomCollapse
 				menu={
@@ -169,7 +169,7 @@ export const WorkspacePanel: React.FC = () => {
 						setWorkspaceType(e);
 					}}
 				>
-					<TabsList className='mx-auto mb-4 flex w-fit'>
+					<TabsList className='mb-3 flex w-full'>
 						<TabsTrigger value='color'>Color</TabsTrigger>
 						<TabsTrigger value='texture'>Texture</TabsTrigger>
 						<TabsTrigger value='image'>Image</TabsTrigger>
@@ -178,15 +178,15 @@ export const WorkspacePanel: React.FC = () => {
 
 					<TabsContent value='color'>
 						<>
-							<div className='flex flex-wrap items-center justify-between gap-2'>
+							<div className='mb-3 grid grid-cols-[repeat(auto-fill,minmax(2.5rem,1fr))] gap-1.5'>
 								{Gradients.map((item) => (
 									<button
 										key={item.c1 + item.c2}
-										className={`h-16 w-16 overflow-hidden rounded-lg transition-all hover:shadow-md active:scale-90 ${
+										className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-control border text-white transition-shadow [&_svg]:size-4 [&_svg]:drop-shadow ${
 											currentWorkspace.workspaceGradientSettings.color1 ===
 											item.c1
-												? 'border-2 border-primary shadow-md'
-												: 'border border-border'
+												? 'border-transparent ring-2 ring-foreground ring-offset-2 ring-offset-sidebar'
+												: 'border-black/10 hover:ring-2 hover:ring-foreground/30 hover:ring-offset-1 hover:ring-offset-sidebar'
 										}`}
 										style={{
 											background: `linear-gradient(${item.c1},${item.c2})`,
@@ -241,21 +241,21 @@ export const WorkspacePanel: React.FC = () => {
 						</>
 					</TabsContent>
 					<TabsContent value='texture'>
-						<div className='flex flex-auto flex-row flex-wrap gap-2 overflow-auto'>
+						<div className='grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-1.5'>
 							{textures.map((texture) => (
 								<div
 									key={texture.name}
-									className={`size-16 cursor-pointer rounded-lg border-2 bg-background p-2 hover:border-border active:scale-95 transition-all ${
+									className={`aspect-square w-full cursor-pointer rounded-control border bg-background p-1.5 transition-shadow ${
 										currentWorkspace.textureName === texture.name
-											? 'border-primary shadow-md'
-											: 'border-border'
+											? 'border-transparent ring-2 ring-foreground ring-offset-2 ring-offset-sidebar'
+											: 'border-border hover:ring-2 hover:ring-foreground/30 hover:ring-offset-1 hover:ring-offset-sidebar'
 									}`}
 									onClick={() => {
 										setTexture(texture.name);
 									}}
 								>
 									<Suspense>
-										<texture.component className='flex h-full w-full flex-auto rounded-lg'></texture.component>
+										<texture.component className='flex h-full w-full flex-auto rounded-[4px]'></texture.component>
 									</Suspense>
 								</div>
 							))}
@@ -276,21 +276,21 @@ export const WorkspacePanel: React.FC = () => {
 						></ColorPicker>
 					</TabsContent>
 					<TabsContent value='image'>
-						<div className='flex flex-auto flex-row flex-wrap gap-2 overflow-auto'>
+						<div className='grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-1.5'>
 							{Wallpapers.map((item) => (
 								<button
 									key={item.id}
-									className={`h-16 w-16 overflow-hidden rounded-lg border-2 bg-background transition-all hover:shadow-md active:scale-90 ${
+									className={`aspect-square w-full overflow-hidden rounded-control border bg-background transition-shadow ${
 										currentWorkspace.textureName === item.id
-											? 'border-primary shadow-md'
-											: 'border-border'
+											? 'border-transparent ring-2 ring-foreground ring-offset-2 ring-offset-sidebar'
+											: 'border-border hover:ring-2 hover:ring-foreground/30 hover:ring-offset-1 hover:ring-offset-sidebar'
 									}`}
 									onClick={() => {
 										setTexture(item.id);
 									}}
 								>
 									<img
-										className='flex h-full w-full flex-auto'
+										className='flex h-full w-full flex-auto object-cover'
 										src={item.thumb}
 									></img>
 								</button>
@@ -384,7 +384,7 @@ export const WorkspacePanel: React.FC = () => {
 													seed: currentWorkspace.workspaceDynamicSettings.seed,
 												});
 											}}
-											className='flex h-10 w-10 items-center justify-center rounded border border-border text-2xl hover:bg-base-200'
+											className='flex h-10 w-10 items-center justify-center rounded-control border border-border text-2xl hover:bg-accent'
 										>
 											+
 										</button>

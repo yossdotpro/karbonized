@@ -15,21 +15,19 @@ interface ComponentsGalleryDialogProps {
 	onAddToCanvas: (component: KComponent) => void;
 }
 
-export const ComponentsGalleryDialog: React.FC<ComponentsGalleryDialogProps> = ({
-	open,
-	onOpenChange,
-	onAddToCanvas,
-}) => {
+export const ComponentsGalleryDialog: React.FC<
+	ComponentsGalleryDialogProps
+> = ({ open, onOpenChange, onAddToCanvas }) => {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
+			<DialogContent className='flex h-[70vh] flex-col overflow-hidden sm:max-w-xl'>
 				<DialogHeader>
-					<DialogTitle>Component Library</DialogTitle>
+					<DialogTitle>Component library</DialogTitle>
 					<DialogDescription>
-						Browse and add imported custom components to your canvas.
+						Add an imported component to the canvas.
 					</DialogDescription>
 				</DialogHeader>
-				<div className="flex-1 overflow-hidden">
+				<div className='-mx-5 -mb-5 flex min-h-0 flex-1 flex-col border-t border-border'>
 					<ComponentsGallery onAddToCanvas={onAddToCanvas} />
 				</div>
 			</DialogContent>
