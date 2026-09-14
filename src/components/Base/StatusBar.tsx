@@ -15,6 +15,42 @@ import { Button } from '../ui/button';
 import { ViewPanel } from '../Panels/ViewPanel';
 import useMousePosition from '@/hooks/useMousePosition';
 import { Separator } from '../ui/separator';
+import { useAutosaveStatus } from '@/lib/persistence/autosave';
+
+const AutosaveIndicator: React.FC = () => {
+	const status = useAutosaveStatus((state) => state.status);
+	const savedAt = useAutosaveStatus((state) => state.savedAt);
+
+	if (status === 'idle') return null;
+
+	const label = {
+		saving: 'Saving…',
+		saved: 'Saved',
+		error: 'Autosave failed',
+	}[status];
+
+	return (
+		<span
+			className='flex items-center gap-1.5'
+			title={
+				savedAt
+					? `Last saved ${new Date(savedAt).toLocaleTimeString()}`
+					: undefined
+			}
+		>
+			<span
+				className={`size-1.5 rounded-full ${
+					status === 'error'
+						? 'bg-destructive'
+						: status === 'saving'
+							? 'animate-pulse bg-muted-foreground'
+							: 'bg-emerald-500'
+				}`}
+			/>
+			{label}
+		</span>
+	);
+};
 
 export const StatusBar: React.FC = () => {
 	/* Component State */
@@ -129,6 +165,10 @@ export const StatusBar: React.FC = () => {
 			</div>
 
 			<div className='flex-auto' />
+
+			<AutosaveIndicator />
+
+			<Separator orientation='vertical' className='h-3' />
 
 			<ViewPanel />
 

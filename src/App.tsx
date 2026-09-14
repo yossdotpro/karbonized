@@ -1,9 +1,10 @@
-import React, { Suspense, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import {
 	BrowserRouter as Router,
 	Routes,
 	Route,
 	Navigate,
+	useLocation,
 } from 'react-router-dom';
 import './App.css';
 import { AppContext } from './AppContext';
@@ -18,6 +19,7 @@ import {
 	CommandPaletteTrigger,
 	ShortcutManager,
 } from './components/CommandPalette';
+import { useSessionAutosave } from './lib/persistence/autosave';
 
 const Editor = React.lazy(async () => await import('./pages/Editor'));
 const NewProject = React.lazy(async () => await import('./pages/NewProject'));
@@ -119,6 +121,38 @@ const AppShell: React.FC<{
 	);
 };
 
+/** Waits for the previous session to be restored before showing the app. */
+const SessionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const { ready, restored } = useSessionAutosave();
+	const location = useLocation();
+	const [initialPath] = useState(() => location.pathname);
+	const [landed, setLanded] = useState(false);
+
+	useEffect(() => {
+		if (ready && location.pathname === '/editor') setLanded(true);
+	}, [ready, location.pathname]);
+
+	if (!ready) {
+		return (
+			<div className='flex h-full w-full items-center justify-center'>
+				<Spinner className='size-5 text-muted-foreground' />
+			</div>
+		);
+	}
+
+	// A restored session opens straight in the editor instead of "New project".
+	if (
+		restored &&
+		!landed &&
+		['/', '/new'].includes(initialPath) &&
+		location.pathname !== '/editor'
+	) {
+		return <Navigate to='/editor' replace />;
+	}
+
+	return <>{children}</>;
+};
+
 const App: React.FC = () => {
 	const [theme, toggleTheme] = useTheme();
 	const isHorizontal = useScreenDirection();
@@ -139,7 +173,9 @@ const App: React.FC = () => {
 					}}
 					className='flex h-screen w-screen flex-auto flex-col overflow-hidden bg-background text-foreground'
 				>
-					<AppShell isHorizontal={isHorizontal} />
+					<SessionGate>
+						<AppShell isHorizontal={isHorizontal} />
+					</SessionGate>
 				</div>
 
 				<ShortcutManager />
