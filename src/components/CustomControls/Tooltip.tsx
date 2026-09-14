@@ -26,7 +26,7 @@ export const Tooltip: React.FC<Props> = ({
 	const isHorizontal = useScreenDirection();
 	const [showTooltip, setShowTooltip] = useState(false);
 	const { x, y, reference, floating, strategy } = useFloating({
-		middleware: [offset(10), flip(), shift()],
+		middleware: [offset(8), flip(), shift()],
 		placement,
 	});
 
@@ -60,14 +60,15 @@ export const Tooltip: React.FC<Props> = ({
 						// @ts-ignore
 						<Portal>
 							<motion.div
-								initial={{ scale: 0.8, opacity: 0 }}
+								initial={{ scale: 0.96, opacity: 0 }}
 								animate={{ scale: 1, opacity: 1 }}
-								exit={{ scale: 0, opacity: 0 }}
+								exit={{ scale: 0.96, opacity: 0 }}
+								transition={{ duration: 0.12 }}
 								className='z-50'
 								ref={floating}
 								style={{ position: strategy, top: y ?? 0, left: x ?? 0 }}
 							>
-								<div className='flex flex-auto select-none flex-col rounded-xl border border-neutral bg-base-200 p-2 px-4 text-xs shadow-xl dark:text-white'>
+								<div className='flex flex-auto select-none flex-col whitespace-nowrap rounded-control border border-border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-lg shadow-black/20'>
 									{message}
 								</div>
 							</motion.div>

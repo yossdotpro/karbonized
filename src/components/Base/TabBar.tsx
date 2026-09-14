@@ -66,7 +66,7 @@ export const TabBar: React.FC = () => {
 			autoHide
 			style={{ width: '100%' }}
 			renderThumbHorizontal={(props) => (
-				<div {...props} className='rounded-lg bg-border/50 p-1' />
+				<div {...props} className='rounded-full bg-border' />
 			)}
 			onWheel={(event: any) => {
 				const delta = Math.max(
@@ -81,7 +81,7 @@ export const TabBar: React.FC = () => {
 				event.preventDefault();
 			}}
 		>
-			<div className='flex w-[70%] gap-2 px-1.5'>
+			<div className='flex w-fit items-center gap-0.5 py-1'>
 				{workspaces.map((item) => (
 					<ContextMenu key={item.id}>
 						<ContextMenuTrigger asChild>
@@ -91,17 +91,17 @@ export const TabBar: React.FC = () => {
 									setCurrentWorkspace(item.id);
 								}}
 								onContextMenu={() => setContextMenuWorkspaceId(item.id)}
-								className={`group relative flex items-center gap-2.5 rounded-xs px-3 py-2 text-sm font-medium outline-hidden select-none ${
+								className={`group relative flex h-7 items-center gap-1.5 rounded-control pl-2 pr-1 text-[13px] outline-hidden select-none transition-colors ${
 									currentWorkspaceID === item.id
-										? 'bg-card shadow-lg shadow-black/10 ring-1 ring-border'
-										: 'bg-muted/50 hover:bg-muted hover:shadow-md'
+										? 'bg-accent text-foreground'
+										: 'text-muted-foreground hover:bg-accent/60 hover:text-foreground'
 								}`}
 							>
 								<IconSquareRotated
-									className='text-foreground/70'
-									size={16}
+									className='shrink-0 opacity-70'
+									size={13}
 								></IconSquareRotated>
-								<label className='select-none text-clip whitespace-nowrap text-xs font-medium text-foreground hover:cursor-pointer'>
+								<label className='select-none whitespace-nowrap'>
 									{item.workspaceName}
 								</label>
 
@@ -110,9 +110,11 @@ export const TabBar: React.FC = () => {
 										ev.stopPropagation();
 										deleteWorkspace(item.id);
 									}}
-									className='ml-1 rounded-xl p-1 text-foreground/50 opacity-0 transition-opacity hover:bg-accent hover:text-foreground group-hover:opacity-100'
+									className={`flex size-5 items-center justify-center rounded-[4px] text-muted-foreground transition-opacity hover:bg-foreground/10 hover:text-foreground group-hover:opacity-100 ${
+										currentWorkspaceID === item.id ? 'opacity-60' : 'opacity-0'
+									}`}
 								>
-									<IconX size={14}></IconX>
+									<IconX size={12}></IconX>
 								</div>
 							</button>
 						</ContextMenuTrigger>

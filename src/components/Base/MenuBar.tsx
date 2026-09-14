@@ -15,22 +15,40 @@ import {
 import CryptoJS from 'crypto-js';
 import FileSaver from 'file-saver';
 import { toBlob, toPng } from 'html-to-image';
-import React, { Suspense, useContext, useEffect, useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AppContext } from '../../AppContext';
-import { useScreenDirection } from '../../hooks/useScreenDirection';
 import { type Project } from '../../types';
 import {
 	useWorkspaceStore,
 	useControlsStore,
-	useHistoryStore,
 	useUIStore,
 	useProjectStore,
 } from '../../stores';
 import { ExportImage, export_format } from '../../utils/Exporter';
 import { getRandomNumber } from '../../utils/getRandom';
 import { PROJECT_KEY } from '../../utils/secrets';
-import { Plus } from 'lucide-react';
+import {
+	Eraser,
+	FileJson,
+	FilePlus2,
+	FolderOpen,
+	Heart,
+	ImageDown,
+	Info,
+	PackagePlus,
+	Plus,
+	Save,
+	ScrollText,
+	Share2,
+	SquareDashed,
+} from 'lucide-react';
+import {
+	commandRegistry,
+	runCommand,
+	useCommandRegistryVersion,
+	useCommands,
+} from '@/lib/commands/registry';
+import { shortcutLabel } from '@/lib/commands/shortcuts';
 import TabBar from './TabBar';
 import { Button } from '@/components/ui/button';
 
@@ -60,11 +78,8 @@ const mergeHistoryById = <T extends { id: string }>(
 };
 
 export const MenuBar: React.FC = () => {
-	/* App Context */
-	const { viewerRef } = useContext(AppContext);
 	const navigate = useNavigate();
 	const location = useLocation();
-	const isHorizontal = useScreenDirection();
 
 	// Check if we're in the editor
 	const isEditor = location.pathname === '/editor';
@@ -75,34 +90,16 @@ export const MenuBar: React.FC = () => {
 	const [showDonations, setShowDonations] = useState(false);
 	const [showImportComponents, setShowImportComponents] = useState(false);
 
-	/* Actions */
-	const redo = useHistoryStore((state) => state.redo);
-	const undo = useHistoryStore((state) => state.undo);
-	const controlState = useHistoryStore((state) => state.controlState);
-
 	/* App Store */
-	const currentControlID = useControlsStore((state) => state.currentControlID);
-	const duplicateControl = useControlsStore((state) => state.duplicateControl);
-	const setCurrentControlID = useControlsStore(
-		(state) => state.setCurrentControlID,
-	);
-	const setControlPos = useControlsStore((state) => state.setControlPosition);
-	const setControlSize = useControlsStore((state) => state.setControlSize);
-	const setControlTransform = useControlsStore(
-		(state) => state.setControlTransform,
-	);
 	const ControlProperties = useControlsStore(
 		(state) => state.ControlProperties,
 	);
 	const saveProject = useProjectStore((state) => state.saveProject);
 	const loadProject = useProjectStore((state) => state.loadProject);
 
-	const addControl = useControlsStore((state) => state.addControl);
-
-	const addWorkspace = useWorkspaceStore((state) => state.addWorkspace);
 	const cleanWorkspace = useWorkspaceStore((state) => state.cleanWorkspace);
-	const setWorkspaceControls = useWorkspaceStore(
-		(state) => state.setWorkspaceControls,
+	const setCurrentWorkspace = useWorkspaceStore(
+		(state) => state.setCurrentWorkspace,
 	);
 	const setIsExporting = useUIStore((state) => state.setIsExporting);
 
@@ -111,72 +108,6 @@ export const MenuBar: React.FC = () => {
 		(state) => state.currentWorkspaceID,
 	);
 	const workspaces = useWorkspaceStore((state) => state.workspaces);
-
-	const applyHistoryResult = (
-		result:
-			| {
-					type: 'workspace-update';
-					snapshot: { controls: any[]; currentControlID: string };
-					historyId: string;
-			  }
-			| {
-					type: 'control-update';
-					historyId: string;
-			  }
-			| undefined,
-	) => {
-		if (result?.type === 'workspace-update') {
-			setWorkspaceControls(result.snapshot.controls);
-			setCurrentControlID(result.snapshot.currentControlID);
-			return;
-		}
-
-		if (result?.type !== 'control-update' || controlState == null) return;
-
-		if (controlState.id.endsWith('-pos')) {
-			setControlPos(controlState.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-control_size')) {
-			setControlSize(controlState.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-transform')) {
-			setControlTransform(controlState.value);
-		}
-	};
-
-	/* Handle Key Shortcuts */
-	const onKeyDown = (event: KeyboardEvent) => {
-		if (event.ctrlKey && event.key === 'n') {
-			event.preventDefault();
-			navigate('/new');
-		} else if (event.ctrlKey && event.key === 'p') {
-			event.preventDefault();
-			setShowPreview(true);
-		} else if (event.ctrlKey && event.key === 's') {
-			event.preventDefault();
-			void handleSaveProject();
-		} else if (event.key === 'Escape') {
-			event.preventDefault();
-
-			setShowAbout(false);
-			setShowPreview(false);
-			setShowChangelog(false);
-			setShowDonations(false);
-			setShowImportComponents(false);
-		}
-	};
-
-	useEffect(() => {
-		window.addEventListener('keydown', onKeyDown);
-
-		return () => {
-			window.removeEventListener('keydown', onKeyDown);
-		};
-	}, [workspaces]);
 
 	const exportImage = async (type: export_format) => {
 		setIsExporting(true);
@@ -187,23 +118,6 @@ export const MenuBar: React.FC = () => {
 			type,
 		);
 		setTimeout(() => setIsExporting(false), 500);
-	};
-
-	const getElementsByType = (type: string) => {
-		return (
-			currentWorkspace?.controls?.filter((item) => item.type === type).length ??
-			0 + 1
-		);
-	};
-
-	const duplicate = (): void => {
-		if (currentControlID === '') return;
-
-		duplicateControl(
-			currentControlID,
-			currentWorkspace,
-			currentWorkspace?.id || '',
-		);
 	};
 
 	const handleShare = async () => {
@@ -348,44 +262,148 @@ export const MenuBar: React.FC = () => {
 		cleanWorkspace();
 	};
 
-	const centerView = () => {
-		const width = parseFloat(currentWorkspace?.workspaceWidth ?? '1280');
+	// Re-render when commands (and their shortcuts) are registered elsewhere.
+	useCommandRegistryVersion();
+	const shortcut = (id: string) =>
+		shortcutLabel(commandRegistry.get(id)?.shortcut);
 
-		if (isHorizontal) {
-			if (width < 1280) {
-				viewerRef.current?.setZoom(0.9);
-			} else if (width >= 1280 && width < 1920) {
-				viewerRef.current?.setZoom(0.6);
-			} else if (width >= 1920 && width < 2560) {
-				viewerRef.current?.setZoom(0.4);
-			} else if (width >= 2560 && width < 3840) {
-				viewerRef.current?.setZoom(0.3);
-			} else if (width >= 3840) {
-				viewerRef.current?.setZoom(0.2);
-			}
-		} else {
-			if (width < 1280) {
-				viewerRef.current?.setZoom(0.6);
-			} else if (width >= 1280 && width < 1920) {
-				viewerRef.current?.setZoom(0.25);
-			} else if (width >= 1920) {
-				viewerRef.current?.setZoom(0.1);
-			}
-		}
-
-		viewerRef.current?.scrollCenter();
-	};
+	useCommands([
+		{
+			id: 'file.new-project',
+			title: 'New project',
+			group: 'File',
+			icon: FilePlus2,
+			shortcut: 'Alt+N',
+			keywords: ['create', 'workspace', 'nuevo'],
+			run: () => navigate('/new'),
+		},
+		{
+			id: 'file.open',
+			title: 'Open project…',
+			group: 'File',
+			icon: FolderOpen,
+			shortcut: 'Mod+O',
+			keywords: ['load', 'kproject'],
+			run: handleLoadProject,
+		},
+		{
+			id: 'file.save',
+			title: 'Save project',
+			group: 'File',
+			icon: Save,
+			shortcut: 'Mod+S',
+			allowInInput: true,
+			when: () => isEditor,
+			run: () => void handleSaveProject(),
+		},
+		{
+			id: 'file.save-template',
+			title: 'Save project as template',
+			group: 'File',
+			icon: FileJson,
+			when: () => isEditor,
+			run: () => void handleSaveAsJson(),
+		},
+		{
+			id: 'file.export',
+			title: 'Export…',
+			group: 'File',
+			icon: ImageDown,
+			shortcut: 'Mod+Shift+E',
+			keywords: ['render', 'preview', 'download'],
+			when: () => isEditor,
+			run: () => setShowPreview(true),
+		},
+		...(
+			[
+				['png', 'PNG', export_format.png],
+				['jpeg', 'JPEG', export_format.jpeg],
+				['svg', 'SVG', export_format.svg],
+			] as const
+		).map(([id, label, format]) => ({
+			id: `file.export-${id}`,
+			title: `Export as ${label}`,
+			group: 'File' as const,
+			icon: ImageDown,
+			keywords: ['download', 'image'],
+			when: () => isEditor,
+			run: () => void exportImage(format),
+		})),
+		{
+			id: 'file.share',
+			title: 'Share image',
+			group: 'File',
+			icon: Share2,
+			when: () => isEditor,
+			run: () => void handleShare(),
+		},
+		{
+			id: 'file.import-components',
+			title: 'Import components…',
+			group: 'File',
+			icon: PackagePlus,
+			keywords: ['kcomponent', 'extension'],
+			when: () => isEditor,
+			run: () => setShowImportComponents(true),
+		},
+		{
+			id: 'workspace.clean',
+			title: 'Clear workspace',
+			group: 'Workspaces',
+			icon: Eraser,
+			keywords: ['clean', 'reset', 'remove all'],
+			when: () => isEditor,
+			run: handleCleanWorkspace,
+		},
+		...workspaces.map((workspace) => ({
+			id: `workspace.switch-${workspace.id}`,
+			title: `Go to ${workspace.workspaceName}`,
+			group: 'Workspaces' as const,
+			icon: SquareDashed,
+			keywords: ['switch', 'tab', 'workspace'],
+			when: () =>
+				isEditor &&
+				useWorkspaceStore.getState().currentWorkspaceID !== workspace.id,
+			run: () => setCurrentWorkspace(workspace.id),
+		})),
+		{
+			id: 'help.changelog',
+			title: 'Changelog',
+			group: 'Help',
+			icon: ScrollText,
+			keywords: ['news', 'release', 'version'],
+			run: () => setShowChangelog(true),
+		},
+		{
+			id: 'help.donations',
+			title: 'Support Karbonized',
+			group: 'Help',
+			icon: Heart,
+			keywords: ['donate', 'donations'],
+			run: () => setShowDonations(true),
+		},
+		{
+			id: 'help.about',
+			title: 'About Karbonized',
+			group: 'Help',
+			icon: Info,
+			run: () => setShowAbout(true),
+		},
+	]);
 
 	return (
 		<>
-			<div className='z-10 flex items-center gap-1 overflow-hidden text-foreground'>
+			<div className='z-10 flex h-full min-w-0 items-center gap-1 overflow-hidden text-foreground'>
 				<Menubar>
 					{/* File */}
 					<MenubarMenu>
 						<MenubarTrigger>File</MenubarTrigger>
 						<MenubarContent>
 							<MenubarItem onClick={() => navigate('/new')}>
-								New Project <MenubarShortcut>⌘N</MenubarShortcut>
+								New Project{' '}
+								<MenubarShortcut>
+									{shortcut('file.new-project')}
+								</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarItem
@@ -394,6 +412,7 @@ export const MenuBar: React.FC = () => {
 								}}
 							>
 								Load Project
+								<MenubarShortcut>{shortcut('file.open')}</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarItem
@@ -403,7 +422,7 @@ export const MenuBar: React.FC = () => {
 								}}
 							>
 								Save Project
-								<MenubarShortcut>⌘S</MenubarShortcut>
+								<MenubarShortcut>{shortcut('file.save')}</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarItem
@@ -422,7 +441,7 @@ export const MenuBar: React.FC = () => {
 								}}
 							>
 								Render
-								<MenubarShortcut>⌘P</MenubarShortcut>
+								<MenubarShortcut>{shortcut('file.export')}</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarSub>
@@ -478,30 +497,30 @@ export const MenuBar: React.FC = () => {
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={() => {
-									if (isEditor) applyHistoryResult(undo());
+									runCommand('edit.undo');
 								}}
 							>
 								Undo
-								<MenubarShortcut>⌘Z</MenubarShortcut>
+								<MenubarShortcut>{shortcut('edit.undo')}</MenubarShortcut>
 							</MenubarItem>
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={() => {
-									if (isEditor) applyHistoryResult(redo());
+									runCommand('edit.redo');
 								}}
 							>
 								Redo
-								<MenubarShortcut>⌘Y</MenubarShortcut>
+								<MenubarShortcut>{shortcut('edit.redo')}</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={() => {
-									if (isEditor) duplicate();
+									runCommand('edit.duplicate');
 								}}
 							>
 								Duplicate
-								<MenubarShortcut>⌘D</MenubarShortcut>
+								<MenubarShortcut>{shortcut('edit.duplicate')}</MenubarShortcut>
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
@@ -532,7 +551,9 @@ export const MenuBar: React.FC = () => {
 								}}
 							>
 								New Workspace
-								<MenubarShortcut>⌘M</MenubarShortcut>
+								<MenubarShortcut>
+									{shortcut('file.new-project')}
+								</MenubarShortcut>
 							</MenubarItem>
 							<MenubarItem
 								disabled={!isEditor}
@@ -552,34 +573,31 @@ export const MenuBar: React.FC = () => {
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={() => {
-									if (isEditor)
-										viewerRef.current?.setZoom(
-											viewerRef.current?.getZoom() + 0.2,
-										);
+									runCommand('view.zoom-in');
 								}}
 							>
 								Zoom In
+								<MenubarShortcut>{shortcut('view.zoom-in')}</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={() => {
-									if (isEditor)
-										viewerRef.current?.setZoom(
-											viewerRef.current?.getZoom() - 0.2,
-										);
+									runCommand('view.zoom-out');
 								}}
 							>
 								Zoom Out
+								<MenubarShortcut>{shortcut('view.zoom-out')}</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={() => {
-									if (isEditor) viewerRef.current?.setZoom(0.7);
+									runCommand('view.zoom-reset');
 								}}
 							>
 								Zoom Reset
+								<MenubarShortcut>{shortcut('view.zoom-reset')}</MenubarShortcut>
 							</MenubarItem>
 
 							<MenubarSeparator></MenubarSeparator>
@@ -587,11 +605,11 @@ export const MenuBar: React.FC = () => {
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={() => {
-									if (isEditor) centerView();
+									runCommand('view.fit');
 								}}
 							>
 								Center View
-								<MenubarShortcut>⌘Space</MenubarShortcut>
+								<MenubarShortcut>{shortcut('view.fit')}</MenubarShortcut>
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
@@ -615,16 +633,19 @@ export const MenuBar: React.FC = () => {
 					</MenubarMenu>
 				</Menubar>
 
+				{isEditor && <div className='mx-1.5 h-4 w-px shrink-0 bg-border' />}
+
 				{isEditor && <TabBar></TabBar>}
 
 				{isEditor && (
 					<Button
-						className='h-8 w-8 px-2'
+						className='shrink-0'
 						onClick={handleNewWorkspace}
-						size={'icon'}
+						size={'icon-sm'}
 						variant={'ghost'}
+						aria-label='New workspace'
 					>
-						<Plus size={16}></Plus>
+						<Plus className='size-3.5'></Plus>
 					</Button>
 				)}
 			</div>

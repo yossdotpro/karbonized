@@ -5,10 +5,10 @@ import { WorkspacePanel } from './WorkspacePanel';
 import { ResizablePanel } from '../ui/resizable';
 import { Button } from '../ui/button';
 import {
-	ChevronLeft,
-	ChevronRight,
 	InspectionPanel,
 	Layers,
+	PanelRightClose,
+	PanelRightOpen,
 	SquarePen,
 } from 'lucide-react';
 import { Label } from '../ui/label';
@@ -16,7 +16,8 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { HierarchyPanel } from './HierarchyPanel';
 import { Tooltip } from '../CustomControls/Tooltip';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useCommands } from '@/lib/commands/registry';
+import { shortcutLabel } from '@/lib/commands/shortcuts';
 
 export const RightPanel: React.FC = () => {
 	/* App Store */
@@ -34,29 +35,55 @@ export const RightPanel: React.FC = () => {
 	const workspaceMode = useUIStore((state) => state.workspaceMode);
 	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
 
-	/* Show/Close Menu KeyShortcut */
-	const onKeyDown = (event: KeyboardEvent): void => {
-		if (event.ctrlKey && event.key === 'b') {
-			event.preventDefault();
-
-			setShowMenu(!showMenu);
-		}
-	};
+	useCommands([
+		{
+			id: 'view.toggle-properties',
+			title: showMenu ? 'Hide properties panel' : 'Show properties panel',
+			group: 'View',
+			icon: showMenu ? PanelRightClose : PanelRightOpen,
+			shortcut: 'Mod+B',
+			allowInInput: true,
+			run: () => {
+				setShowMenu((current) => !current);
+				setWorkspaceMode('custom');
+			},
+		},
+		...(
+			[
+				['hierarchy', 'Show layers', Layers],
+				['control', 'Show control properties', SquarePen],
+				['workspace', 'Show workspace settings', InspectionPanel],
+			] as const
+		).map(([id, title, icon]) => ({
+			id: `view.panel-${id}`,
+			title,
+			group: 'View' as const,
+			icon,
+			run: () => {
+				setTab(id);
+				setWorkspaceMode('custom');
+				setShowMenu(true);
+				if (id === 'workspace') setWorkspaceTab('workspace');
+			},
+		})),
+	]);
 
 	useEffect(() => {
-		window.addEventListener('keydown', onKeyDown);
+		// The panel registers its constraints with the group after mount, so
+		// defer the call and ignore it if the group is not ready yet.
+		const frame = requestAnimationFrame(() => {
+			try {
+				if (showMenu) {
+					panel.current?.expand();
+				} else {
+					panel.current?.collapse();
+				}
+			} catch {
+				/* panel not registered yet */
+			}
+		});
 
-		return () => {
-			window.removeEventListener('keydown', onKeyDown);
-		};
-	}, [showMenu]);
-
-	useEffect(() => {
-		if (showMenu) {
-			panel.current?.expand();
-		} else {
-			panel.current?.collapse();
-		}
+		return () => cancelAnimationFrame(frame);
 	}, [showMenu]);
 
 	useEffect(() => {
@@ -84,24 +111,28 @@ export const RightPanel: React.FC = () => {
 			panelRef={panel}
 		>
 			<div
-				className={`pointer-events-auto mr-auto flex h-full w-full gap-2 overflow-hidden bg-popover p-2 text-foreground shadow-md transition-all`}
+				className={`pointer-events-auto mr-auto flex h-full w-full gap-1.5 overflow-hidden border-l border-border bg-sidebar p-1.5 text-foreground`}
 			>
 				{/* Selectors */}
-				<div className='flex flex-col gap-4 shrink-0'>
-					<Tooltip message={showMenu ? 'Collapse Panel' : 'Expand Panel'}>
+				<div className='flex shrink-0 flex-col gap-0.5'>
+					<Tooltip
+						message={`${showMenu ? 'Collapse panel' : 'Expand panel'}  ${shortcutLabel('Mod+B')}`}
+						placement='left'
+					>
 						<Button
 							variant={'ghost'}
 							size={'icon'}
+							aria-label={showMenu ? 'Collapse panel' : 'Expand panel'}
 							onClick={() => {
 								setShowMenu(!showMenu);
 								setWorkspaceMode('custom');
 							}}
-							className='shrink-0 inline-flex size-9 items-center justify-center rounded-4xl text-sm font-medium outline-none select-none hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/30 active:scale-95 disabled:pointer-events-none disabled:opacity-50'
+							className='mb-1'
 						>
 							{showMenu ? (
-								<ChevronRight size={16} />
+								<PanelRightClose size={16} />
 							) : (
-								<ChevronLeft size={16} />
+								<PanelRightOpen size={16} />
 							)}
 						</Button>
 					</Tooltip>
@@ -115,63 +146,33 @@ export const RightPanel: React.FC = () => {
 							label: 'Workspace',
 						},
 					].map((item) => {
-						const isActive = tab === item.id;
+						const isActive = tab === item.id && showMenu;
 
 						return (
-							<Tooltip key={item.id} message={`${item.label} Settings`}>
-								<motion.button
+							<Tooltip
+								key={item.id}
+								message={`${item.label} Settings`}
+								placement='left'
+							>
+								<Button
+									variant='ghost'
+									size='icon'
+									aria-label={item.label}
+									aria-pressed={isActive}
 									onClick={() => {
 										setTab(item.id as any);
 										setWorkspaceMode('custom');
 										setShowMenu(true);
 										if (item.id === 'workspace') setWorkspaceTab('workspace');
 									}}
-									className={`shrink-0 transition-colors flex w-9 flex-col items-center overflow-hidden rounded-4xl border border-transparent outline-none select-none focus-visible:ring-3 focus-visible:ring-ring/30 active:scale-95 ${
+									className={
 										isActive
-											? 'bg-primary text-white'
-											: 'bg-transparent text-muted-foreground hover:text-foreground'
-									}`}
-									initial={false}
-									animate={{
-										height: isActive ? 120 : 36,
-										scale: isActive ? 1.02 : 1,
-									}}
-									transition={{
-										type: 'spring',
-										stiffness: 320,
-										damping: 28,
-										mass: 0.8,
-									}}
+											? 'bg-accent text-foreground hover:bg-accent'
+											: undefined
+									}
 								>
-									<div className='shrink-0 flex items-center justify-center size-9'>
-										{item.icon}
-									</div>
-
-									<AnimatePresence>
-										{isActive && (
-											<motion.div
-												initial={{ opacity: 0, y: 3, filter: 'blur(2px)' }}
-												animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-												exit={{ opacity: 0, y: 2, filter: 'blur(2px)' }}
-												transition={{
-													duration: 0.22,
-													ease: [0.22, 1, 0.36, 1],
-												}}
-												className='flex flex-col items-center justify-start pb-4'
-											>
-												<span
-													className='text-[10px] h-16 font-bold uppercase tracking-widest'
-													style={{
-														writingMode: 'vertical-rl',
-														textOrientation: 'mixed',
-													}}
-												>
-													{item.label}
-												</span>
-											</motion.div>
-										)}
-									</AnimatePresence>
-								</motion.button>
+									{item.icon}
+								</Button>
 							</Tooltip>
 						);
 					})}
@@ -185,7 +186,7 @@ export const RightPanel: React.FC = () => {
 					<div
 						className={`flex h-full min-h-0 flex-col overflow-hidden ${tab === 'control' ? 'flex' : 'hidden'}`}
 					>
-						<Label className='mb-1 mt-4 select-none text-sm font-bold'>
+						<Label className='flex h-8 shrink-0 select-none items-center px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
 							Control
 						</Label>
 						<ScrollArea className='flex-1 h-full'>
@@ -193,7 +194,7 @@ export const RightPanel: React.FC = () => {
 							<div className='p-1' id='menu'></div>
 							{currentID === '' && (
 								<div className='flex h-64 flex-auto items-center justify-center'>
-									<p className='text-muted-foreground select-none text-center text-sm'>
+									<p className='select-none text-center text-[13px] text-muted-foreground'>
 										Select a control to start editing it
 									</p>
 								</div>
@@ -204,7 +205,7 @@ export const RightPanel: React.FC = () => {
 					{/* Workspace */}
 					{tab === 'workspace' && (
 						<div className='flex h-full min-h-0 flex-col overflow-hidden'>
-							<Label className='mb-1 mt-4 select-none text-sm font-bold'>
+							<Label className='flex h-8 shrink-0 select-none items-center px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
 								Workspace
 							</Label>
 							<ScrollArea className='flex-1 p-1 h-full'>
@@ -216,7 +217,7 @@ export const RightPanel: React.FC = () => {
 					{/* Hierarchy */}
 					{tab === 'hierarchy' && (
 						<div className='flex h-full min-h-0 flex-col overflow-hidden'>
-							<Label className='mb-1 mt-4 select-none text-sm font-bold'>
+							<Label className='flex h-8 shrink-0 select-none items-center px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
 								Hierarchy
 							</Label>
 							<ScrollArea className='flex-1 h-full'>

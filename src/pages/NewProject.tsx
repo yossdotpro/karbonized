@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
+	Check,
 	FileImage,
 	Layers,
 	Plus,
@@ -12,13 +13,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card';
 import { useWorkspaceStore } from '@/stores';
 import { getRandomNumber } from '@/utils/getRandom';
 import { SizeItem, Sizes } from '@/constants/sizes';
@@ -91,181 +85,194 @@ export const NewProject: React.FC = () => {
 			size.description?.toLowerCase().includes(searchQuery.toLowerCase()),
 	);
 
+	const currentWidth = useCustomSize
+		? customWidth
+		: String(selectedPreset?.width || 1920);
+	const currentHeight = useCustomSize
+		? customHeight
+		: String(selectedPreset?.height || 1080);
+
 	return (
-		<div className='flex h-full w-full bg-background p-4 overflow-y-auto'>
+		<div className='flex h-full w-full overflow-y-auto bg-background px-6'>
 			<motion.div
-				initial={{ opacity: 0, y: 20 }}
+				initial={{ opacity: 0, y: 6 }}
 				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.3 }}
-				className='w-full max-w-6xl mx-auto'
+				transition={{ duration: 0.2, ease: 'easeOut' }}
+				className='mx-auto flex w-full max-w-4xl flex-col py-12'
 			>
 				{/* Header */}
-				<div className='mb-8 text-center'>
-					<div className='mb-4 flex justify-center'>
-						<div className='rounded-full bg-primary/10 p-4'>
-							<Layers className='h-8 w-8 text-primary' />
-						</div>
+				<div className='mb-8 flex items-start gap-3'>
+					<div className='flex size-9 shrink-0 items-center justify-center rounded-surface border border-border bg-card'>
+						<Layers className='size-4 text-muted-foreground' />
 					</div>
-					<h1 className='text-3xl font-bold text-foreground mb-2'>
-						New Project
-					</h1>
-					<p className='text-muted-foreground'>
-						Create a new project with the dimensions you need
-					</p>
+					<div>
+						<h1 className='text-xl font-semibold tracking-tight text-foreground'>
+							New project
+						</h1>
+						<p className='mt-0.5 text-[13px] text-muted-foreground'>
+							Name your project and pick a canvas size.
+						</p>
+					</div>
 				</div>
 
-				<div className='grid gap-6 lg:grid-cols-3 xl:grid-cols-4'>
-					{/* Left Column - Project Info */}
-					<Card className='lg:col-span-1 xl:col-span-2'>
-						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
-								<FileImage className='w-5 h-5' />
-								Project Information
-							</CardTitle>
-							<CardDescription>
-								Configure the basic details of your project
-							</CardDescription>
-						</CardHeader>
-						<CardContent className='space-y-4'>
-							<div>
-								<Label htmlFor='project-name'>Project Name</Label>
-								<Input
-									id='project-name'
-									placeholder='My Project'
-									value={projectName}
-									onChange={(e) => setProjectName(e.target.value)}
-									className='mt-1'
-								/>
-							</div>
+				<div className='grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]'>
+					{/* Details */}
+					<section className='flex h-fit flex-col gap-5 rounded-surface border border-border bg-card p-5'>
+						<div className='flex items-center gap-2 text-[13px] font-medium text-foreground'>
+							<FileImage className='size-4 text-muted-foreground' />
+							Details
+						</div>
 
-							<div>
-								<Label>Canvas Dimensions</Label>
-								<div className='mt-2 space-y-3'>
-									{!useCustomSize && (
-										<div className='grid grid-cols-2 gap-2'>
-											<div className='text-sm text-muted-foreground'>
-												Width: {selectedPreset?.width || 1920}px
-											</div>
-											<div className='text-sm text-muted-foreground'>
-												Height: {selectedPreset?.height || 1080}px
-											</div>
-										</div>
-									)}
-
-									{useCustomSize && (
-										<div className='grid grid-cols-2 gap-2'>
-											<div>
-												<Label htmlFor='custom-width' className='text-xs'>
-													Width (px)
-												</Label>
-												<Input
-													id='custom-width'
-													type='number'
-													value={customWidth}
-													onChange={(e) => setCustomWidth(e.target.value)}
-													className='mt-1'
-												/>
-											</div>
-											<div>
-												<Label htmlFor='custom-height' className='text-xs'>
-													Height (px)
-												</Label>
-												<Input
-													id='custom-height'
-													type='number'
-													value={customHeight}
-													onChange={(e) => setCustomHeight(e.target.value)}
-													className='mt-1'
-												/>
-											</div>
-										</div>
-									)}
-								</div>
-							</div>
-
-							<Button
-								variant='outline'
-								onClick={handleCustomSizeToggle}
-								className='w-full'
+						<div className='flex flex-col gap-1.5'>
+							<Label
+								htmlFor='project-name'
+								className='text-xs font-normal text-muted-foreground'
 							>
-								{useCustomSize ? 'Use Preset Sizes' : 'Custom Dimensions'}
-							</Button>
-						</CardContent>
-					</Card>
+								Project name
+							</Label>
+							<Input
+								id='project-name'
+								placeholder='My Project'
+								value={projectName}
+								autoFocus
+								onChange={(e) => setProjectName(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === 'Enter') handleCreateProject();
+								}}
+							/>
+						</div>
 
-					{/* Right Column - Preset Sizes */}
-					<Card className='lg:col-span-2 xl:col-span-2'>
-						<CardHeader>
-							<CardTitle className='flex items-center gap-2'>
-								<Monitor className='w-5 h-5' />
-								Predefined Sizes
-							</CardTitle>
-							<CardDescription>
-								Select a predefined size to start quickly
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<div className='mb-4'>
-								<div className='relative'>
-									<Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4' />
-									<Input
-										placeholder='Search sizes...'
-										value={searchQuery}
-										onChange={(e) => setSearchQuery(e.target.value)}
-										className='pl-10'
-									/>
-								</div>
+						<div className='flex flex-col gap-1.5'>
+							<div className='flex items-center justify-between'>
+								<Label className='text-xs font-normal text-muted-foreground'>
+									Canvas size
+								</Label>
+								<button
+									type='button'
+									onClick={() =>
+										useCustomSize
+											? setUseCustomSize(false)
+											: handleCustomSizeToggle()
+									}
+									className='text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline'
+								>
+									{useCustomSize ? 'Use a preset' : 'Custom size'}
+								</button>
 							</div>
-							<div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 max-h-96 overflow-y-auto'>
-								{filteredSizes.map((preset) => (
-									<div
-										key={preset.label}
-										onClick={() => handlePresetSelect(preset)}
-										className={`p-3 rounded-lg border cursor-pointer transition-all hover:bg-accent ${
-											selectedPreset?.label === preset.label && !useCustomSize
-												? 'border-primary bg-primary/5'
-												: 'border-border'
-										}`}
-									>
-										<div className='flex items-center gap-3'>
-											<div className='text-muted-foreground'>{preset.icon}</div>
-											<div className='flex-1'>
-												<div className='font-medium text-sm'>
-													{preset.label}
-												</div>
-												<div className='text-xs text-muted-foreground'>
-													{preset.width} × {preset.height}px
-												</div>
-												<div className='text-xs text-muted-foreground mt-1'>
-													{preset.description}
-												</div>
-											</div>
-										</div>
+							<div className='grid grid-cols-2 gap-2'>
+								{[
+									{
+										id: 'custom-width',
+										prefix: 'W',
+										label: 'Width in pixels',
+										value: currentWidth,
+										onChange: setCustomWidth,
+									},
+									{
+										id: 'custom-height',
+										prefix: 'H',
+										label: 'Height in pixels',
+										value: currentHeight,
+										onChange: setCustomHeight,
+									},
+								].map((field) => (
+									<div key={field.id} className='relative'>
+										<span className='pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground'>
+											{field.prefix}
+										</span>
+										<Input
+											id={field.id}
+											type='number'
+											aria-label={field.label}
+											value={field.value}
+											disabled={!useCustomSize}
+											onChange={(e) => field.onChange(e.target.value)}
+											className='pl-7 font-mono tabular-nums disabled:bg-muted/50 disabled:opacity-100'
+										/>
 									</div>
 								))}
 							</div>
-						</CardContent>
-					</Card>
+							<p className='text-xs text-muted-foreground'>
+								{useCustomSize
+									? 'Enter the size in pixels.'
+									: selectedPreset
+										? `${selectedPreset.label} preset`
+										: 'Full HD by default — choose a preset or set a custom size.'}
+							</p>
+						</div>
+					</section>
+
+					{/* Presets */}
+					<section className='flex min-h-0 flex-col rounded-surface border border-border bg-card'>
+						<div className='flex items-center gap-2 border-b border-border py-2 pl-4 pr-2'>
+							<Monitor className='size-4 shrink-0 text-muted-foreground' />
+							<span className='text-[13px] font-medium text-foreground'>
+								Presets
+							</span>
+							<div className='relative ml-auto w-48'>
+								<Search className='pointer-events-none absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground' />
+								<Input
+									placeholder='Search sizes…'
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+									className='h-7 pl-7 text-xs md:text-xs'
+								/>
+							</div>
+						</div>
+						<ul className='max-h-[380px] overflow-y-auto p-1'>
+							{filteredSizes.map((preset) => {
+								const isSelected =
+									selectedPreset?.label === preset.label && !useCustomSize;
+
+								return (
+									<li key={preset.label}>
+										<button
+											type='button'
+											onClick={() => handlePresetSelect(preset)}
+											className={`flex w-full items-center gap-3 rounded-control px-2.5 py-1.5 text-left transition-colors [&_svg]:size-4 ${
+												isSelected
+													? 'bg-accent text-foreground'
+													: 'text-muted-foreground hover:bg-muted hover:text-foreground'
+											}`}
+										>
+											<span className='shrink-0'>{preset.icon}</span>
+											<span className='min-w-0 flex-1'>
+												<span className='block truncate text-[13px] text-foreground'>
+													{preset.label}
+												</span>
+												<span className='block truncate text-xs text-muted-foreground'>
+													{preset.description}
+												</span>
+											</span>
+											<span className='shrink-0 font-mono text-xs tabular-nums text-muted-foreground'>
+												{preset.width} × {preset.height}
+											</span>
+											<Check
+												className={`shrink-0 ${isSelected ? 'opacity-100' : 'opacity-0'}`}
+											/>
+										</button>
+									</li>
+								);
+							})}
+							{filteredSizes.length === 0 && (
+								<li className='px-3 py-8 text-center text-[13px] text-muted-foreground'>
+									No sizes match "{searchQuery}"
+								</li>
+							)}
+						</ul>
+					</section>
 				</div>
 
-				{/* Action Buttons */}
-				<div className='mt-8 flex flex-col sm:flex-row justify-between gap-4'>
-					<Button
-						variant='outline'
-						onClick={() => navigate('/editor')}
-						className='flex items-center gap-2 w-full sm:w-auto'
-					>
-						<ArrowLeft className='w-4 h-4' />
-						Back to Editor
+				{/* Actions */}
+				<div className='mt-6 flex flex-col-reverse justify-end gap-2 sm:flex-row'>
+					<Button variant='ghost' onClick={() => navigate('/editor')}>
+						<ArrowLeft className='size-3.5' />
+						Back to editor
 					</Button>
 
-					<Button
-						onClick={handleCreateProject}
-						size='lg'
-						className='flex items-center gap-2 w-full sm:w-auto'
-					>
-						<Plus className='w-4 h-4' />
-						Create Project
+					<Button onClick={handleCreateProject}>
+						<Plus className='size-3.5' />
+						Create project
 					</Button>
 				</div>
 			</motion.div>

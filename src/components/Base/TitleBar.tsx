@@ -5,6 +5,7 @@ import { Moon, Sun } from 'lucide-react';
 import { Button } from '../ui/button';
 import { KarbonizedLogoFlat } from '../Icons/Icons';
 import { ContextualMenuBar } from './ContextualMenuBar';
+import { CommandPaletteTrigger } from '../CommandPalette';
 
 export const TitleBar: React.FC = () => {
 	const [maximized, setMaximized] = useState(false);
@@ -25,43 +26,45 @@ export const TitleBar: React.FC = () => {
 	return (
 		<div
 			id='titlebar'
-			className='draggable h-12 min-h-12 border-b bg-sidebar flex w-screen border-border z-1000'
+			className='draggable z-1000 flex h-10 min-h-10 w-screen items-stretch border-b border-border bg-sidebar'
 			onContextMenu={(e) => {
 				e.preventDefault();
 			}}
 		>
 			{/* Menu Bar */}
-			<div className='not-draggable flex max-w-[80% py-0 items-center overflow-x-hidden'>
-				<KarbonizedLogoFlat className='size-4 min-w-4 ml-4 mr-2' />
+			<div className='not-draggable flex max-w-[80%] items-center gap-2 overflow-x-hidden pl-3'>
+				<KarbonizedLogoFlat className='size-4 min-w-4' />
 
 				<ContextualMenuBar></ContextualMenuBar>
 			</div>
 
 			{/* Actions */}
-			<div className='not-draggable pointer-events-auto z-10 ml-auto flex items-center gap-1'>
+			<div className='not-draggable pointer-events-auto z-10 ml-auto flex items-stretch'>
+				<CommandPaletteTrigger className='my-auto mr-2' />
+
 				<Button
-					size={'icon'}
+					size={'icon-sm'}
 					variant={'ghost'}
-					className='ml-auto mr-2 rounded-full p-3 hover:cursor-pointer hover:bg-accent active:bg-accent/70'
+					className='my-auto mr-2'
 					onClick={() => {
 						toggleTheme();
 					}}
 				>
 					{theme === 'light' ? (
-						<Moon className='ml-auto h-4 w-4 text-foreground'></Moon>
+						<Moon className='size-3.5'></Moon>
 					) : (
-						<Sun className='ml-auto h-4 w-4 text-foreground'></Sun>
+						<Sun className='size-3.5'></Sun>
 					)}
 				</Button>
 
 				<button
-					className='cursor-pointer px-5 py-4 hover:bg-foreground/10 active:bg-foreground/20'
+					className='flex w-11 items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/70'
 					onClick={() =>
 						(window as any).electron.ipcRenderer.sendMessage('minimizeApp')
 					}
 				>
 					<svg
-						className='mx-auto my-auto h-3 w-3 text-foreground'
+						className='size-2.5'
 						viewBox='0 0 412 41'
 						version='1.1'
 						xmlns='http://www.w3.org/2000/svg'
@@ -77,14 +80,14 @@ export const TitleBar: React.FC = () => {
 				</button>
 
 				<button
-					className='cursor-pointer px-5 py-4 hover:bg-foreground/10 active:bg-foreground/20'
+					className='flex w-11 items-center justify-center text-muted-foreground hover:bg-accent hover:text-foreground active:bg-accent/70'
 					onClick={() =>
 						(window as any).electron.ipcRenderer.sendMessage('maximizeApp')
 					}
 				>
 					{maximized ? (
 						<svg
-							className='mx-auto my-auto h-3 w-3 text-foreground'
+							className='size-2.5'
 							width='412px'
 							viewBox='0 0 412 416'
 							version='1.1'
@@ -100,7 +103,7 @@ export const TitleBar: React.FC = () => {
 						</svg>
 					) : (
 						<svg
-							className='mx-auto my-auto h-3 w-3 text-foreground'
+							className='size-2.5'
 							viewBox='0 0 412 412.5'
 							version='1.1'
 							xmlns='http://www.w3.org/2000/svg'
@@ -117,13 +120,13 @@ export const TitleBar: React.FC = () => {
 				</button>
 
 				<button
-					className='group cursor-pointer px-5 py-4 hover:bg-red-700 active:bg-red-800'
+					className='group flex w-11 items-center justify-center text-muted-foreground hover:bg-[#e81123] hover:text-white active:bg-[#c50f1f]'
 					onClick={() =>
 						(window as any).electron.ipcRenderer.sendMessage('closeApp')
 					}
 				>
 					<svg
-						className='mx-auto my-auto h-3 w-3 text-foreground group-hover:text-destructive-foreground'
+						className='size-2.5'
 						viewBox='0 0 411.34656 402.79956'
 						version='1.1'
 						xmlns='http://www.w3.org/2000/svg'

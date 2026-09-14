@@ -39,13 +39,13 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 	variables,
 	onUpdateVariable,
 }) => (
-	<div className='space-y-4'>
+	<div className='space-y-3.5'>
 		{variables.map((variable) => {
 			switch (variable.type) {
 				case 'color':
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<ColorPicker
@@ -60,7 +60,7 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 				case 'number':
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<div className='flex items-center gap-2'>
@@ -74,7 +74,7 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 									max={variable.max || 100}
 									step={variable.step || 1}
 								/>
-								<span className='w-12 text-right text-xs text-muted-foreground'>
+								<span className='w-10 text-right font-mono text-[11px] tabular-nums text-muted-foreground'>
 									{variable.value}
 								</span>
 							</div>
@@ -87,7 +87,7 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 							key={variable.name}
 							className='flex items-center justify-between'
 						>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<Switch
@@ -113,7 +113,7 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 				default:
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<Input
@@ -121,7 +121,7 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 								onChange={(event) =>
 									onUpdateVariable(variable.name, event.target.value)
 								}
-								className='h-8 text-sm'
+								className='h-7 font-mono text-xs'
 							/>
 						</div>
 					);
@@ -134,13 +134,13 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 	variables,
 	onUpdateVariable,
 }) => (
-	<div className='space-y-4'>
+	<div className='space-y-3.5'>
 		{variables.map((variable) => {
 			switch (variable.type) {
 				case 'color':
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<ColorPicker
@@ -169,7 +169,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<ColorPicker
@@ -201,7 +201,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 				case 'number':
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<div className='flex items-center gap-2'>
@@ -213,7 +213,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 									max={variable.max || 100}
 									step={variable.step || 1}
 								/>
-								<span className='w-12 text-right text-xs text-muted-foreground'>
+								<span className='w-10 text-right font-mono text-[11px] tabular-nums text-muted-foreground'>
 									{variable.value as any}
 								</span>
 							</div>
@@ -226,7 +226,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 							key={variable.name}
 							className='flex items-center justify-between'
 						>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<Switch
@@ -241,7 +241,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 				case 'url':
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<Input
@@ -250,7 +250,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 									onUpdateVariable(variable.name, event.target.value)
 								}
 								placeholder='https://example.com'
-								className='h-8 text-sm'
+								className='h-7 font-mono text-xs'
 							/>
 						</div>
 					);
@@ -322,7 +322,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 				default:
 					return (
 						<div key={variable.name} className='space-y-2'>
-							<Label className='text-xs text-muted-foreground'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
 								{variable.name}
 							</Label>
 							<Input
@@ -330,7 +330,7 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 								onChange={(event) =>
 									onUpdateVariable(variable.name, event.target.value)
 								}
-								className='h-8 text-sm'
+								className='h-7 font-mono text-xs'
 							/>
 						</div>
 					);
@@ -354,7 +354,7 @@ export const HTMLBlockActionsControls: React.FC<ActionControlsProps> = ({
 				className='w-full justify-start'
 				disabled={!allowScriptExecution}
 			>
-				<Play className='mr-2 h-4 w-4' />
+				<Play className='size-3.5' />
 				{action.label}
 			</Button>
 		))}

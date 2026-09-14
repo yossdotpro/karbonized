@@ -172,7 +172,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 				<motion.div
 					initial={{ marginTop: '25px' }}
 					animate={{ marginTop: '5px' }}
-					className='flex flex-col gap-3 bg-background border border-border shadow-md rounded-lg p-3'
+					className='flex flex-col'
 				>
 					{/* Position */}
 					<CustomCollapse
@@ -189,7 +189,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 								<Button
 									variant={flipX ? 'default' : 'outline'}
 									size='icon'
-									className='flex-1 transition-all duration-200 hover:scale-105'
+									className='flex-1 transition-all duration-200 '
 									onClick={() => {
 										setFlipX(!flipX);
 									}}
@@ -199,7 +199,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 								<Button
 									variant={flipY ? 'default' : 'outline'}
 									size='icon'
-									className='flex-1 transition-all duration-200 hover:scale-105'
+									className='flex-1 transition-all duration-200 '
 									onClick={() => {
 										setFlipY(!flipY);
 									}}
@@ -409,7 +409,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 										setRotateX(0);
 										setRotateY(0);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -594,7 +594,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setBlur(-1 * 1);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -620,7 +620,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onClick={() => {
 										setBrightness(100);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -646,7 +646,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setContrast(100);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -672,7 +672,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setGrayscale(0);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -698,7 +698,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setHueRotate(0);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -724,7 +724,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setInvert(0);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -750,7 +750,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setSaturate(100);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -776,7 +776,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setSepia(0);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -802,7 +802,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 									onMouseDown={() => {
 										setOpacity(100);
 									}}
-									className='transition-all duration-200 hover:scale-105'
+									className='transition-all duration-200 '
 								>
 									<IconReload size={16} />
 								</Button>
@@ -818,7 +818,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 					{/* Delete */}
 					<Button
 						variant='destructive'
-						className='w-full transition-all duration-200 hover:scale-105'
+						className='w-full transition-all duration-200 '
 						onClick={() => {
 							setID('');
 							onDeleteControl();

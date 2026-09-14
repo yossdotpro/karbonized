@@ -13,7 +13,11 @@ import './utils.css';
 import { isElectron } from './utils/isElectron';
 import { Spinner } from '@/components/ui/spinner';
 import { KarbonizedLogoFlat } from './components/Icons/Icons';
-import { BlockEditorChromeProvider } from './contexts/BlockEditorChromeContext';
+import {
+	CommandPalette,
+	CommandPaletteTrigger,
+	ShortcutManager,
+} from './components/CommandPalette';
 
 const Editor = React.lazy(async () => await import('./pages/Editor'));
 const NewProject = React.lazy(async () => await import('./pages/NewProject'));
@@ -33,19 +37,23 @@ const AppShell: React.FC<{
 			{isHorizontal ? (
 				<>
 					{isElectron() ? (
-						Boolean((window as any).electron.ipcRenderer.isLinuxOrWindows()) && (
+						Boolean(
+							(window as any).electron.ipcRenderer.isLinuxOrWindows(),
+						) && (
 							<Suspense>
 								<TitleBar></TitleBar>
 							</Suspense>
 						)
 					) : (
-						<div className='my-1 flex items-center'>
+						<header className='flex h-10 shrink-0 items-center gap-2 border-b border-border bg-sidebar pl-3 pr-2'>
 							<Suspense>
-								<KarbonizedLogoFlat className='size-6 ml-4 mr-2' />
+								<KarbonizedLogoFlat className='size-4 shrink-0' />
 
 								<ContextualMenuBar></ContextualMenuBar>
 							</Suspense>
-						</div>
+
+							<CommandPaletteTrigger className='ml-auto shrink-0' />
+						</header>
 					)}
 
 					<div
@@ -58,8 +66,8 @@ const AppShell: React.FC<{
 								element={
 									<Suspense
 										fallback={
-											<div className='flex items-center justify-center'>
-												<Spinner className='h-8 w-8' />
+											<div className='flex h-full w-full items-center justify-center'>
+												<Spinner className='size-5 text-muted-foreground' />
 											</div>
 										}
 									>
@@ -72,8 +80,8 @@ const AppShell: React.FC<{
 								element={
 									<Suspense
 										fallback={
-											<div className='flex items-center justify-center'>
-												<Spinner className='h-8 w-8' />
+											<div className='flex h-full w-full items-center justify-center'>
+												<Spinner className='size-5 text-muted-foreground' />
 											</div>
 										}
 									>
@@ -86,8 +94,8 @@ const AppShell: React.FC<{
 								element={
 									<Suspense
 										fallback={
-											<div className='flex items-center justify-center'>
-												<Spinner className='h-8 w-8' />
+											<div className='flex h-full w-full items-center justify-center'>
+												<Spinner className='size-5 text-muted-foreground' />
 											</div>
 										}
 									>
@@ -118,78 +126,25 @@ const App: React.FC = () => {
 
 	return (
 		<Router>
-			<BlockEditorChromeProvider>
-				<AppContext.Provider
-					value={{
-						viewerRef,
-						theme,
-						toggleTheme,
+			<AppContext.Provider
+				value={{
+					viewerRef,
+					theme,
+					toggleTheme,
+				}}
+			>
+				<div
+					onContextMenu={(event) => {
+						event.preventDefault();
 					}}
+					className='flex h-screen w-screen flex-auto flex-col overflow-hidden bg-background text-foreground'
 				>
-					<div
-						onContextMenu={(event) => {
-							event.preventDefault();
-						}}
-						className='grid-background flex h-screen w-screen flex-auto flex-col overflow-hidden bg-background text-foreground transition-all ease-in-out'
-					>
-						{/* Noise Background */}
-						<svg
-							className='fixed'
-							xmlns='http://www.w3.org/2000/svg'
-							version='1.1'
-							viewBox='0 0 700 700'
-						>
-							<defs>
-								<filter
-									id='nnnoise-filter'
-									x='-20%'
-									y='-20%'
-									width='140%'
-									height='140%'
-									filterUnits='objectBoundingBox'
-									primitiveUnits='userSpaceOnUse'
-									colorInterpolationFilters='linearRGB'
-								>
-									<feTurbulence
-										type='fractalNoise'
-										baseFrequency='0.102'
-										numOctaves='4'
-										seed='15'
-										stitchTiles='stitch'
-										x='0%'
-										y='0%'
-										width='100%'
-										height='100%'
-										result='turbulence'
-									></feTurbulence>
-									<feSpecularLighting
-										surfaceScale='15'
-										specularConstant='0.75'
-										specularExponent='20'
-										lightingColor='#1a1a18'
-										x='0%'
-										y='0%'
-										width='100%'
-										height='100%'
-										in='turbulence'
-										result='specularLighting'
-									>
-										<feDistantLight azimuth='3' elevation='100'></feDistantLight>
-									</feSpecularLighting>
-								</filter>
-							</defs>
-							<rect width='700' height='700' fill='transparent'></rect>
-							<rect
-								width='700'
-								height='700'
-								fill='#2D2D2A'
-								filter='url(#nnnoise-filter)'
-							></rect>
-						</svg>
-						<AppShell isHorizontal={isHorizontal} />
-					</div>
-				</AppContext.Provider>
-			</BlockEditorChromeProvider>
+					<AppShell isHorizontal={isHorizontal} />
+				</div>
+
+				<ShortcutManager />
+				<CommandPalette />
+			</AppContext.Provider>
 		</Router>
 	);
 };
