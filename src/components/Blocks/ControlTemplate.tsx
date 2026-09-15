@@ -2,7 +2,8 @@
 import { ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { toJpeg, toPng, toSvg } from 'html-to-image';
+import { toast } from 'sonner';
+import { type ExportFormat, exportElement } from '@/lib/export/exporter';
 import React, { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useControlState } from '../../hooks/useControlState';
 import {
@@ -244,65 +245,21 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		}
 	}, [controlTransform]);
 
-	// Save Image as PNG
-	const exportAsPng = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
-
-		toPng(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.png';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
-			});
-	}, [ref, workspaceName]);
-
-	// Save Image as SVG
-	const exportAsSvg = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
-
-		toSvg(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.svg';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
-			});
-	}, [ref, workspaceName]);
-
-	// Save Image as JPEG
-	const exportAsJpeg = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
-
-		toJpeg(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.jpeg';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
-			});
-	}, [ref, workspaceName]);
+	/* Export this block as an image with the current export settings */
+	const exportBlock = useCallback(
+		async (format: ExportFormat) => {
+			try {
+				await exportElement(ref.current, `${workspaceName}-${id}`, { format });
+			} catch (error) {
+				console.error(error);
+				toast.error('Export failed');
+			}
+		},
+		[id, ref, workspaceName],
+	);
+	const exportAsPng = useCallback(() => exportBlock('png'), [exportBlock]);
+	const exportAsSvg = useCallback(() => exportBlock('svg'), [exportBlock]);
+	const exportAsJpeg = useCallback(() => exportBlock('jpeg'), [exportBlock]);
 
 	const syncSelectionState = useCallback(() => {
 		if (controlID === id) return;

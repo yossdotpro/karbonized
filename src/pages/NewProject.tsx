@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -40,12 +41,13 @@ export const NewProject: React.FC = () => {
 			: selectedPreset?.height || 1080;
 
 		if (!projectName.trim()) {
-			alert('Please enter a project name');
+			toast.error('Give your project a name');
+			document.getElementById('project-name')?.focus();
 			return;
 		}
 
 		if (width <= 0 || height <= 0) {
-			alert('Please enter valid dimensions');
+			toast.error('Enter a width and height greater than 0');
 			return;
 		}
 

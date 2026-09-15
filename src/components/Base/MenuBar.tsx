@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/menubar';
 import CryptoJS from 'crypto-js';
 import FileSaver from 'file-saver';
-import { toBlob, toPng } from 'html-to-image';
+import { toPng } from 'html-to-image';
 import React, { Suspense, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { type Project } from '../../types';
@@ -24,10 +24,18 @@ import {
 	useUIStore,
 	useProjectStore,
 } from '../../stores';
-import { ExportImage, export_format } from '../../utils/Exporter';
+import {
+	type ExportFormat,
+	canCopyImage,
+	copyElementImage,
+	exportElement,
+	renderBlob,
+} from '@/lib/export/exporter';
+import { toast } from 'sonner';
 import { getRandomNumber } from '../../utils/getRandom';
 import { PROJECT_KEY } from '../../utils/secrets';
 import {
+	ClipboardCopy,
 	Eraser,
 	FileJson,
 	FilePlus2,
@@ -109,41 +117,47 @@ export const MenuBar: React.FC = () => {
 	);
 	const workspaces = useWorkspaceStore((state) => state.workspaces);
 
-	const exportImage = async (type: export_format) => {
-		setIsExporting(true);
-		await new Promise((resolve) => setTimeout(resolve, 100));
-		ExportImage(
-			currentWorkspace?.workspaceName ?? 'workspace',
-			document.getElementById('workspace'),
-			type,
-		);
-		setTimeout(() => setIsExporting(false), 500);
+	const workspaceElement = () => document.getElementById('workspace');
+	const exportName = () => currentWorkspace?.workspaceName ?? 'workspace';
+
+	const exportImage = async (format: ExportFormat) => {
+		try {
+			await exportElement(workspaceElement(), exportName(), { format });
+		} catch (error) {
+			console.error(error);
+			toast.error('Export failed', {
+				description: error instanceof Error ? error.message : undefined,
+			});
+		}
+	};
+
+	const handleCopyImage = async () => {
+		try {
+			await copyElementImage(workspaceElement());
+			toast.success('Image copied to clipboard');
+		} catch (error) {
+			console.error(error);
+			toast.error('Could not copy the image', {
+				description: error instanceof Error ? error.message : undefined,
+			});
+		}
 	};
 
 	const handleShare = async () => {
-		const element = document.getElementById('workspace');
-		console.log('share');
-		if (element != null) {
-			setIsExporting(true);
-			await new Promise((resolve) => setTimeout(resolve, 100));
-			const newFile = await toBlob(element);
-			setIsExporting(false);
-			if (newFile != null) {
-				const data = {
-					files: [
-						new File([newFile], 'image.png', {
-							type: newFile.type,
-						}),
-					],
-					title: 'Image',
-					text: 'image',
-				};
+		const element = workspaceElement();
+		if (!element) return;
 
-				try {
-					await navigator.share(data);
-				} catch (err) {
-					console.log(err);
-				}
+		const blob = await renderBlob(element);
+		if (!blob) return;
+
+		try {
+			await navigator.share({
+				files: [new File([blob], `${exportName()}.png`, { type: 'image/png' })],
+				title: exportName(),
+			});
+		} catch (error) {
+			if ((error as DOMException)?.name !== 'AbortError') {
+				toast.error('Sharing is not available here');
 			}
 		}
 	};
@@ -184,15 +198,15 @@ export const MenuBar: React.FC = () => {
 									currentControlID: '',
 								}));
 							} else {
-								alert('Please provide a valid Karbonized Project');
+								toast.error('This is not a valid Karbonized project');
 							}
 						} catch (err) {
-							alert('Invalid Project File');
+							toast.error('Could not open the project file');
 						}
 					});
 					reader.readAsText(target.files[0]);
 				} else {
-					alert('Only Karbonized Projects are allowed');
+					toast.error('Choose a .kproject file');
 				}
 			}
 		});
@@ -314,20 +328,30 @@ export const MenuBar: React.FC = () => {
 			when: () => isEditor,
 			run: () => setShowPreview(true),
 		},
+		{
+			id: 'file.copy-image',
+			title: 'Copy image',
+			group: 'File',
+			icon: ClipboardCopy,
+			shortcut: 'Alt+Shift+C',
+			keywords: ['clipboard', 'png', 'paste'],
+			when: () => isEditor && canCopyImage(),
+			run: () => void handleCopyImage(),
+		},
 		...(
 			[
-				['png', 'PNG', export_format.png],
-				['jpeg', 'JPEG', export_format.jpeg],
-				['svg', 'SVG', export_format.svg],
+				['png', 'PNG'],
+				['jpeg', 'JPEG'],
+				['svg', 'SVG'],
 			] as const
-		).map(([id, label, format]) => ({
+		).map(([id, label]) => ({
 			id: `file.export-${id}`,
 			title: `Export as ${label}`,
 			group: 'File' as const,
 			icon: ImageDown,
 			keywords: ['download', 'image'],
 			when: () => isEditor,
-			run: () => void exportImage(format),
+			run: () => void exportImage(id),
 		})),
 		{
 			id: 'file.share',
@@ -440,7 +464,7 @@ export const MenuBar: React.FC = () => {
 									if (isEditor) setShowPreview(true);
 								}}
 							>
-								Render
+								Export…
 								<MenubarShortcut>{shortcut('file.export')}</MenubarShortcut>
 							</MenubarItem>
 
@@ -452,7 +476,7 @@ export const MenuBar: React.FC = () => {
 									<MenubarItem
 										disabled={!isEditor}
 										onClick={() => {
-											if (isEditor) exportImage(export_format.png);
+											if (isEditor) exportImage('png');
 										}}
 									>
 										Export as PNG
@@ -461,7 +485,7 @@ export const MenuBar: React.FC = () => {
 									<MenubarItem
 										disabled={!isEditor}
 										onClick={() => {
-											if (isEditor) exportImage(export_format.jpeg);
+											if (isEditor) exportImage('jpeg');
 										}}
 									>
 										Export as JPEG
@@ -470,13 +494,21 @@ export const MenuBar: React.FC = () => {
 									<MenubarItem
 										disabled={!isEditor}
 										onClick={() => {
-											if (isEditor) exportImage(export_format.svg);
+											if (isEditor) exportImage('svg');
 										}}
 									>
 										Export as SVG
 									</MenubarItem>
 								</MenubarSubContent>
 							</MenubarSub>
+
+							<MenubarItem
+								disabled={!isEditor || !canCopyImage()}
+								onClick={() => runCommand('file.copy-image')}
+							>
+								Copy Image
+								<MenubarShortcut>{shortcut('file.copy-image')}</MenubarShortcut>
+							</MenubarItem>
 
 							<MenubarSeparator />
 							<MenubarItem

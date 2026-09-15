@@ -4,6 +4,10 @@
 
 ### 🚀 Features
 
+- **Export options**: scale (0.5×–4×) with the resulting size, transparent background for PNG and SVG, JPEG quality; the export dialog remembers your choices and warns when the image is too large for the browser
+- **Copy image to the clipboard** (`Alt+Shift+C`, File menu and export dialog)
+- Block "Export layer" uses the same scale and transparency settings
+- Notifications for export, copy and project errors instead of browser alerts
 - **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
 - **Block context menu** redesigned: opacity with value, duplicate, arrange (bring to front, forward, backward, send to back), hide, lock, export layer and delete
 - **Snapping toggle** (`Shift+S`, also in the status bar); selection handles and snap guides restyled

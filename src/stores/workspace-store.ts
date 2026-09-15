@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { create } from 'zustand';
 import { getRandomNumber } from '../utils/getRandom';
 import type {
@@ -102,7 +103,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 	deleteWorkspace: (id) => {
 		const state = get();
 		if (state.workspaces.length <= 1) {
-			alert('You need at least one Workspace');
+			toast.error('You need at least one workspace');
 			return;
 		}
 

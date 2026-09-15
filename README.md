@@ -31,7 +31,7 @@ See the full [changelog](./CHANGELOG.md).
 * **🎨 Backgrounds:** solid colors, gradients, textures, images and dynamic backgrounds, with blur and noise.
 * **🧩 HTML blocks and components:** build your own blocks with HTML/CSS/JS, expose variables as controls and actions as buttons, and share them as `.kcomponent` files.
 * **⌨️ Keyboard-first:** a command palette and shortcuts for tools, editing, zoom and exporting.
-* **💾 Export:** save your designs as **PNG**, **JPEG** or **SVG**, or share them directly.
+* **💾 Export:** save your designs as **PNG**, **JPEG** or **SVG** at up to 4× scale, with a transparent background, copy them to the clipboard or share them directly.
 * **🗂 Projects:** several workspaces at once, automatic session saving, and `.kproject` files you can save, open and turn into templates.
 * **🖥 Multi-platform:** use Karbonized as a Progressive Web App (with **offline** support) or as a desktop app for **Windows**, **Linux** and **macOS**.
 * **🆓 Free and open source.**
@@ -54,6 +54,7 @@ Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to see every command. The mo
 | Toggle properties panel | <kbd>Ctrl</kbd> <kbd>B</kbd> |
 | New project / Open project | <kbd>Alt</kbd> <kbd>N</kbd> / <kbd>Ctrl</kbd> <kbd>O</kbd> |
 | Save project / Export | <kbd>Ctrl</kbd> <kbd>S</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>E</kbd> |
+| Copy image | <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>C</kbd> |
 
 In the HTML block editor:
 

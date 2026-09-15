@@ -14,6 +14,7 @@ import './utils.css';
 import { isElectron } from './utils/isElectron';
 import { Spinner } from '@/components/ui/spinner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import { KarbonizedLogoFlat } from './components/Icons/Icons';
 import {
 	CommandPalette,
@@ -182,6 +183,7 @@ const App: React.FC = () => {
 
 					<ShortcutManager />
 					<CommandPalette />
+					<Toaster />
 				</AppContext.Provider>
 			</TooltipProvider>
 		</Router>

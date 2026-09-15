@@ -67,6 +67,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	const lockAspect = useUIStore((state) => state.lockAspect);
 	const snapping = useViewStore((state) => state.snapping);
 	const isExporting = useUIStore((state) => state.isExporting);
+	const exportTransparent = useUIStore((state) => state.exportTransparent);
 
 	const workspaces = useWorkspaceStore((state) => state.workspaces);
 	const currentWorkspaceID = useWorkspaceStore(
@@ -425,17 +426,19 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	return (
 		<div ref={reference} id='workspace'>
 			<div
-				className='relative overflow-hidden shadow-2xl transition-all'
+				className={`relative overflow-hidden transition-all ${isExporting ? '' : 'shadow-2xl'}`}
 				style={{
 					height: currentWorkspace?.workspaceHeight + 'px',
 					width: currentWorkspace?.workspaceWidth + 'px',
 				}}
 			>
-				<div className='absolute inset-0 overflow-hidden'>
-					{renderWorkspaceBackground()}
-				</div>
+				{!exportTransparent && (
+					<div className='absolute inset-0 overflow-hidden'>
+						{renderWorkspaceBackground()}
+					</div>
+				)}
 
-				{blurAmount > 0 && (
+				{!exportTransparent && blurAmount > 0 && (
 					<div className='absolute inset-0 overflow-hidden pointer-events-none'>
 						<div
 							className='absolute inset-0'
@@ -448,7 +451,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					</div>
 				)}
 
-				{noiseAmount > 0 && (
+				{!exportTransparent && noiseAmount > 0 && (
 					<div
 						className='absolute inset-0 pointer-events-none'
 						style={{
