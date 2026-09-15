@@ -8,6 +8,7 @@
 - **Block context menu** redesigned: opacity with value, duplicate, arrange (bring to front, forward, backward, send to back), hide, lock, export layer and delete
 - **Snapping toggle** (`Shift+S`, also in the status bar); selection handles and snap guides restyled
 - **Delete / Backspace** remove the selected block from anywhere on the canvas
+- **Arrow keys** move the selected block by 1px (10px with Shift); each step can be undone; locked blocks stay in place
 
 ### 🐛 Fixes
 

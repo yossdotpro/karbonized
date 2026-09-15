@@ -101,6 +101,24 @@ describe('matchesShortcut', () => {
 	});
 });
 
+describe('named keys', () => {
+	it('respect Shift', () => {
+		expect(matchesShortcut(key({ key: 'ArrowLeft' }), 'ArrowLeft')).toBe(true);
+		expect(
+			matchesShortcut(key({ key: 'ArrowLeft', shiftKey: true }), 'ArrowLeft'),
+		).toBe(false);
+		expect(
+			matchesShortcut(
+				key({ key: 'ArrowLeft', shiftKey: true }),
+				'Shift+ArrowLeft',
+			),
+		).toBe(true);
+		expect(
+			matchesShortcut(key({ key: 'Enter', shiftKey: true }), 'Enter'),
+		).toBe(false);
+	});
+});
+
 describe('shortcut labels', () => {
 	it('renders key caps and a compact label', () => {
 		expect(shortcutKeys('Mod+Shift+Z')).toEqual(['Ctrl', 'Shift', 'Z']);

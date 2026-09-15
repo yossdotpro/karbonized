@@ -47,6 +47,7 @@ Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to see every command. The mo
 | Undo / Redo | <kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd> |
 | Duplicate selection | <kbd>Ctrl</kbd> <kbd>D</kbd> |
 | Delete selection | <kbd>Delete</kbd> |
+| Move selection 1px / 10px | <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> / with <kbd>Shift</kbd> |
 | Toggle snapping | <kbd>Shift</kbd> <kbd>S</kbd> |
 | Zoom in / out / 100% / fit | <kbd>Ctrl</kbd> <kbd>+</kbd> / <kbd>Ctrl</kbd> <kbd>−</kbd> / <kbd>Shift</kbd> <kbd>0</kbd> / <kbd>Shift</kbd> <kbd>1</kbd> |
 | Lock aspect ratio | <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd> |

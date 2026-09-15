@@ -5,9 +5,10 @@
  * - `Mod` is ⌘ on macOS and Ctrl everywhere else.
  * - Letters and digits match the physical key (`event.code`), so they work the
  *   same on every keyboard layout and with Alt/Option held.
- * - Symbols use named tokens (`Plus`, `Minus`, `Period`, `Enter`, `Escape`…)
- *   and match `event.key`, ignoring Shift, because their position varies
- *   between layouts (e.g. `+` on a Spanish keyboard).
+ * - Named keys (`Enter`, `Escape`, `ArrowLeft`…) match `event.key`.
+ * - Printable symbols (`Plus`, `Minus`, `Period`, `Comma`, `Slash`) match
+ *   `event.key` ignoring Shift, because their position varies between layouts
+ *   (e.g. `+` on a Spanish keyboard).
  */
 
 export const isMac =
@@ -38,6 +39,14 @@ const SYMBOL_KEYS: Record<string, string[]> = {
 	arrowleft: ['ArrowLeft'],
 	arrowright: ['ArrowRight'],
 };
+
+const PRINTABLE_SYMBOLS = new Set([
+	'plus',
+	'minus',
+	'period',
+	'comma',
+	'slash',
+]);
 
 const KEY_LABELS: Record<string, string> = {
 	plus: '+',
@@ -95,11 +104,16 @@ export const matchesShortcut = (
 	}
 
 	const symbol = SYMBOL_KEYS[key];
-	if (symbol) {
+
+	// Printable symbols move around between layouts (and may need Shift to
+	// type), so Shift is ignored for them; named keys like arrows respect it.
+	if (symbol && PRINTABLE_SYMBOLS.has(key)) {
 		return symbol.includes(event.key);
 	}
 
 	if (shift !== event.shiftKey) return false;
+
+	if (symbol) return symbol.includes(event.key);
 
 	// Prefer the physical key; fall back to `event.key` when the code is not
 	// reported (virtual keyboards, some IMEs and synthetic events).

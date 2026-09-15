@@ -145,7 +145,62 @@ export const Editor: React.FC = () => {
 		);
 	};
 
+	/* Move the selected block with the arrow keys (Shift for 10px) */
+	const nudgeSelection = (dx: number, dy: number): void => {
+		const { currentControlID, controlPosition, setControlPosition } =
+			useControlsStore.getState();
+		const control = useWorkspaceStore
+			.getState()
+			.currentWorkspace?.controls.find((item) => item.id === currentControlID);
+
+		if (!control || control.locked || !controlPosition) return;
+
+		const history = useHistoryStore.getState();
+		const id = `${currentControlID}-pos`;
+		const next = {
+			x: Number(controlPosition.x) + dx,
+			y: Number(controlPosition.y) + dy,
+		};
+
+		history.setPast([...history.pastHistory, { id, value: controlPosition }]);
+		history.setControlState({ id, value: next });
+		history.setFuture([]);
+		setControlPosition(next);
+	};
+
+	const hasSelection = () =>
+		useControlsStore.getState().currentControlID !== '';
+
+	const nudgeCommands = (
+		[
+			['left', 'ArrowLeft', -1, 0],
+			['right', 'ArrowRight', 1, 0],
+			['up', 'ArrowUp', 0, -1],
+			['down', 'ArrowDown', 0, 1],
+		] as const
+	).flatMap(([direction, key, dx, dy]) => [
+		{
+			id: `edit.nudge-${direction}`,
+			title: `Nudge ${direction}`,
+			group: 'Edit' as const,
+			shortcut: key,
+			hidden: true,
+			when: hasSelection,
+			run: () => nudgeSelection(dx, dy),
+		},
+		{
+			id: `edit.nudge-${direction}-large`,
+			title: `Nudge ${direction} 10px`,
+			group: 'Edit' as const,
+			shortcut: `Shift+${key}`,
+			hidden: true,
+			when: hasSelection,
+			run: () => nudgeSelection(dx * 10, dy * 10),
+		},
+	]);
+
 	useCommands([
+		...nudgeCommands,
 		{
 			id: 'edit.undo',
 			title: 'Undo',
