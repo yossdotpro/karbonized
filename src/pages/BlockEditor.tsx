@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import '@/lib/monaco/setup';
 import Editor, { type OnMount } from '@monaco-editor/react';
 import {
 	ArrowLeft,
 	Boxes,
+	CircleX,
+	SquareTerminal,
+	TriangleAlert,
 	Braces,
 	ChevronDown,
 	ChevronRight,
@@ -67,6 +71,13 @@ import {
 	HTMLBlockJSVariablesControls,
 } from '@/components/Blocks/HTMLBlockBindingsPanel';
 import { useCommands } from '@/lib/commands/registry';
+import {
+	BlockConsole,
+	type ConsoleEntry,
+	appendConsoleEntry,
+	createConsoleEntry,
+	createScriptConsole,
+} from '@/components/BlockEditor/BlockConsole';
 import { shortcutLabel } from '@/lib/commands/shortcuts';
 
 interface BlockEditorState {
@@ -199,6 +210,17 @@ const BlockEditor: React.FC = () => {
 		bindings: true,
 	});
 	const [cursor, setCursor] = useState({ line: 1, column: 1 });
+	const [showConsole, setShowConsole] = useState(false);
+	const [consoleEntries, setConsoleEntries] = useState<ConsoleEntry[]>([]);
+
+	const reportToConsole = (entry: ConsoleEntry) =>
+		setConsoleEntries((entries) => appendConsoleEntry(entries, entry));
+	const consoleErrors = consoleEntries.filter(
+		(entry) => entry.level === 'error',
+	).length;
+	const consoleWarnings = consoleEntries.filter(
+		(entry) => entry.level === 'warn',
+	).length;
 
 	const ControlProperties = useControlsStore(
 		(state) => state.ControlProperties,
@@ -401,6 +423,10 @@ const BlockEditor: React.FC = () => {
 		shadowRoot.appendChild(container);
 
 		if (editorState.allowScriptExecution && editorState.jsContent.trim()) {
+			// Each run starts with a clean console, like reloading a page.
+			setConsoleEntries([]);
+			const scriptConsole = createScriptConsole(reportToConsole);
+
 			try {
 				const host = shadowHostRef.current;
 				const scopedDocument = createScopedDocument(shadowRoot, host);
@@ -416,15 +442,9 @@ const BlockEditor: React.FC = () => {
 
 				const htmlBlockAPI = {
 					refresh: updatePreview,
-					log: (message: unknown) => {
-						console.log('Block Editor:', message);
-					},
-					warn: (message: unknown) => {
-						console.warn('Block Editor:', message);
-					},
-					error: (message: unknown) => {
-						console.error('Block Editor:', message);
-					},
+					log: (...args: unknown[]) => scriptConsole.log(...args),
+					warn: (...args: unknown[]) => scriptConsole.warn(...args),
+					error: (...args: unknown[]) => scriptConsole.error(...args),
 					host,
 					root: container,
 					shadowRoot,
@@ -432,7 +452,6 @@ const BlockEditor: React.FC = () => {
 					globalDocument: window.document,
 					registerAction: (actionId: string, handler: () => void) => {
 						actionHandlersRef.current.set(actionId, handler);
-						console.log(`Action registered: ${actionId}`);
 					},
 					safeDOM,
 					uploadFile: fileHandler.uploadFile,
@@ -475,9 +494,11 @@ const BlockEditor: React.FC = () => {
 					compiledSource,
 				);
 
-				executeUserCode(window, console, window.alert.bind(window));
+				executeUserCode(window, scriptConsole, window.alert.bind(window));
 			} catch (error) {
 				console.error('Error executing Block Editor script:', error);
+				reportToConsole(createConsoleEntry('error', ['Uncaught', error]));
+				setShowConsole(true);
 			}
 		}
 	};
@@ -567,17 +588,28 @@ const BlockEditor: React.FC = () => {
 	const executeCustomAction = (action: CustomAction) => {
 		if (!editorState.allowScriptExecution) return;
 
+		const run = (handler?: () => void) => {
+			try {
+				handler?.();
+			} catch (error) {
+				reportToConsole(
+					createConsoleEntry('error', [
+						`Action "${action.label}" failed:`,
+						error,
+					]),
+				);
+				setShowConsole(true);
+			}
+		};
+
 		const handler = actionHandlersRef.current.get(action.id);
 		if (handler != null) {
-			handler();
+			run(handler);
 			return;
 		}
 
 		updatePreview();
-		setTimeout(() => {
-			const refreshedHandler = actionHandlersRef.current.get(action.id);
-			refreshedHandler?.();
-		}, 50);
+		setTimeout(() => run(actionHandlersRef.current.get(action.id)), 50);
 	};
 
 	const toggleRuntime = (checked?: boolean) => {
@@ -647,6 +679,24 @@ const BlockEditor: React.FC = () => {
 			shortcut: 'Mod+J',
 			allowInInput: true,
 			run: () => setShowPreview((current) => !current),
+		},
+		{
+			id: 'block.toggle-console',
+			title: showConsole ? 'Hide console' : 'Show console',
+			group: 'Block Editor',
+			icon: SquareTerminal,
+			shortcut: 'Mod+Shift+Y',
+			allowInInput: true,
+			keywords: ['logs', 'output', 'errors', 'terminal'],
+			run: () => setShowConsole((current) => !current),
+		},
+		{
+			id: 'block.clear-console',
+			title: 'Clear console',
+			group: 'Block Editor',
+			icon: SquareTerminal,
+			keywords: ['logs', 'output'],
+			run: () => setConsoleEntries([]),
 		},
 		{
 			id: 'block.toggle-runtime',
@@ -1008,24 +1058,50 @@ const BlockEditor: React.FC = () => {
 									</span>
 								</div>
 
-								{/* Monaco */}
-								<div className='relative min-h-0 flex-1'>
-									<Editor
-										path={activeFile.label}
-										language={activeFile.language}
-										theme={currentMonacoTheme}
-										value={activeFile.content}
-										options={editorOptions}
-										beforeMount={registerEditorThemes}
-										onMount={handleEditorMount}
-										onChange={(value) => handleFileChange(value || '')}
-										loading={
-											<span className='text-xs text-muted-foreground'>
-												Loading editor…
-											</span>
-										}
-									/>
-								</div>
+								<ResizablePanelGroup
+									orientation='vertical'
+									className='min-h-0 flex-1'
+								>
+									<ResizablePanel id='block-editor-monaco' minSize='20'>
+										{/* Monaco */}
+										<div className='relative h-full'>
+											<Editor
+												path={activeFile.label}
+												language={activeFile.language}
+												theme={currentMonacoTheme}
+												value={activeFile.content}
+												options={editorOptions}
+												beforeMount={registerEditorThemes}
+												onMount={handleEditorMount}
+												onChange={(value) => handleFileChange(value || '')}
+												loading={
+													<span className='text-xs text-muted-foreground'>
+														Loading editor…
+													</span>
+												}
+											/>
+										</div>
+									</ResizablePanel>
+
+									{showConsole && (
+										<>
+											<ResizableHandle className='bg-transparent' />
+											<ResizablePanel
+												id='block-editor-console'
+												defaultSize='32'
+												minSize={96}
+												maxSize='75'
+											>
+												<BlockConsole
+													entries={consoleEntries}
+													runtimeEnabled={editorState.allowScriptExecution}
+													onClear={() => setConsoleEntries([])}
+													onClose={() => setShowConsole(false)}
+												/>
+											</ResizablePanel>
+										</>
+									)}
+								</ResizablePanelGroup>
 							</section>
 						</ResizablePanel>
 
@@ -1225,6 +1301,34 @@ const BlockEditor: React.FC = () => {
 					</div>
 
 					<div className='flex items-center tabular-nums'>
+						<button
+							type='button'
+							onClick={() => setShowConsole((current) => !current)}
+							title='Toggle console'
+							className={cn(
+								'flex h-6 items-center gap-2 rounded-[4px] px-1.5 hover:bg-accent hover:text-foreground',
+								showConsole && 'text-foreground',
+							)}
+						>
+							<span className='flex items-center gap-1'>
+								<CircleX
+									className={cn(
+										'size-3',
+										consoleErrors > 0 && 'text-destructive',
+									)}
+								/>
+								{consoleErrors}
+							</span>
+							<span className='flex items-center gap-1'>
+								<TriangleAlert
+									className={cn(
+										'size-3',
+										consoleWarnings > 0 && 'text-amber-500',
+									)}
+								/>
+								{consoleWarnings}
+							</span>
+						</button>
 						<span className='px-1.5'>
 							Ln {cursor.line}, Col {cursor.column}
 						</span>

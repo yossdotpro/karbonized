@@ -8,6 +8,8 @@
 - **Command palette** (`Ctrl/⌘+K`) listing every available action with its shortcut
 - **Session autosave** — workspaces and block properties are stored in IndexedDB and restored on startup
 - **Block editor** redesigned as a code editor: activity bar, explorer, file tabs with unsaved state, resizable preview panel and Monaco themes that match the app
+- **Block editor console** (`Ctrl+Shift+Y`) showing `console.*` and `htmlBlockAPI.log/warn/error` output, uncaught script errors and failing actions, with error and warning counts in the status bar
+- **Monaco is bundled** with the app (HTML, CSS and JavaScript only) instead of loading from a CDN, so the block editor works offline and in the desktop app
 
 ### ⌨️ Shortcuts
 
@@ -24,6 +26,7 @@
 - `Ctrl+Y` triggered both redo and crop
 - The editor crashed on load when the properties panel tried to expand before it was registered
 - Block editor preview stayed blank after hiding and showing it, and did not match the canvas rendering
+- Tooltips and menus opened from buttons could not anchor to them because `Button` did not forward refs
 
 ## v 2.0.0 - Beta 3
 
