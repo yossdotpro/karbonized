@@ -58,6 +58,7 @@ import {
 } from '@/lib/commands/registry';
 import { shortcutLabel } from '@/lib/commands/shortcuts';
 import TabBar from './TabBar';
+import { BeedlyMenu } from '../Beedly/BeedlyMenu';
 import { Button } from '@/components/ui/button';
 
 const AboutModal = React.lazy(async () => await import('../Modals/AboutModal'));
@@ -645,6 +646,9 @@ export const MenuBar: React.FC = () => {
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
+
+					{/* Beedly */}
+					<BeedlyMenu isEditor={isEditor} />
 
 					{/* About */}
 					<MenubarMenu>

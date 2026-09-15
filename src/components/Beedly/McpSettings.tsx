@@ -13,14 +13,7 @@ import {
 	type McpClientSnippet,
 	mcpClientSnippets,
 } from '@/lib/beedly/mcp/client-config';
-
-const errorMessage = (error: unknown) =>
-	error instanceof Error
-		? error.message.replace(
-				/^Error invoking remote method '[^']+': (Error: )?/,
-				'',
-			)
-		: String(error);
+import { ipcErrorMessage } from '@/lib/beedly/mcp/use-mcp-status';
 
 const copy = async (text: string, what: string) => {
 	try {
@@ -121,7 +114,7 @@ export const McpSettings: React.FC = () => {
 			setStatus(await action());
 		} catch (error) {
 			toast.error('Could not update the MCP server', {
-				description: errorMessage(error),
+				description: ipcErrorMessage(error),
 			});
 		} finally {
 			setBusy(false);

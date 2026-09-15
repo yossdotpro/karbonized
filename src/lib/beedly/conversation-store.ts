@@ -7,6 +7,7 @@ import { BEEDLY_SYSTEM_PROMPT } from './core/system-prompt';
 import type { ChatMessage } from './core/types';
 import { getActiveProfile, getTransport, useBeedlySettings } from './settings';
 import { editorTools } from './tools';
+import { useBeedlyUI } from './ui-store';
 import {
 	type StreamDraft,
 	type ToolMeta,
@@ -130,6 +131,7 @@ export const useBeedlyConversation = create<ConversationState>((set, get) => {
 			if (get().current.id === conversation.id) set({ current: conversation });
 		};
 
+		useBeedlyUI.setState({ working: true });
 		set({
 			running: true,
 			runningConversationId: conversation.id,
@@ -225,6 +227,7 @@ export const useBeedlyConversation = create<ConversationState>((set, get) => {
 			// Everything this response changed undoes in one step.
 			const entry = useHistoryStore.getState().collapseTrailing(recorded);
 			controller = null;
+			useBeedlyUI.setState({ working: false });
 			set({
 				lastRun: entry ? { conversationId: conversation.id, entry } : null,
 				running: false,

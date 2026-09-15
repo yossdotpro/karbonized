@@ -15,7 +15,7 @@ The desktop app can also expose those actions as a local **MCP server**, so Clau
 
 ## Using Beedly
 
-Open the panel with <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>L</kbd> or **Show Beedly** in the command palette. It sits next to the properties panel.
+Open the panel with <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>L</kbd>, the **Beedly** button in the status bar, the **Beedly** menu in the menu bar or **Show Beedly** in the command palette. It sits next to the properties panel.
 
 - Type a request and press <kbd>Enter</kbd> (<kbd>Shift</kbd> + <kbd>Enter</kbd> for a new line).
 - Answers stream in. Every action shows up as a card; open it to see its arguments, its result and how long it took.
@@ -86,7 +86,7 @@ Beedly and the MCP server share the same tools:
 
 ## MCP server (desktop app)
 
-1. Open **Beedly settings → MCP server** and turn on **Allow other apps to control Karbonized**.
+1. Turn on **Beedly → MCP server** in the menu bar, or open **Beedly settings → MCP server** and turn on **Allow other apps to control Karbonized**. While it is on, the **MCP** indicator in the status bar shows its state and opens these settings.
 2. Pick your client and copy its configuration. It already contains the URL and your token.
 3. Keep Karbonized open while the client works. Karbonized can stay in the background.
 

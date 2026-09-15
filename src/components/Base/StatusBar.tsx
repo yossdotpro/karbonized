@@ -16,6 +16,10 @@ import { ViewPanel } from '../Panels/ViewPanel';
 import useMousePosition from '@/hooks/useMousePosition';
 import { Separator } from '../ui/separator';
 import { useAutosaveStatus } from '@/lib/persistence/autosave';
+import {
+	BeedlyStatusButton,
+	McpStatusIndicator,
+} from '../Beedly/BeedlyStatusBarItems';
 
 const AutosaveIndicator: React.FC = () => {
 	const status = useAutosaveStatus((state) => state.status);
@@ -165,6 +169,12 @@ export const StatusBar: React.FC = () => {
 			</div>
 
 			<div className='flex-auto' />
+
+			<McpStatusIndicator />
+
+			<BeedlyStatusButton />
+
+			<Separator orientation='vertical' className='h-3' />
 
 			<AutosaveIndicator />
 

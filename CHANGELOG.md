@@ -8,6 +8,8 @@
 - Beedly works with Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible server; providers, models and keys are set in **Beedly settings**
 - API keys stay on the device: encrypted with the system keychain on desktop (and only sent to the base URL they were saved for), stored in the browser on the web
 - Everything Beedly does in one response undoes in one step, with **Undo changes** under the response
+- **Beedly** button in the status bar (shows when a response is in progress) and a **Beedly** menu in the menu bar: show or hide the panel, new chat, stop, switch model, settings and, in the desktop app, turn the MCP server on or off
+- An **MCP** indicator in the status bar of the desktop app shows the server state and opens its settings
 - **Text blocks fit their text**: new text blocks grow and shrink with their content, font size and style. Resizing with a side handle keeps the width and wraps the text (the height still follows it); a top, bottom or corner handle fixes both. Pick **Auto**, **Auto height** or **Fixed** in the Text section, which now takes several lines. Existing text blocks keep their size
 - **MCP server** in the desktop app (off by default): Claude Desktop, Claude Code, Cursor and other MCP clients can read the workspace, create projects, add, edit, align and delete blocks, edit HTML block code, change the background and size, look at the canvas and export images; settings include ready-made client configurations
 - **Export options**: scale (0.5×–4×) with the resulting size, transparent background for PNG and SVG, JPEG quality; the export dialog remembers your choices and warns when the image is too large for the browser
