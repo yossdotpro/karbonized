@@ -14,7 +14,7 @@ Karbonized is a visual image/mockup editor built with React + Vite + TypeScript.
 - export the result as `png`, `jpeg`, or `svg`
 - load packaged extensions as `.kext`
 
-There is no in-app agent system in this project. The closest thing to an extensible architecture is the plugin/extension system.
+The app includes **Beedly**, an in-app AI assistant, and a local **MCP server** in the Electron app; both use the same editor tools (see "Beedly and MCP" below). Besides that, the extensible part of the app is the plugin/extension system.
 
 ## Main Stack
 
@@ -35,10 +35,15 @@ There is no in-app agent system in this project. The closest thing to an extensi
 - `src/stores/`: Zustand stores split by concern (`workspace-store`, `controls-store`, `history-store`, `ui-store`, …)
 - `src/lib/commands/`: command registry and keyboard shortcuts (see below)
 - `src/lib/persistence/autosave.ts`: session autosave/restore (IndexedDB)
+- `src/lib/editor/`: editor actions with arguments (`actions.ts`) and undo/redo helpers (`history.ts`)
+- `src/lib/blocks/catalog.ts`: block types, their stored properties, defaults and size limits
+- `src/lib/beedly/`: Beedly assistant (tools, provider adapters, agent loop, settings, conversations) and the renderer side of the MCP server
+- `src/components/Beedly/`: Beedly panel, settings dialog and MCP settings
 - `src/utils/`: exporting, platform utilities, helper lists, and static data
 - `src/models/Extension.ts`: TypeScript contract for extensions
 - `docs/plugin_system.md`: functional documentation for the plugin system
-- `src-electron/`: main process/preload for the Vite-based Electron variant
+- `src-electron/`: main process/preload for the Vite-based Electron variant, including `beedly/` (API keys, provider requests) and `mcp/` (MCP server and stdio bridge)
+- `scripts/install-electron.cjs`: postinstall that downloads the Electron binary (Yarn 4 skips dependency install scripts)
 - `electron/`: additional/legacy Electron implementation based on Capacitor; do not assume both runtime paths are equally active without checking
 
 ## App Flow
@@ -78,6 +83,19 @@ That means duplicating, importing, or deleting controls usually requires touchin
 
 - the controls list
 - the associated properties
+
+## Beedly and MCP
+
+Beedly (assistant panel, `Mod+L`) and the MCP server share one set of tools. Full user and contributor docs: `docs/beedly.md`.
+
+- **Tools** (`src/lib/beedly/tools/`): `defineTool` with a zod schema (validation + JSON Schema for providers and MCP). `executeTool` runs mutating tools synchronously inside `useHistoryStore.getState().transaction()`, waits for the canvas to re-render, then folds every step recorded during the call into one undo step.
+- **Editor actions** (`src/lib/editor/actions.ts`): add/update/delete/select/align blocks, HTML block code, canvas settings, workspaces. Use them instead of touching stores from tools or new UI. Blocks that have not mounted yet receive properties through `initialProperties`; mounted blocks through `ControlProperties` plus a history batch.
+- **History**: batch entries can mix property changes, `workspace-structure-*` snapshots and `workspace-settings-*` snapshots. Apply undo/redo with `undo()`/`redo()` from `src/lib/editor/history.ts`, which handles all of them.
+- **Block catalog** (`src/lib/blocks/catalog.ts`): mirrors the `useControlState` keys and defaults of each block. Update it when a block gains or renames a property.
+- **Providers** (`src/lib/beedly/providers/`): pure adapters (Anthropic Messages, OpenAI Chat Completions, Gemini) that build requests and parse SSE streams; presets add base URLs and hints. The UI never depends on the provider.
+- **Transports**: the web uses `fetch` from the page (the provider must allow CORS). Electron sends requests from the main process (`src-electron/beedly/http.ts`), which adds the API key; keys are encrypted with `safeStorage` and bound to the origin they were saved for. Never log requests, headers or keys; use `redactSecrets()` for error text.
+- **MCP server** (`src-electron/mcp/server.ts`): Streamable HTTP on 127.0.0.1, stateless, bearer token, Host/Origin checks. Tool calls are forwarded over IPC to the renderer (`src/lib/beedly/mcp/renderer.ts`, mounted in `App.tsx` on desktop). `mcp-stdio.cjs` bridges stdio clients (Claude Desktop) to it and is unpacked from the asar archive.
+- Tests for tools, adapters (recorded streams), the agent loop, history transactions and MCP request checks live next to the code.
 
 ## Extension System
 
