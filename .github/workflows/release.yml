@@ -35,6 +35,9 @@ jobs:
       - name: Install Dependencies
         run: yarn install --no-immutable
 
+      - name: Run tests
+        run: yarn test
+
       - name: Install Linux Dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |

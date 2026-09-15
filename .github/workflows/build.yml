@@ -33,6 +33,8 @@ jobs:
       # (Yarn 4 enables immutable installs by default on CI).
       - name: install frontend dependencies
         run: yarn install --no-immutable
+      - name: run tests
+        run: yarn test
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
