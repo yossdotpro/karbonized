@@ -7,7 +7,16 @@ import { join } from 'node:path';
  * stored in the user data folder. Keys are decrypted only in this process,
  * right before a request; the renderer can store and delete them but never
  * read them back.
+ *
+ * Each key is bound to the origin of the base URL it was saved for, so page
+ * code (e.g. a script in an HTML block) cannot send it anywhere else.
  */
+
+interface StoredKey {
+	/** Base64 of the encrypted key. */
+	data: string;
+	origin: string;
+}
 
 const keysFile = () => join(app.getPath('userData'), 'beedly-keys.json');
 
@@ -20,7 +29,19 @@ const assertProfileId = (profileId: unknown): string => {
 	return profileId;
 };
 
-const readAll = async (): Promise<Record<string, string>> => {
+export const originOf = (url: unknown): string => {
+	try {
+		const parsed = new URL(String(url));
+		if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+			throw new Error();
+		}
+		return parsed.origin;
+	} catch {
+		throw new Error('Invalid base URL.');
+	}
+};
+
+const readAll = async (): Promise<Record<string, StoredKey>> => {
 	try {
 		const data = JSON.parse(await readFile(keysFile(), 'utf-8'));
 		return typeof data === 'object' && data !== null ? data : {};
@@ -29,11 +50,16 @@ const readAll = async (): Promise<Record<string, string>> => {
 	}
 };
 
-const writeAll = (data: Record<string, string>) =>
+const writeAll = (data: Record<string, StoredKey>) =>
 	writeFile(keysFile(), JSON.stringify(data), { mode: 0o600 });
 
-export const setKey = async (profileId: unknown, key: unknown) => {
+export const setKey = async (
+	profileId: unknown,
+	key: unknown,
+	baseUrl: unknown,
+) => {
 	const id = assertProfileId(profileId);
+	const origin = originOf(baseUrl);
 	if (typeof key !== 'string' || key.trim() === '') {
 		throw new Error('The API key is empty.');
 	}
@@ -42,7 +68,10 @@ export const setKey = async (profileId: unknown, key: unknown) => {
 	}
 
 	const data = await readAll();
-	data[id] = safeStorage.encryptString(key.trim()).toString('base64');
+	data[id] = {
+		data: safeStorage.encryptString(key.trim()).toString('base64'),
+		origin,
+	};
 	await writeAll(data);
 };
 
@@ -54,15 +83,30 @@ export const removeKey = async (profileId: unknown) => {
 	await writeAll(data);
 };
 
-export const hasKey = async (profileId: unknown) =>
-	assertProfileId(profileId) in (await readAll());
+/** A key is stored for the profile and can be used with `baseUrl`. */
+export const hasKey = async (profileId: unknown, baseUrl: unknown) => {
+	const stored = (await readAll())[assertProfileId(profileId)];
+	if (!stored) return false;
+	try {
+		return stored.origin === originOf(baseUrl);
+	} catch {
+		return false;
+	}
+};
 
-export const getKey = async (profileId: unknown) => {
-	const encrypted = (await readAll())[assertProfileId(profileId)];
-	if (!encrypted) return undefined;
+/** The key of a profile for a request to `url`, if it was saved for its origin. */
+export const getKeyFor = async (profileId: unknown, url: string) => {
+	const stored = (await readAll())[assertProfileId(profileId)];
+	if (!stored) return undefined;
+
+	if (stored.origin !== originOf(url)) {
+		throw new Error(
+			`The API key was saved for ${stored.origin}. Save it again in Beedly settings to use it with ${originOf(url)}.`,
+		);
+	}
 
 	try {
-		return safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
+		return safeStorage.decryptString(Buffer.from(stored.data, 'base64'));
 	} catch {
 		return undefined;
 	}

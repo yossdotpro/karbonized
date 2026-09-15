@@ -73,10 +73,11 @@ const subscribe =
 
 const beedly: BeedlyBridge = {
 	keys: {
-		set: (profileId, key) =>
-			ipcRenderer.invoke('beedly:keys:set', profileId, key),
+		set: (profileId, key, baseUrl) =>
+			ipcRenderer.invoke('beedly:keys:set', profileId, key, baseUrl),
 		remove: (profileId) => ipcRenderer.invoke('beedly:keys:remove', profileId),
-		has: (profileId) => ipcRenderer.invoke('beedly:keys:has', profileId),
+		has: (profileId, baseUrl) =>
+			ipcRenderer.invoke('beedly:keys:has', profileId, baseUrl),
 	},
 	http: {
 		request: (requestId, profileId, request) =>

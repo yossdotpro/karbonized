@@ -107,7 +107,13 @@ export const useBeedlySettings = create<BeedlySettings>()(
 				const trimmed = key.trim();
 				if (trimmed === '') return get().removeKey(id);
 
-				await getKeyStore().set(id, trimmed);
+				const profile = get().profiles.find((item) => item.id === id);
+				await getKeyStore().set(
+					id,
+					trimmed,
+					profile?.baseUrl.trim() ||
+						getPreset(profile?.kind ?? 'openai').defaultBaseUrl,
+				);
 				set((state) => ({
 					profilesWithKey: Array.from(new Set([...state.profilesWithKey, id])),
 				}));
@@ -124,7 +130,12 @@ export const useBeedlySettings = create<BeedlySettings>()(
 				const store = getKeyStore();
 				const results = await Promise.all(
 					get().profiles.map(async (profile) =>
-						(await store.has(profile.id)) ? profile.id : null,
+						(await store.has(
+							profile.id,
+							profile.baseUrl.trim() || getPreset(profile.kind).defaultBaseUrl,
+						))
+							? profile.id
+							: null,
 					),
 				);
 				set({

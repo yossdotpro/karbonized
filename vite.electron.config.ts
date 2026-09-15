@@ -35,6 +35,21 @@ export default defineConfig({
 					},
 				},
 			},
+			{
+				// stdio bridge for MCP clients; runs outside Electron, nothing to start.
+				entry: 'src-electron/mcp/stdio-proxy.ts',
+				onstart() {},
+				vite: {
+					build: {
+						outDir: 'dist-electron',
+						lib: {
+							entry: 'src-electron/mcp/stdio-proxy.ts',
+							formats: ['cjs'],
+							fileName: () => 'mcp-stdio.cjs',
+						},
+					},
+				},
+			},
 		]),
 	],
 	

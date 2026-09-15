@@ -37,15 +37,21 @@ export type McpRequest =
 	| { requestId: string; type: 'list-tools' }
 	| ({ requestId: string; type: 'call-tool' } & McpToolCall);
 
+/** A request before the broker assigns its id. */
+export type McpRequestPayload =
+	{ type: 'list-tools' } | ({ type: 'call-tool' } & McpToolCall);
+
 export type McpResponse =
 	| { requestId: string; type: 'list-tools'; tools: ToolDescriptor[] }
 	| { requestId: string; type: 'call-tool'; result: ToolResult };
 
 export interface BeedlyBridge {
 	keys: {
-		set: (profileId: string, key: string) => Promise<void>;
+		/** The key only works for requests to the origin of `baseUrl`. */
+		set: (profileId: string, key: string, baseUrl: string) => Promise<void>;
 		remove: (profileId: string) => Promise<void>;
-		has: (profileId: string) => Promise<boolean>;
+		/** A key is stored and usable with `baseUrl`. */
+		has: (profileId: string, baseUrl: string) => Promise<boolean>;
 	};
 	http: {
 		request: (

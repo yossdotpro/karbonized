@@ -1,8 +1,10 @@
 import { z } from 'zod';
 import {
+	createWorkspace,
 	getWorkspaceSummary,
 	requireWorkspace,
 	setCanvasSettings,
+	waitForElement,
 } from '@/lib/editor/actions';
 import type { WorkspaceSettings } from '@/stores/workspace-store';
 import { textures } from '@/constants/textures';
@@ -43,6 +45,34 @@ export const getWorkspaceTool = defineTool({
 					]),
 				),
 			})),
+		};
+	},
+});
+
+export const createWorkspaceTool = defineTool({
+	name: 'create_workspace',
+	title: 'Create workspace',
+	description:
+		'Create a new project in a new tab with an empty canvas of the given size, and open it. Use it when no workspace is open or the user asks for a new design.',
+	input: z.object({
+		name: z.string().describe('Project name.'),
+		width: z.number().int().min(50).max(8000).describe('Canvas width.'),
+		height: z.number().int().min(50).max(8000).describe('Canvas height.'),
+	}),
+	// Opening a project is not an undoable edit.
+	mutates: false,
+	execute: async (args) => {
+		const workspace = createWorkspace(args);
+		if (!(await waitForElement('#workspace'))) {
+			throw new ToolError(
+				'The workspace was created but the editor did not open.',
+			);
+		}
+		return {
+			id: workspace.id,
+			name: workspace.workspaceName,
+			width: args.width,
+			height: args.height,
 		};
 	},
 });
@@ -174,6 +204,7 @@ export const setCanvasSizeTool = defineTool({
 
 export const workspaceTools = [
 	getWorkspaceTool,
+	createWorkspaceTool,
 	setCanvasBackgroundTool,
 	setCanvasSizeTool,
 ];

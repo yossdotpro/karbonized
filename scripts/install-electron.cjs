@@ -45,8 +45,9 @@ if (!executable) {
 const isInstalled = () => {
 	try {
 		return (
-			fs.readFileSync(path.join(distDir, 'version'), 'utf-8').replace(/^v/, '') ===
-				version &&
+			fs
+				.readFileSync(path.join(distDir, 'version'), 'utf-8')
+				.replace(/^v/, '') === version &&
 			fs.readFileSync(path.join(electronDir, 'path.txt'), 'utf-8') ===
 				executable &&
 			fs.existsSync(path.join(distDir, executable))
@@ -63,7 +64,11 @@ const extract = (zipPath) => {
 	if (platform === 'win32') {
 		// bsdtar ships with Windows 10+ and reads zip files. Use it explicitly:
 		// the GNU tar of Git Bash may come first in PATH and cannot.
-		const tar = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'tar.exe');
+		const tar = path.join(
+			process.env.SystemRoot ?? 'C:\\Windows',
+			'System32',
+			'tar.exe',
+		);
 		execFileSync(tar, ['-xf', zipPath, '-C', distDir], { stdio: 'inherit' });
 	} else if (platform === 'darwin') {
 		// ditto keeps the symlinks and permissions of the app bundle.

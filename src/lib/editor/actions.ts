@@ -11,6 +11,7 @@ import {
 	readBox,
 } from '@/lib/canvas/selection';
 import { generateNewId } from '@/lib/utils';
+import { getRandomNumber } from '@/utils/getRandom';
 import {
 	HTML_BLOCK_CODE_KEYS,
 	getBlockProperties,
@@ -79,7 +80,11 @@ export interface WorkspaceSummary {
 
 export const requireWorkspace = (): Workspace => {
 	const workspace = useWorkspaceStore.getState().currentWorkspace;
-	if (!workspace) throw new EditorActionError('No workspace is open.');
+	if (!workspace) {
+		throw new EditorActionError(
+			'No workspace is open. Create one with create_workspace.',
+		);
+	}
 	return workspace;
 };
 
@@ -377,13 +382,25 @@ export const addBlock = (input: AddBlockInput): Item => {
 		isVisible: true,
 	};
 
+	// Text blocks don't grow with their text: size them to fit it.
+	const fitted =
+		input.type === 'text' &&
+		input.width === undefined &&
+		input.height === undefined
+			? estimateTextSize(
+					String(input.properties?.text ?? 'lorem'),
+					Number(input.properties?.textSize ?? 24),
+					input.properties?.isBold === true,
+				)
+			: undefined;
+
 	const width = clamp(
-		input.width ?? spec.defaultSize.width,
+		input.width ?? fitted?.width ?? spec.defaultSize.width,
 		spec.minSize.width,
 		spec.maxSize.width,
 	);
 	const height = clamp(
-		input.height ?? spec.defaultSize.height,
+		input.height ?? fitted?.height ?? spec.defaultSize.height,
 		spec.minSize.height,
 		spec.maxSize.height,
 	);
@@ -436,10 +453,91 @@ export const updateBlock = (id: string, input: UpdateBlockInput): void => {
 		controls.toggleControlLock(id, requireWorkspace());
 	}
 
+	const textChanged =
+		block.type === 'text' &&
+		input.width === undefined &&
+		input.height === undefined &&
+		['text', 'textSize', 'isBold'].some(
+			(key) => input.properties?.[key] !== undefined,
+		);
+	const value = (key: string) =>
+		input.properties?.[key] ?? propertyValue(block, key);
+	const geometry = textChanged
+		? {
+				...input,
+				...estimateTextSize(
+					String(value('text')),
+					Number(value('textSize')),
+					value('isBold') === true,
+				),
+			}
+		: input;
+
 	setBlockProperties(id, {
 		...input.properties,
-		...geometryProperties(block, input),
+		...geometryProperties(block, geometry),
 	});
+};
+
+/**
+ * Measure text the way a text block renders it (same fonts and classes as
+ * `TextBlock`), with a hidden element inside the canvas. Undefined when the
+ * canvas is not rendered.
+ */
+const measureTextBlock = (
+	text: string,
+	size: number,
+	bold: boolean,
+): { width: number; height: number } | undefined => {
+	const canvas =
+		typeof document === 'undefined'
+			? null
+			: document.getElementById('workspace');
+	if (!canvas) return undefined;
+
+	const probe = document.createElement('p');
+	probe.className = bold ? 'poppins-font-family font-bold' : '';
+	Object.assign(probe.style, {
+		position: 'absolute',
+		left: '-100000px',
+		top: '0',
+		margin: '0',
+		visibility: 'hidden',
+		whiteSpace: 'pre',
+		fontSize: `${size}px`,
+	});
+	probe.textContent = text;
+	canvas.appendChild(probe);
+	const { scrollWidth, scrollHeight } = probe;
+	probe.remove();
+
+	if (scrollWidth === 0) return undefined;
+	return {
+		width: Math.ceil(scrollWidth + size * 0.25),
+		height: Math.ceil(scrollHeight + size * 0.2),
+	};
+};
+
+/**
+ * Box that fits a text block's text (the block does not grow with it):
+ * measured on the canvas when possible, otherwise estimated on the wide side.
+ */
+export const estimateTextSize = (
+	text: string,
+	fontSize: number,
+	bold: boolean,
+): { width: number; height: number } => {
+	const size = Number.isFinite(fontSize) && fontSize > 0 ? fontSize : 24;
+	const measured = measureTextBlock(text, size, bold);
+	if (measured) return measured;
+
+	const lines = text.split('\n');
+	const longest = Math.max(1, ...lines.map((line) => line.length));
+
+	return {
+		width: Math.ceil(longest * size * (bold ? 0.66 : 0.58) + size * 0.5),
+		height: Math.ceil(lines.length * size * 1.5),
+	};
 };
 
 export const deleteBlocks = (ids: string[]): void => {
@@ -519,6 +617,49 @@ export const setCanvasSettings = (
 		.commitWorkspaceSettings(workspace.id, previous, next);
 	useWorkspaceStore.getState().setWorkspaceSettings(next);
 };
+
+/**
+ * Create a workspace (a project tab) with a canvas size, make it current and
+ * open the editor if another page is showing.
+ */
+export const createWorkspace = (input: {
+	name: string;
+	width: number;
+	height: number;
+}): Workspace => {
+	const workspaces = useWorkspaceStore.getState();
+	const id = getRandomNumber().toString();
+
+	workspaces.addWorkspace(id, input.name.trim() || undefined);
+	workspaces.setCurrentWorkspace(id);
+	workspaces.setWorkspaceSize({
+		width: String(Math.round(input.width)),
+		height: String(Math.round(input.height)),
+	});
+
+	// The router follows history changes (same as the app's own navigation).
+	if (typeof window !== 'undefined' && window.location.pathname !== '/editor') {
+		window.history.pushState({}, '', '/editor');
+		window.dispatchEvent(new PopStateEvent('popstate'));
+	}
+
+	return requireWorkspace();
+};
+
+/** Resolve once `selector` matches an element, or time out. */
+export const waitForElement = (
+	selector: string,
+	timeoutMs = 5000,
+): Promise<boolean> =>
+	new Promise((resolve) => {
+		const started = Date.now();
+		const check = () => {
+			if (document.querySelector(selector)) resolve(true);
+			else if (Date.now() - started >= timeoutMs) resolve(false);
+			else setTimeout(check, 50);
+		};
+		check();
+	});
 
 /** Resolve once the block is rendered (blocks load lazily), or time out. */
 export const waitForBlock = (id: string, timeoutMs = 3000): Promise<boolean> =>

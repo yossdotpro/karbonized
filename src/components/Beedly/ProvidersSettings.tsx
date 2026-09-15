@@ -67,7 +67,7 @@ const ApiKeyField: React.FC<{ profile: ProviderProfile }> = ({ profile }) => {
 	const showInput = !hasKey || editing;
 	const storage = getKeyStore().readable
 		? 'Stored in this browser only.'
-		: 'Encrypted with your system keychain. Never shown to the page.';
+		: 'Encrypted with your system keychain and only sent to this base URL.';
 
 	const save = async () => {
 		if (draft.trim() === '') return;
@@ -286,6 +286,7 @@ const ProfileForm: React.FC<{ profile: ProviderProfile }> = ({ profile }) => {
 	const updateProfile = useBeedlySettings((state) => state.updateProfile);
 	const removeProfile = useBeedlySettings((state) => state.removeProfile);
 	const setActiveProfile = useBeedlySettings((state) => state.setActiveProfile);
+	const refreshKeys = useBeedlySettings((state) => state.refreshKeys);
 	const [testing, setTesting] = useState(false);
 
 	const testConnection = async () => {
@@ -332,9 +333,10 @@ const ProfileForm: React.FC<{ profile: ProviderProfile }> = ({ profile }) => {
 						<button
 							type='button'
 							className='underline underline-offset-2 hover:text-foreground'
-							onClick={() =>
-								updateProfile(profile.id, { baseUrl: preset.defaultBaseUrl })
-							}
+							onClick={() => {
+								updateProfile(profile.id, { baseUrl: preset.defaultBaseUrl });
+								void refreshKeys();
+							}}
 						>
 							Reset to {preset.defaultBaseUrl}
 						</button>
@@ -350,6 +352,8 @@ const ProfileForm: React.FC<{ profile: ProviderProfile }> = ({ profile }) => {
 					onChange={(event) =>
 						updateProfile(profile.id, { baseUrl: event.target.value })
 					}
+					// Desktop keys are tied to the URL they were saved for.
+					onBlur={() => void refreshKeys()}
 				/>
 			</Field>
 

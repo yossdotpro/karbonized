@@ -2,7 +2,7 @@ import { ipcMain, type WebContents } from 'electron';
 import { redactSecrets } from '../../src/lib/beedly/core/redact';
 import type { HttpBridgeEvent } from '../../src/lib/beedly/bridge';
 import type { HttpRequest } from '../../src/lib/beedly/core/types';
-import { getKey, hasKey, removeKey, setKey } from './keys';
+import { getKeyFor, hasKey, removeKey, setKey } from './keys';
 
 /**
  * Model provider requests for Beedly, made from the main process: no CORS
@@ -47,13 +47,15 @@ const describeFetchError = (error: unknown): string => {
 export const registerBeedlyHttp = () => {
 	const controllers = new Map<string, AbortController>();
 
-	ipcMain.handle('beedly:keys:set', (_event, profileId, key) =>
-		setKey(profileId, key),
+	ipcMain.handle('beedly:keys:set', (_event, profileId, key, baseUrl) =>
+		setKey(profileId, key, baseUrl),
 	);
 	ipcMain.handle('beedly:keys:remove', (_event, profileId) =>
 		removeKey(profileId),
 	);
-	ipcMain.handle('beedly:keys:has', (_event, profileId) => hasKey(profileId));
+	ipcMain.handle('beedly:keys:has', (_event, profileId, baseUrl) =>
+		hasKey(profileId, baseUrl),
+	);
 
 	ipcMain.on(
 		'beedly:http:request',
@@ -79,7 +81,7 @@ export const registerBeedlyHttp = () => {
 			try {
 				const headers = { ...request.headers };
 				if (request.auth) {
-					key = await getKey(profileId);
+					key = await getKeyFor(profileId, request.url);
 					if (key) {
 						headers[request.auth.header] = request.auth.scheme
 							? `${request.auth.scheme} ${key}`

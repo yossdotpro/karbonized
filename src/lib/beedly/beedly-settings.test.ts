@@ -16,7 +16,8 @@ vi.mock('./keys', () => {
 	return {
 		getKeyStore: () => ({
 			readable: true,
-			set: async (id: string, key: string) => void keys.set(id, key),
+			set: async (id: string, key: string, baseUrl: string) =>
+				void keys.set(id, `${baseUrl}|${key}`),
 			remove: async (id: string) => void keys.delete(id),
 			has: async (id: string) => keys.has(id),
 			get: async (id: string) => keys.get(id),

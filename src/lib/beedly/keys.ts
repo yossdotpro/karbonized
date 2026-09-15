@@ -11,9 +11,10 @@ import { getBeedlyBridge } from './bridge';
 export interface KeyStore {
 	/** True when keys can be read back by the page (web). */
 	readable: boolean;
-	set: (profileId: string, key: string) => Promise<void>;
+	/** On desktop the key only works with the origin of `baseUrl`. */
+	set: (profileId: string, key: string, baseUrl: string) => Promise<void>;
 	remove: (profileId: string) => Promise<void>;
-	has: (profileId: string) => Promise<boolean>;
+	has: (profileId: string, baseUrl: string) => Promise<boolean>;
 	/** Web only; undefined on Electron. */
 	get: (profileId: string) => Promise<string | undefined>;
 }

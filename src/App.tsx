@@ -22,6 +22,7 @@ import {
 	ShortcutManager,
 } from './components/CommandPalette';
 import { useSessionAutosave } from './lib/persistence/autosave';
+import { getBeedlyBridge } from './lib/beedly/bridge';
 
 const Editor = React.lazy(async () => await import('./pages/Editor'));
 const NewProject = React.lazy(async () => await import('./pages/NewProject'));
@@ -31,6 +32,9 @@ const TitleBar = React.lazy(
 );
 const ContextualMenuBar = React.lazy(
 	async () => await import('./components/Base/ContextualMenuBar'),
+);
+const McpBridge = React.lazy(
+	async () => await import('./components/Beedly/McpBridge'),
 );
 
 const AppShell: React.FC<{
@@ -176,6 +180,12 @@ const App: React.FC = () => {
 					>
 						<SessionGate>
 							<AppShell isHorizontal={isHorizontal} />
+							{/* MCP clients can control the app (desktop only) */}
+							{getBeedlyBridge() && (
+								<Suspense>
+									<McpBridge />
+								</Suspense>
+							)}
 						</SessionGate>
 					</div>
 

@@ -3,7 +3,9 @@ import { useControlsStore, useHistoryStore, useWorkspaceStore } from '@/stores';
 import {
 	EditorActionError,
 	addBlock,
+	createWorkspace,
 	deleteBlocks,
+	estimateTextSize,
 	getHtmlBlockCode,
 	getWorkspaceSummary,
 	parseRotation,
@@ -64,8 +66,9 @@ describe('editor actions', () => {
 		expect(workspace().controls).toHaveLength(1);
 		expect(useControlsStore.getState().currentControlID).toBe(block.id);
 		expect(pending(`${block.id}-text`)).toBe('Hello');
-		expect(pending(`${block.id}-pos`)).toEqual({ x: 598, y: 338 });
-		expect(pending(`${block.id}-control_size`)).toEqual({ w: 85, h: 45 });
+		// Sized to fit "Hello" at 24px, centered.
+		expect(pending(`${block.id}-control_size`)).toEqual({ w: 82, h: 36 });
+		expect(pending(`${block.id}-pos`)).toEqual({ x: 599, y: 342 });
 		expect(useHistoryStore.getState().pastHistory).toHaveLength(1);
 
 		undo();
@@ -117,7 +120,7 @@ describe('editor actions', () => {
 		updateBlock(block.id, { x: 10, rotation: 45, properties: { text: 'Hi' } });
 
 		expect(pending(`${block.id}-text`)).toBe('Hi');
-		expect(pending(`${block.id}-pos`)).toEqual({ x: 10, y: 338 });
+		expect(pending(`${block.id}-pos`)).toEqual({ x: 10, y: 342 });
 		expect(pending(`${block.id}-transform`)).toBe('rotate(45deg)');
 		expect(
 			useControlsStore
@@ -143,8 +146,8 @@ describe('editor actions', () => {
 				type: 'text',
 				x: 5,
 				y: 6,
-				width: 85,
-				height: 45,
+				width: 82,
+				height: 36,
 				rotation: 30,
 				properties: { text: 'Hello' },
 			}),
@@ -188,6 +191,42 @@ describe('editor actions', () => {
 
 		const text = addBlock({ type: 'text' });
 		expect(() => getHtmlBlockCode(text.id)).toThrow(/not an HTML block/);
+	});
+
+	it('creates a workspace, makes it current and opens the editor', () => {
+		const created = createWorkspace({
+			name: 'Post',
+			width: 1080,
+			height: 1350,
+		});
+
+		expect(workspace()).toMatchObject({
+			id: created.id,
+			workspaceName: 'Post',
+			workspaceWidth: '1080',
+			workspaceHeight: '1350',
+		});
+		expect(useWorkspaceStore.getState().workspaces).toHaveLength(2);
+		expect(window.location.pathname).toBe('/editor');
+	});
+
+	it('resizes text blocks to fit their text unless a size is given', () => {
+		const block = addBlock({
+			type: 'text',
+			properties: { text: 'Two\nlines', textSize: '40', isBold: true },
+		});
+		expect(pending(`${block.id}-control_size`)).toEqual({ w: 152, h: 120 });
+
+		updateBlock(block.id, { properties: { textSize: '20' } });
+		expect(pending(`${block.id}-control_size`)).toEqual({ w: 76, h: 60 });
+
+		updateBlock(block.id, { width: 300, properties: { text: 'Longer text' } });
+		expect(pending(`${block.id}-control_size`)).toEqual({ w: 300, h: 60 });
+
+		expect(estimateTextSize('abc', Number.NaN, false)).toEqual({
+			width: 54,
+			height: 36,
+		});
 	});
 
 	it('parses and sets the rotation of a transform', () => {
