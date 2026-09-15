@@ -19,41 +19,43 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
+      # Vite 7 requires Node ^20.19 || >=22.12.
       - name: Install Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v7
         with:
-          node-version: 16
+          node-version: 24
 
+      - name: Enable Corepack
+        run: corepack enable
+
+      # yarn.lock is not committed, so the install has to be allowed to create it
+      # (Yarn 4 enables immutable installs by default on CI).
       - name: Install Dependencies
-        run: npm install --force
+        run: yarn install --no-immutable
 
       - name: Install Linux Dependencies
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install rpm libopenjp2-tools libarchive-tools
+          sudo apt-get install -y rpm libopenjp2-tools libarchive-tools
           sudo snap install snapcraft --classic
 
       - name: build-linux
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          env SHELL=bash
-          npm run build:linux
+        run: yarn build:linux
 
       - name: build-mac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: matrix.os == 'macos-latest'
-        run: npm run build:mac
+        run: yarn build:mac
 
       - name: build-win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: matrix.os == 'windows-latest'
-        run: npm run build:win
+        run: yarn build:win

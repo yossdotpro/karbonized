@@ -1,10 +1,11 @@
 name: Deploy
 
+# GitHub Pages deploy. The app is deployed to production through Vercel; this
+# workflow only runs on demand until it is decided whether Pages is still needed.
+# Note: the app is built for the site root (Vite `base` and BrowserRouter have
+# no base path), so it does not work as-is under /karbonized/ on GitHub Pages.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
 
 permissions:
   contents: read
@@ -22,25 +23,29 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Pages
-        uses: actions/configure-pages@v2
+        uses: actions/configure-pages@v6
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v7
         with:
-          node-version: 16
+          node-version: 24
 
+      - name: Enable Corepack
+        run: corepack enable
+
+      # yarn.lock is not committed, so the install has to be allowed to create it
+      # (Yarn 4 enables immutable installs by default on CI).
       - name: Install dependencies
-        run: |
-          npm install
+        run: yarn install --no-immutable
 
       - name: Build project
-        run: npm run build
+        run: yarn build
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v5
         with:
           path: ./dist
 
@@ -55,6 +60,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/deploy-pages@v5
