@@ -47,6 +47,8 @@ import {
 	parseJavaScript,
 	generateActionRegistrations,
 	generateCompiledSource,
+	BLOCK_SCRIPT_URL,
+	getActionScopes,
 	updateCSSVariable,
 	updateJSVariable,
 	createSafeDOM,
@@ -77,6 +79,7 @@ import {
 	appendConsoleEntry,
 	createConsoleEntry,
 	createScriptConsole,
+	isBlockScriptError,
 } from '@/components/BlockEditor/BlockConsole';
 import { shortcutLabel } from '@/lib/commands/shortcuts';
 
@@ -186,6 +189,10 @@ const BlockEditor: React.FC = () => {
 	const location = useLocation();
 	const shadowHostRef = useRef<HTMLDivElement>(null);
 	const shadowRootRef = useRef<ShadowRoot | null>(null);
+	const actionScopeDecorations = useRef<ReturnType<
+		Parameters<OnMount>[0]['createDecorationsCollection']
+	> | null>(null);
+	const [editorReady, setEditorReady] = useState(false);
 	const actionHandlersRef = useRef<Map<string, () => void>>(new Map());
 	const { theme } = useContext(AppContext);
 	const blockId =
@@ -214,6 +221,11 @@ const BlockEditor: React.FC = () => {
 
 	const reportToConsole = (entry: ConsoleEntry) =>
 		setConsoleEntries((entries) => appendConsoleEntry(entries, entry));
+
+	const reportError = (prefix: string, error: unknown) => {
+		reportToConsole(createConsoleEntry('error', [prefix, error]));
+		setShowConsole(true);
+	};
 	const consoleErrors = consoleEntries.filter(
 		(entry) => entry.level === 'error',
 	).length;
@@ -504,6 +516,32 @@ const BlockEditor: React.FC = () => {
 		}
 	};
 
+	/* Errors thrown later by block scripts (timers, listeners, promises) */
+	const scriptsEnabled = editorState.allowScriptExecution;
+	useEffect(() => {
+		if (!scriptsEnabled) return;
+
+		const onError = (event: ErrorEvent) => {
+			if (!isBlockScriptError(BLOCK_SCRIPT_URL, event.error, event.filename)) {
+				return;
+			}
+			reportError('Uncaught', event.error ?? event.message);
+		};
+
+		const onRejection = (event: PromiseRejectionEvent) => {
+			if (!isBlockScriptError(BLOCK_SCRIPT_URL, event.reason)) return;
+			reportError('Uncaught (in promise)', event.reason);
+		};
+
+		window.addEventListener('error', onError);
+		window.addEventListener('unhandledrejection', onRejection);
+
+		return () => {
+			window.removeEventListener('error', onError);
+			window.removeEventListener('unhandledrejection', onRejection);
+		};
+	}, [scriptsEnabled]);
+
 	useEffect(() => {
 		const timeoutId = setTimeout(updatePreview, 400);
 		return () => clearTimeout(timeoutId);
@@ -588,17 +626,16 @@ const BlockEditor: React.FC = () => {
 	const executeCustomAction = (action: CustomAction) => {
 		if (!editorState.allowScriptExecution) return;
 
-		const run = (handler?: () => void) => {
+		const run = (handler?: () => unknown) => {
+			const onError = (error: unknown) =>
+				reportError(`Action "${action.label}" failed:`, error);
+
 			try {
-				handler?.();
+				const result = handler?.();
+				// Async actions fail after returning.
+				if (result instanceof Promise) result.catch(onError);
 			} catch (error) {
-				reportToConsole(
-					createConsoleEntry('error', [
-						`Action "${action.label}" failed:`,
-						error,
-					]),
-				);
-				setShowConsole(true);
+				onError(error);
 			}
 		};
 
@@ -783,6 +820,9 @@ const BlockEditor: React.FC = () => {
 		theme === 'dark' ? EDITOR_THEME_DARK : EDITOR_THEME_LIGHT;
 
 	const handleEditorMount: OnMount = (editor, monaco) => {
+		actionScopeDecorations.current = editor.createDecorationsCollection();
+		setEditorReady(true);
+
 		editor.onDidChangeCursorPosition((event) => {
 			setCursor({
 				line: event.position.lineNumber,
@@ -794,6 +834,71 @@ const BlockEditor: React.FC = () => {
 		// cursor and selections line up with the glyphs.
 		document.fonts?.ready.then(() => monaco.editor.remeasureFonts());
 	};
+
+	/* Show which lines belong to each `// @action:` in main.js */
+	useEffect(() => {
+		const decorations = actionScopeDecorations.current;
+		if (!decorations) return;
+
+		if (activeTab !== 'js') {
+			decorations.clear();
+			return;
+		}
+
+		const codeLines = editorState.jsContent.split(/\r?\n/);
+
+		decorations.set(
+			getActionScopes(editorState.jsContent).flatMap((scope) => {
+				// The hint is injected after the end of the marker line.
+				const markerEnd = (codeLines[scope.markerLine - 1]?.length ?? 0) + 1;
+				const lines =
+					scope.startLine === 0
+						? 'no code yet'
+						: scope.startLine === scope.endLine
+							? `line ${scope.startLine}`
+							: `lines ${scope.startLine}–${scope.endLine}`;
+
+				return [
+					{
+						range: {
+							startLineNumber: scope.markerLine,
+							startColumn: markerEnd,
+							endLineNumber: scope.markerLine,
+							endColumn: markerEnd,
+						},
+						options: {
+							// Empty ranges are hidden unless asked otherwise.
+							showIfCollapsed: true,
+							after: {
+								content: `  runs ${lines}`,
+								inlineClassName: 'block-action-hint',
+							},
+							hoverMessage: {
+								value:
+									'Everything below this marker, up to the next `// @action:`, runs when the action is triggered. Put shared code above the first action.',
+							},
+						},
+					},
+					...(scope.startLine === 0
+						? []
+						: [
+								{
+									range: {
+										startLineNumber: scope.markerLine,
+										startColumn: 1,
+										endLineNumber: scope.endLine,
+										endColumn: 1,
+									},
+									options: {
+										isWholeLine: true,
+										linesDecorationsClassName: 'block-action-scope',
+									},
+								},
+							]),
+				];
+			}),
+		);
+	}, [activeTab, editorState.jsContent, editorReady]);
 
 	const handleFileChange = (nextValue: string) => {
 		setEditorState((previousState) => ({

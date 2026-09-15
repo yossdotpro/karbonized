@@ -142,15 +142,52 @@ export const parseJavaScript = (js: string): ParsedJavaScript => {
 	};
 };
 
+export interface ActionScope {
+	label: string;
+	/** 1-based line of the `// @action:` marker. */
+	markerLine: number;
+	/** First and last line of code that runs with the action (0 when empty). */
+	startLine: number;
+	endLine: number;
+}
+
+/**
+ * Where each action's code lives: every line after its `// @action:` marker
+ * up to the next marker or the end of the file, ignoring trailing blank lines.
+ */
+export const getActionScopes = (code: string): ActionScope[] => {
+	const lines = code.split(/\r?\n/);
+	const scopes: ActionScope[] = [];
+
+	lines.forEach((line, index) => {
+		const match = line.match(/^\s*\/\/\s*@action:(.+?)\s*$/);
+		if (match) {
+			scopes.push({
+				label: match[1].trim(),
+				markerLine: index + 1,
+				startLine: 0,
+				endLine: 0,
+			});
+			return;
+		}
+
+		const current = scopes.at(-1);
+		if (!current || line.trim() === '') return;
+
+		if (current.startLine === 0) current.startLine = index + 1;
+		current.endLine = index + 1;
+	});
+
+	return scopes;
+};
+
 export const generateActionRegistrations = (
 	actions: JavaScriptAction[],
 ): string => {
 	return actions
 		.map(
 			(action) => `
-console.log("Registering action: ${escapeJavaScriptString(action.label)} (ID: ${escapeJavaScriptString(action.id)})");
 registerAction("${escapeJavaScriptString(action.id)}", () => {
-	console.log("Executing action: ${escapeJavaScriptString(action.label)}");
 ${action.code}
 ${generateActionInvocation(action.code)}
 });`,
@@ -244,6 +281,12 @@ const parseJSValue = (value: string, type: JSVariable['type']) => {
 export const escapeJavaScriptString = (value: string): string =>
 	JSON.stringify(value).slice(1, -1);
 
+/**
+ * Name given to compiled block scripts in stack traces, so errors thrown later
+ * (timers, event listeners, promises) can be traced back to the block.
+ */
+export const BLOCK_SCRIPT_URL = 'karbonized-block.js';
+
 export const generateCompiledSource = (
 	parsedJavaScript: ParsedJavaScript,
 	actionRegistrations: string,
@@ -277,6 +320,7 @@ ${variableDeclarations}
 ${parsedJavaScript.setupCode}
 
 ${actionRegistrations}
+//# sourceURL=${BLOCK_SCRIPT_URL}
 `;
 };
 
