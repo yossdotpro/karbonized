@@ -115,12 +115,9 @@ export const parseCSSVariables = (css: string): CSSVariable[] => {
 						parsedValue = value;
 				}
 			} else {
-				// Fallback to automatic detection based on naming conventions
-
-				let type: CSSVariable['type'] = 'string';
-				let parsedValue: string | number | boolean = value;
-				let min, max, step, unit;
-
+				// Fallback to automatic detection based on naming conventions.
+				// (Assigns the outer variables; redeclaring them here used to shadow
+				// them, so every unannotated variable ended up as a string.)
 				if (
 					name.includes('color') ||
 					/^#[0-9a-fA-F]{6}$/.test(value) ||

@@ -148,9 +148,9 @@ export const generateActionRegistrations = (
 	return actions
 		.map(
 			(action) => `
-console.log('Registering action: ${action.label} (ID: ${action.id})');
+console.log("Registering action: ${escapeJavaScriptString(action.label)} (ID: ${escapeJavaScriptString(action.id)})");
 registerAction("${escapeJavaScriptString(action.id)}", () => {
-	console.log('Executing action: ${action.label}');
+	console.log("Executing action: ${escapeJavaScriptString(action.label)}");
 ${action.code}
 ${generateActionInvocation(action.code)}
 });`,
@@ -224,7 +224,16 @@ const parseJSValue = (value: string, type: JSVariable['type']) => {
 			case 'url':
 			case 'string':
 			default:
-				return value.replace(/^['"]|['"]$/g, ''); // Remove quotes
+				// Values written by the editor are JSON strings (escaped quotes and
+				// newlines); hand-written ones may use plain or single quotes.
+				if (/^".*"$/.test(value)) {
+					try {
+						return JSON.parse(value);
+					} catch {
+						/* fall through to stripping the quotes */
+					}
+				}
+				return value.replace(/^['"]|['"]$/g, '');
 		}
 	} catch {
 		return getDefaultValueForType(type);
@@ -280,7 +289,9 @@ const formatJSValue = (value: any, type: JSVariable['type']): string => {
 		case 'url':
 		case 'image':
 		case 'file':
-			return `"${value}"`;
+			// JSON keeps quotes and newlines valid both in code and on the
+			// single-line `// @var` annotation.
+			return JSON.stringify(String(value ?? ''));
 		case 'number':
 			return String(value);
 		case 'boolean':
@@ -289,7 +300,7 @@ const formatJSValue = (value: any, type: JSVariable['type']): string => {
 		case 'array':
 			return JSON.stringify(value);
 		default:
-			return `"${value}"`;
+			return JSON.stringify(String(value ?? ''));
 	}
 };
 

@@ -13,6 +13,12 @@
 
 - Pressing Delete while typing in a field deleted the selected block
 - The view re-centered every time a block was added or removed; it now fits only when switching workspaces or changing the canvas size
+- CSS variables without a `@type` annotation were always detected as text, so colors, sizes and booleans got a text field instead of a color picker, slider or switch
+- HTML block scripts broke when a JS string variable contained quotes or new lines, or when an action label contained an apostrophe
+
+### 🧪 Tests
+
+- Vitest test suite (`yarn test`) covering shortcuts, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
 
 ## v 2.0.0
 
