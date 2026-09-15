@@ -1,6 +1,7 @@
 import { useViewStore } from '@/lib/viewer';
 /* eslint-disable array-callback-return */
 import React, {
+	useRef,
 	type RefObject,
 	Suspense,
 	useLayoutEffect,
@@ -42,6 +43,11 @@ interface Props {
 export const Workspace: React.FC<Props> = ({ reference }) => {
 	/* App Store */
 	const controlID = useControlsStore((state) => state.currentControlID);
+	const selectedControlIDs = useControlsStore(
+		(state) => state.selectedControlIDs,
+	);
+	const commitBatch = useHistoryStore((state) => state.commitBatch);
+	const groupDragStart = useRef<Record<string, { x: number; y: number }>>({});
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
 	const currentControls = currentWorkspace?.controls ?? [];
 	const currentControl = useMemo(() => {
@@ -146,6 +152,51 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	>(null);
 
 	useLayoutEffect(() => {
+		/* Several selected blocks move and resize together */
+		if (selectedControlIDs.length > 1) {
+			const ids = selectedControlIDs.flatMap((id) => {
+				const control = currentControls.find((item) => item.id === id);
+				if (
+					!control ||
+					control.locked ||
+					control.isDeleted ||
+					control.isVisible === false
+				) {
+					return [];
+				}
+				return control.type === 'group'
+					? getGroupDescendantIds(currentControls, control.id)
+					: [control.id];
+			});
+
+			let frame = 0;
+			let cancelled = false;
+			let attempts = 0;
+
+			const resolveTargets = () => {
+				if (cancelled) return;
+
+				const targets = ids
+					.map((id) => document.getElementById(id))
+					.filter((item): item is HTMLElement => item !== null);
+
+				if (targets.length === ids.length || attempts >= 20) {
+					setMoveableTarget(targets.length > 0 ? targets : null);
+					return;
+				}
+
+				attempts += 1;
+				frame = window.requestAnimationFrame(resolveTargets);
+			};
+
+			frame = window.requestAnimationFrame(resolveTargets);
+
+			return () => {
+				cancelled = true;
+				window.cancelAnimationFrame(frame);
+			};
+		}
+
 		if (
 			currentControl === undefined ||
 			currentControl.locked ||
@@ -214,6 +265,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		groupTargetIds,
 		currentControls,
 		currentWorkspaceID,
+		selectedControlIDs,
 	]);
 
 	const syncGroupTargetsToStore = (
@@ -550,6 +602,14 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 							},
 						]);
 					}}
+					onDragGroupStart={({ targets }: any) => {
+						groupDragStart.current = Object.fromEntries(
+							(targets as HTMLElement[]).map((target) => [
+								target.id,
+								readTargetPosition(target),
+							]),
+						);
+					}}
 					onDragGroup={({ events }: any) => {
 						events.forEach(({ target, left, top }: any) => {
 							target.style.left = `${left}px`;
@@ -557,6 +617,21 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						});
 					}}
 					onDragGroupEnd={({ targets }: any) => {
+						// Record the move of every block as one undoable step.
+						commitBatch(
+							(targets as HTMLElement[])
+								.map((target) => ({
+									id: `${target.id}-pos`,
+									previous: groupDragStart.current[target.id],
+									next: readTargetPosition(target),
+								}))
+								.filter(
+									(change) =>
+										change.previous &&
+										(change.previous.x !== change.next.x ||
+											change.previous.y !== change.next.y),
+								),
+						);
 						syncGroupTargetsToStore(targets);
 						setFutureHistory([]);
 					}}

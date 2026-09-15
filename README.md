@@ -45,9 +45,14 @@ Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to see every command. The mo
 | Command palette | <kbd>Ctrl</kbd> <kbd>K</kbd> |
 | Select / Pan / Crop / Warp tools | <kbd>V</kbd> / <kbd>H</kbd> / <kbd>C</kbd> / <kbd>W</kbd> |
 | Undo / Redo | <kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd> |
+| Select all / Deselect | <kbd>Ctrl</kbd> <kbd>A</kbd> / <kbd>Esc</kbd> |
+| Add to or remove from the selection | <kbd>Shift</kbd> + click, or drag on the canvas |
 | Duplicate selection | <kbd>Ctrl</kbd> <kbd>D</kbd> |
 | Delete selection | <kbd>Delete</kbd> |
 | Move selection 1px / 10px | <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> / with <kbd>Shift</kbd> |
+| Align left / center / right | <kbd>Alt</kbd> <kbd>A</kbd> / <kbd>Alt</kbd> <kbd>H</kbd> / <kbd>Alt</kbd> <kbd>D</kbd> |
+| Align top / middle / bottom | <kbd>Alt</kbd> <kbd>W</kbd> / <kbd>Alt</kbd> <kbd>V</kbd> / <kbd>Alt</kbd> <kbd>S</kbd> |
+| Distribute horizontally / vertically | <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>H</kbd> / <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>V</kbd> |
 | Toggle snapping | <kbd>Shift</kbd> <kbd>S</kbd> |
 | Zoom in / out / 100% / fit | <kbd>Ctrl</kbd> <kbd>+</kbd> / <kbd>Ctrl</kbd> <kbd>−</kbd> / <kbd>Shift</kbd> <kbd>0</kbd> / <kbd>Shift</kbd> <kbd>1</kbd> |
 | Lock aspect ratio | <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd> |

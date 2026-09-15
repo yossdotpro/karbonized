@@ -261,32 +261,53 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	const exportAsSvg = useCallback(() => exportBlock('svg'), [exportBlock]);
 	const exportAsJpeg = useCallback(() => exportBlock('jpeg'), [exportBlock]);
 
-	const syncSelectionState = useCallback(() => {
-		if (controlID === id) return;
+	const toggleSelection = useControlsStore((state) => state.toggleSelection);
+	const selectedControlIDs = useControlsStore(
+		(state) => state.selectedControlIDs,
+	);
 
-		setID(id);
-		setControlPos({
-			x: position.x,
-			y: position.y,
-		});
-		setControlSize({
-			w: size.w,
-			h: size.h,
-		});
-		setControlTransform(transform);
-	}, [
-		controlID,
-		id,
-		position.x,
-		position.y,
-		setControlPos,
-		setControlSize,
-		setControlTransform,
-		setID,
-		size.h,
-		size.w,
-		transform,
-	]);
+	const syncSelectionState = useCallback(
+		(event?: React.MouseEvent | React.TouchEvent) => {
+			// Shift+click adds or removes the block from the selection.
+			if (event?.shiftKey) {
+				toggleSelection(id);
+				return;
+			}
+
+			// Clicking a block that is part of a multi-selection keeps the selection
+			// so the whole group can be dragged.
+			if (selectedControlIDs.length > 1 && selectedControlIDs.includes(id))
+				return;
+
+			if (controlID === id) return;
+
+			setID(id);
+			setControlPos({
+				x: position.x,
+				y: position.y,
+			});
+			setControlSize({
+				w: size.w,
+				h: size.h,
+			});
+			setControlTransform(transform);
+		},
+		[
+			controlID,
+			id,
+			position.x,
+			position.y,
+			selectedControlIDs,
+			setControlPos,
+			setControlSize,
+			setControlTransform,
+			setID,
+			size.h,
+			size.w,
+			toggleSelection,
+			transform,
+		],
+	);
 
 	return (
 		<>
@@ -325,6 +346,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 							<motion.div
 								id={id}
 								key={id}
+								data-block-id={id}
 								className={`absolute flex flex-auto select-none block-${id}`}
 								style={{
 									zIndex,

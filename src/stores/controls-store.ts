@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getRandomNumber } from '../utils/getRandom';
 import {
+	createLayerSnapshot,
 	cloneControls,
 	getSubtreeIds,
 	generateNewId,
@@ -9,7 +10,7 @@ import {
 	moveToSiblingEdge,
 } from '../lib/utils';
 import { useWorkspaceStore } from './workspace-store';
-import { useHistoryStore } from './history-store';
+import { setHistoryValueResolver, useHistoryStore } from './history-store';
 import type {
 	Item,
 	History,
@@ -22,6 +23,8 @@ import type {
 
 interface ControlsState {
 	currentControlID: string;
+	/** Every selected control; `currentControlID` is the primary (last) one. */
+	selectedControlIDs: string[];
 	ControlProperties: History[];
 	initialProperties: History[];
 	controlSize?: ControlSize;
@@ -32,6 +35,10 @@ interface ControlsState {
 
 interface ControlsActions {
 	setCurrentControlID: (id: string) => void;
+	/** Replace the selection; the last id becomes the primary control. */
+	setSelection: (ids: string[]) => void;
+	/** Add or remove a control from the selection (Shift+click). */
+	toggleSelection: (id: string) => void;
 	setControlProperties: (properties: History[]) => void;
 	addControlProperty: (property: History, workspaceId: string) => void;
 	addInitialProperty: (property: History, workspaceId: string) => void;
@@ -162,6 +169,7 @@ const commitControlsMutation = (
 
 export const useControlsStore = create<ControlsStore>((set, get) => ({
 	currentControlID: '',
+	selectedControlIDs: [],
 	ControlProperties: [],
 	initialProperties: [],
 	readyToSave: false,
@@ -194,10 +202,35 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 	setCurrentControlID: (id) => {
 		set({
 			currentControlID: id,
+			selectedControlIDs: id ? [id] : [],
 			controlPosition: undefined,
 			controlSize: undefined,
 			controlTransform: undefined,
 		});
+	},
+
+	setSelection: (ids) => {
+		const unique = Array.from(new Set(ids.filter(Boolean)));
+		const primary = unique[unique.length - 1] ?? '';
+
+		set((state) => ({
+			selectedControlIDs: unique,
+			currentControlID: primary,
+			...(primary !== state.currentControlID && {
+				controlPosition: undefined,
+				controlSize: undefined,
+				controlTransform: undefined,
+			}),
+		}));
+	},
+
+	toggleSelection: (id) => {
+		const { selectedControlIDs, setSelection } = get();
+		setSelection(
+			selectedControlIDs.includes(id)
+				? selectedControlIDs.filter((item) => item !== id)
+				: [...selectedControlIDs, id],
+		);
 	},
 
 	setControlProperties: (properties) => {
@@ -617,3 +650,42 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		return nextControls;
 	},
 }));
+
+// Some actions set `currentControlID` directly (layer mutations, session
+// restore, project loading). Keep the multi-selection consistent with it.
+useControlsStore.subscribe((state, previous) => {
+	if (
+		state.currentControlID !== previous.currentControlID &&
+		!state.selectedControlIDs.includes(state.currentControlID)
+	) {
+		useControlsStore.setState({
+			selectedControlIDs: state.currentControlID
+				? [state.currentControlID]
+				: [],
+		});
+	}
+});
+
+// Let undo/redo read what a history entry's target looks like right now.
+setHistoryValueResolver((id) => {
+	if (id.startsWith('workspace-structure-')) {
+		const workspace = useWorkspaceStore.getState().currentWorkspace;
+		if (!workspace) return { found: false, value: undefined };
+
+		return {
+			found: true,
+			value: createLayerSnapshot(
+				workspace.controls,
+				useControlsStore.getState().currentControlID,
+			),
+		};
+	}
+
+	const property = useControlsStore
+		.getState()
+		.ControlProperties.find((item) => item.id === id);
+
+	return property
+		? { found: true, value: property.value }
+		: { found: false, value: undefined };
+});

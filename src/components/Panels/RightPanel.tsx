@@ -15,6 +15,7 @@ import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { HierarchyPanel } from './HierarchyPanel';
+import { ArrangeBar } from './ArrangeBar';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { useCommands } from '@/lib/commands/registry';
 
@@ -189,6 +190,7 @@ export const RightPanel: React.FC = () => {
 						<Label className='flex h-8 shrink-0 select-none items-center px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
 							Control
 						</Label>
+						<ArrangeBar />
 						<ScrollArea className='flex-1 h-full'>
 							{/* Menu Portal Container - always in DOM when control tab is active */}
 							<div className='p-1' id='menu'></div>

@@ -13,6 +13,9 @@
 - **Snapping toggle** (`Shift+S`, also in the status bar); selection handles and snap guides restyled
 - **Delete / Backspace** remove the selected block from anywhere on the canvas
 - **Arrow keys** move the selected block by 1px (10px with Shift); each step can be undone; locked blocks stay in place
+- **Multiple selection**: drag on the canvas to select blocks, `Shift`+click to add or remove one, `Ctrl+A` selects every block and `Esc` clears the selection; selected blocks move together
+- **Align and distribute** from the properties panel or with shortcuts (`Alt+A/H/D` left/center/right, `Alt+W/V/S` top/middle/bottom, `Alt+Shift+H/V` distribute); a single block aligns to the canvas
+- Duplicate, delete and arrow keys apply to the whole selection; aligning, distributing and moving several blocks undo in one step
 
 ### 🐛 Fixes
 
@@ -20,10 +23,11 @@
 - The view re-centered every time a block was added or removed; it now fits only when switching workspaces or changing the canvas size
 - CSS variables without a `@type` annotation were always detected as text, so colors, sizes and booleans got a text field instead of a color picker, slider or switch
 - HTML block scripts broke when a JS string variable contained quotes or new lines, or when an action label contained an apostrophe
+- Redo after undoing several steps restored the wrong values
 
 ### 🧪 Tests
 
-- Vitest test suite (`yarn test`) covering shortcuts, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
+- Vitest test suite (`yarn test`) covering shortcuts, undo/redo history, align/distribute math, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
 
 ## v 2.0.0
 

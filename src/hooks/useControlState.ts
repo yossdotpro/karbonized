@@ -5,6 +5,7 @@ import {
 	useWorkspaceStore,
 } from '../stores';
 import default_logo from '../assets/logo.svg';
+import { isBatchHistory } from '../stores/history-store';
 
 export function useControlState<T>(
 	initialState: T,
@@ -76,13 +77,16 @@ export function useControlState<T>(
 		}
 	}, [id, initialProperties, removeInitialProperty, state]);
 
-	/* Look at Current Controls Properties for Changes */
+	/* Apply undo/redo and batch changes that target this property */
 	useEffect(() => {
-		if (
-			controlState?.id === id &&
-			serialize(controlState.value) !== serialize(state)
-		) {
-			setState(controlState.value);
+		const entry = isBatchHistory(controlState)
+			? controlState.value.find((item: { id: string }) => item.id === id)
+			: controlState?.id === id
+				? controlState
+				: undefined;
+
+		if (entry && serialize(entry.value) !== serialize(state)) {
+			setState(entry.value);
 		}
 	}, [controlState, id, state]);
 
