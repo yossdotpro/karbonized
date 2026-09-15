@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { ContextMenuTrigger } from '@/components/ui/context-menu';
+import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toJpeg, toPng, toSvg } from 'html-to-image';
 import React, { useCallback, useEffect, useRef, type ReactNode } from 'react';
@@ -202,6 +203,11 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		'mask-triangle-4',
 	];
 
+	/* Mask classes live in src/styles/masks.css; `mask` fits the shape to the
+	   block, leaving it out tiles the shape (Mask Repeat) */
+	const hasMask = mask !== '' && mask !== 'default';
+	const maskClassName = hasMask && cn(!maskRepeat && 'mask', mask);
+
 	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -362,9 +368,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 							<motion.div
 								id={id}
 								key={id}
-								className={`absolute flex flex-auto select-none block-${id} ${
-									!maskRepeat && 'mask'
-								}  ${mask}`}
+								className={`absolute flex flex-auto select-none block-${id}`}
 								style={{
 									zIndex,
 									height: size.h + 'px',
@@ -397,37 +401,43 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 										}
 									}}
 								>
+									{/* The exported node carries the mask so per-block exports keep
+									    it; flips, rotation and filters stay inside the masked area */}
 									<div
 										id={'control-' + id}
 										ref={ref}
-										style={{
-											borderRadius: borderRadius + 'px',
-											backgroundColor: color,
-											transform: `${flipX ? 'scaleX(-1)' : ''} ${
-												flipY ? 'scaleY(-1)' : ''
-											} rotateY(${rotateY + 'deg'}) rotateX(${rotateX + 'deg'})`,
-
-											filter: `blur(${blur + 'px'}) brightness(${
-												brightness + '%'
-											}) contrast(${contrast + '%'})  grayscale(${
-												grayscale + '%'
-											}) hue-rotate(${huerotate + 'deg'}) invert(${
-												invert + '%'
-											}) opacity(${opacity + '%'}) saturate(${
-												saturate + '%'
-											}) sepia(${sepia + '%'}) drop-shadow(${
-												shadowX +
-												'px ' +
-												shadowY +
-												'px ' +
-												shadowBlur +
-												'px ' +
-												shadowColor
-											})`,
-										}}
-										className='flex h-full flex-auto flex-col'
+										className={cn('flex h-full flex-auto', maskClassName)}
 									>
-										{children}
+										<div
+											style={{
+												borderRadius: borderRadius + 'px',
+												backgroundColor: color,
+												transform: `${flipX ? 'scaleX(-1)' : ''} ${
+													flipY ? 'scaleY(-1)' : ''
+												} rotateY(${rotateY + 'deg'}) rotateX(${rotateX + 'deg'})`,
+
+												filter: `blur(${blur + 'px'}) brightness(${
+													brightness + '%'
+												}) contrast(${contrast + '%'})  grayscale(${
+													grayscale + '%'
+												}) hue-rotate(${huerotate + 'deg'}) invert(${
+													invert + '%'
+												}) opacity(${opacity + '%'}) saturate(${
+													saturate + '%'
+												}) sepia(${sepia + '%'}) drop-shadow(${
+													shadowX +
+													'px ' +
+													shadowY +
+													'px ' +
+													shadowBlur +
+													'px ' +
+													shadowColor
+												})`,
+											}}
+											className='flex h-full flex-auto flex-col'
+										>
+											{children}
+										</div>
 									</div>
 								</div>
 							</motion.div>

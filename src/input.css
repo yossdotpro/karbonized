@@ -5,6 +5,7 @@
 @import '@fontsource-variable/geist-mono';
 @import '@fontsource-variable/noto-sans';
 @import '@fontsource-variable/outfit';
+@import './styles/masks.css';
 
 @custom-variant dark (&:is(.dark *));
 

@@ -533,7 +533,6 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 										value={mask}
 										onValueChange={(e: string) => {
 											setMask(e);
-											// FIX Mask is not Working
 										}}
 									>
 										<SelectTrigger>
@@ -543,6 +542,13 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 											{Masks.map((i: string) => {
 												return (
 													<SelectItem key={i} value={i}>
+														{/* Shape preview using the same mask classes as the block */}
+														<span
+															aria-hidden
+															className={`size-4 shrink-0 bg-current opacity-70 ${
+																i === 'default' ? 'rounded-[3px]' : `mask ${i}`
+															}`}
+														/>
 														{i.replace('mask-', '').replace('-', ' ')}
 													</SelectItem>
 												);
