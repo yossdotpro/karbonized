@@ -171,6 +171,8 @@ Before refactoring platform integration, verify which runtime path is actually u
 - Monaco themes mirror the tokens in `src/lib/theme/editor-theme.ts`; keep both in sync.
 - Shortcuts and command palette entries are registered with `useCommands()` from `src/lib/commands/registry.ts`. Do not add `window.addEventListener('keydown')` handlers; a single handler dispatches every shortcut and skips inputs, Monaco and open overlays unless `allowInInput` is set.
 - Restored block properties go through `initialProperties` (consumed by `useControlState` on mount), not `ControlProperties`.
+- `useControlState` applies each history entry in `controlState` once (when it changes) and saves the local value only when it changes. Don't rely on `controlState` being re-applied later.
+- Blocks can size themselves from their content with `ControlTemplate`'s `autoSize` (`both` or `height`); the measured size is written to the store, never to the local state. Text blocks use it through their `sizing` property (`auto`, `fixed-width`, `fixed`, see `src/lib/blocks/text-sizing.ts`), and resizing them with Moveable switches the mode in the same undo step.
 - Use the `@/` alias when the surrounding file already follows that pattern; the repo mixes relative imports and alias-based imports.
 - Do not assume commented-out code is dead; some features are in transition, especially templates and desktop runtimes.
 

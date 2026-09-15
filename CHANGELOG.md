@@ -8,6 +8,7 @@
 - Beedly works with Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible server; providers, models and keys are set in **Beedly settings**
 - API keys stay on the device: encrypted with the system keychain on desktop (and only sent to the base URL they were saved for), stored in the browser on the web
 - Everything Beedly does in one response undoes in one step, with **Undo changes** under the response
+- **Text blocks fit their text**: new text blocks grow and shrink with their content, font size and style. Resizing with a side handle keeps the width and wraps the text (the height still follows it); a top, bottom or corner handle fixes both. Pick **Auto**, **Auto height** or **Fixed** in the Text section, which now takes several lines. Existing text blocks keep their size
 - **MCP server** in the desktop app (off by default): Claude Desktop, Claude Code, Cursor and other MCP clients can read the workspace, create projects, add, edit, align and delete blocks, edit HTML block code, change the background and size, look at the canvas and export images; settings include ready-made client configurations
 - **Export options**: scale (0.5×–4×) with the resulting size, transparent background for PNG and SVG, JPEG quality; the export dialog remembers your choices and warns when the image is too large for the browser
 - **Copy image to the clipboard** (`Alt+Shift+C`, File menu and export dialog)
@@ -27,6 +28,7 @@
 
 ### 🐛 Fixes
 
+- Undo and redo entries could be applied again later and revert newer edits of the same property, and a block could overwrite a value it had just received with its previous one
 - The Electron binary was never downloaded because Yarn 4 skips dependency install scripts; `yarn install` now installs it
 - Pressing Delete while typing in a field deleted the selected block
 - The view re-centered every time a block was added or removed; it now fits only when switching workspaces or changing the canvas size

@@ -184,7 +184,7 @@ describe('executeTool', () => {
 			properties: { font: 'Inter' },
 		});
 		expect(text(unknown)).toMatch(
-			/Unknown property "font".*Valid: text, color/s,
+			/Unknown property "font".*Valid: text, sizing, color/s,
 		);
 
 		const invalid = await run('add_block', {

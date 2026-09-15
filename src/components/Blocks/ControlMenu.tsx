@@ -33,6 +33,8 @@ interface ControlMenuProps {
 	Masks: string[];
 	controlPos?: { x: number; y: number };
 	controlSize?: { w: number; h: number };
+	/** The width or height was typed in the position panel. */
+	onSizeInput?: (axis: 'w' | 'h') => void;
 	pastHistory: any[];
 	setPastHistory: (value: any[]) => void;
 	setFutureHistory: (value: any[]) => void;
@@ -102,6 +104,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 	Masks,
 	controlPos,
 	controlSize,
+	onSizeInput,
 	pastHistory,
 	setPastHistory,
 	setFutureHistory,
@@ -323,6 +326,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 											});
 
 											setFutureHistory([]);
+											onSizeInput?.('w');
 										}}
 										value={controlSize?.w}
 									></Input>
@@ -358,6 +362,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 											});
 
 											setFutureHistory([]);
+											onSizeInput?.('h');
 										}}
 										value={controlSize?.h}
 									></Input>

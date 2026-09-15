@@ -209,6 +209,22 @@ const SHAPES = [
 
 const size = (width: number, height: number): BlockSize => ({ width, height });
 
+export type TextSizing = 'auto' | 'fixed-width' | 'fixed';
+
+export const TEXT_SIZING_OPTIONS: ReadonlyArray<{
+	value: TextSizing;
+	label: string;
+	hint: string;
+}> = [
+	{ value: 'auto', label: 'Auto', hint: 'Width and height fit the text' },
+	{
+		value: 'fixed-width',
+		label: 'Auto height',
+		hint: 'Fixed width, the text wraps and the height grows',
+	},
+	{ value: 'fixed', label: 'Fixed', hint: 'Fixed width and height' },
+];
+
 export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 	{
 		type: 'code',
@@ -327,6 +343,14 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		maxSize: size(2000, 2000),
 		properties: [
 			{ key: 'text', kind: 'text', default: 'lorem', description: 'Text.' },
+			{
+				key: 'sizing',
+				kind: 'enum',
+				default: 'fixed',
+				options: ['auto', 'fixed-width', 'fixed'],
+				description:
+					'auto: the block fits the text; fixed-width: the width stays and the text wraps; fixed: width and height stay. New blocks use auto unless a size is given.',
+			},
 			{
 				key: 'color',
 				kind: 'color',

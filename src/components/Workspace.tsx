@@ -22,6 +22,8 @@ import { GalaxyBackground } from './Misc/GalaxyBackground';
 import Moveable, {
 	type OnDrag,
 	type OnResize,
+	type OnResizeStart,
+	type OnResizeEnd,
 	type OnScale,
 	type OnRotate,
 	type OnScaleGroup,
@@ -36,6 +38,9 @@ import WorkspaceTexture from './WorkspaceTexture';
 import { Canvas } from './Canvas';
 import { Wallpapers } from '../utils/wallpapers';
 import noiseTexture from '../assets/noisy.png';
+import { readProperty } from '@/lib/editor/actions';
+import type { TextSizing } from '@/lib/blocks/catalog';
+import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
 
 interface Props {
 	reference: RefObject<HTMLDivElement>;
@@ -48,6 +53,13 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	);
 	const commitBatch = useHistoryStore((state) => state.commitBatch);
 	const groupDragStart = useRef<Record<string, { x: number; y: number }>>({});
+	/** A text block being resized: its box and sizing mode before the drag. */
+	const textResize = useRef<{
+		size: { w: number; h: number };
+		sizing: TextSizing;
+		nextSizing: TextSizing;
+		style: { width: string; height: string };
+	} | null>(null);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
 	const currentControls = currentWorkspace?.controls ?? [];
 	const currentControl = useMemo(() => {
@@ -270,6 +282,8 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 
 	const syncGroupTargetsToStore = (
 		targets: Array<HTMLElement | SVGAElement>,
+		/** Blocks were resized: content-sized text blocks keep the new box. */
+		resized = false,
 	): void => {
 		const nextProperties = [...controlProperties];
 
@@ -295,11 +309,13 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 				x: parseFloat(target.style.left.replace('px', '')),
 				y: parseFloat(target.style.top.replace('px', '')),
 			});
-			upsertProperty(`${targetId}-control_size`, {
-				w: parseFloat(target.style.width.replace('px', '')),
-				h: parseFloat(target.style.height.replace('px', '')),
-			});
+			upsertProperty(`${targetId}-control_size`, readTargetSize(target));
 			upsertProperty(`${targetId}-transform`, target.style.transform);
+
+			const sizing = textSizingOf(targetId);
+			if (resized && sizing && sizing !== 'fixed') {
+				upsertProperty(`${targetId}-sizing`, 'fixed');
+			}
 		});
 
 		setControlProperties(nextProperties);
@@ -425,10 +441,24 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		y: parseFloat(target.style.top.replace('px', '')),
 	});
 
-	const readTargetSize = (target: HTMLElement | SVGElement) => ({
-		w: parseFloat(target.style.width.replace('px', '')),
-		h: parseFloat(target.style.height.replace('px', '')),
-	});
+	const readTargetSize = (target: HTMLElement | SVGElement) => {
+		const element = target as HTMLElement;
+		const w = parseFloat(element.style.width);
+		const h = parseFloat(element.style.height);
+		// Content-sized blocks (auto width or height) have no pixel size set.
+		return {
+			w: Number.isFinite(w) ? w : element.offsetWidth,
+			h: Number.isFinite(h) ? h : element.offsetHeight,
+		};
+	};
+
+	const textSizingOf = (id: string): TextSizing | undefined => {
+		if (currentControls.find((item) => item.id === id)?.type !== 'text') {
+			return undefined;
+		}
+		const stored = readProperty(`${id}-sizing`).value;
+		return isTextSizing(stored) ? stored : 'fixed';
+	};
 
 	const readTargetTransform = (target: HTMLElement | SVGElement) =>
 		target.style.transform;
@@ -657,7 +687,36 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					/* Only one of resizable, scalable, warpable can be used. */
 					resizable={!warp}
 					throttleResize={0}
-					onResizeStart={({ target }) => {
+					onResizeStart={({ target, direction }: OnResizeStart) => {
+						const sizing = textSizingOf(controlID);
+						if (sizing) {
+							// Text blocks switch sizing mode with the handle; the size
+							// and the mode are recorded together when the drag ends.
+							const element = target as HTMLElement;
+							const size = {
+								w: element.offsetWidth,
+								h: element.offsetHeight,
+							};
+							const nextSizing = sizingAfterResize(
+								sizing,
+								direction,
+								lockAspect,
+							);
+							textResize.current = {
+								size,
+								sizing,
+								nextSizing,
+								style: {
+									width: element.style.width,
+									height: element.style.height,
+								},
+							};
+							// Start the drag from the box the content gave the block.
+							element.style.width = `${size.w}px`;
+							if (nextSizing === 'fixed') element.style.height = `${size.h}px`;
+							return;
+						}
+
 						setPastHistory([
 							...pastHistory,
 							{
@@ -672,8 +731,13 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					onResize={({ target, width, height, delta }: OnResize) => {
 						// console.log('onResize', target);
 						const nextSize = clampResizeDimensions(target, width, height);
+						// Text with a fixed width wraps: its height follows the text.
+						const heightFollowsContent =
+							textResize.current?.nextSizing === 'fixed-width';
 						delta[0] !== 0 && (target.style.width = `${nextSize.width}px`);
-						delta[1] !== 0 && (target.style.height = `${nextSize.height}px`);
+						delta[1] !== 0 &&
+							!heightFollowsContent &&
+							(target.style.height = `${nextSize.height}px`);
 					}}
 					onResizeGroup={({ events }: any) => {
 						events.forEach(({ target, width, height, delta }: any) => {
@@ -683,10 +747,46 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						});
 					}}
 					onResizeGroupEnd={({ targets }: any) => {
-						syncGroupTargetsToStore(targets);
+						syncGroupTargetsToStore(targets, true);
 						setFutureHistory([]);
 					}}
-					onResizeEnd={({ target }) => {
+					onResizeEnd={({ target, isDrag }: OnResizeEnd) => {
+						const text = textResize.current;
+						if (text) {
+							textResize.current = null;
+							const element = target as HTMLElement;
+
+							if (!isDrag) {
+								element.style.width = text.style.width;
+								element.style.height = text.style.height;
+								return;
+							}
+
+							if (text.nextSizing !== 'fixed') element.style.height = 'auto';
+							const size = {
+								w: element.offsetWidth,
+								h: element.offsetHeight,
+							};
+							commitBatch([
+								{
+									id: `${controlID}-control_size`,
+									previous: text.size,
+									next: size,
+								},
+								...(text.nextSizing !== text.sizing
+									? [
+											{
+												id: `${controlID}-sizing`,
+												previous: text.sizing,
+												next: text.nextSizing,
+											},
+										]
+									: []),
+							]);
+							setControlSize(size);
+							return;
+						}
+
 						const nextSize = readTargetSize(target);
 
 						setControlSize(nextSize);

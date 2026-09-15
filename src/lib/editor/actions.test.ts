@@ -149,7 +149,7 @@ describe('editor actions', () => {
 				width: 82,
 				height: 36,
 				rotation: 30,
-				properties: { text: 'Hello' },
+				properties: { text: 'Hello', sizing: 'auto' },
 			}),
 		]);
 	});
@@ -210,18 +210,28 @@ describe('editor actions', () => {
 		expect(window.location.pathname).toBe('/editor');
 	});
 
-	it('resizes text blocks to fit their text unless a size is given', () => {
+	it('sizes new text blocks to their text and fixes what a size sets', () => {
 		const block = addBlock({
 			type: 'text',
 			properties: { text: 'Two\nlines', textSize: '40', isBold: true },
 		});
+		// Estimated box, used to center the block before it renders.
 		expect(pending(`${block.id}-control_size`)).toEqual({ w: 152, h: 120 });
+		expect(pending(`${block.id}-sizing`)).toBe('auto');
 
-		updateBlock(block.id, { properties: { textSize: '20' } });
-		expect(pending(`${block.id}-control_size`)).toEqual({ w: 76, h: 60 });
+		updateBlock(block.id, { width: 300 });
+		expect(pending(`${block.id}-sizing`)).toBe('fixed-width');
 
-		updateBlock(block.id, { width: 300, properties: { text: 'Longer text' } });
-		expect(pending(`${block.id}-control_size`)).toEqual({ w: 300, h: 60 });
+		updateBlock(block.id, { height: 80 });
+		expect(pending(`${block.id}-sizing`)).toBe('fixed');
+
+		// An explicit mode wins over the size.
+		updateBlock(block.id, { width: 200, properties: { sizing: 'auto' } });
+		expect(pending(`${block.id}-sizing`)).toBe('auto');
+
+		expect(pending(`${addBlock({ type: 'text', width: 240 }).id}-sizing`)).toBe(
+			'fixed-width',
+		);
 
 		expect(estimateTextSize('abc', Number.NaN, false)).toEqual({
 			width: 54,

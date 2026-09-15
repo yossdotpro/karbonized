@@ -6,9 +6,12 @@ import { NumberInput } from '../CustomControls/NumberInput';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
 import { Label } from '../ui/label';
-import { Input } from '../ui/input';
+import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
+import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import { Type } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { type TextSizing, TEXT_SIZING_OPTIONS } from '@/lib/blocks/catalog';
 
 interface Props {
 	id: string;
@@ -25,6 +28,11 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 		false,
 		`${id}-isUnderline`,
 	);
+	// Blocks saved before sizing modes existed keep their fixed box.
+	const [sizing, setSizing] = useControlState<TextSizing>(
+		'fixed',
+		`${id}-sizing`,
+	);
 
 	return (
 		<>
@@ -37,6 +45,18 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 				minWidth={'50px'}
 				maxWidth={'2000px'}
 				maxHeight={'2000px'}
+				autoSize={
+					sizing === 'auto'
+						? 'both'
+						: sizing === 'fixed-width'
+							? 'height'
+							: 'none'
+				}
+				onSizeInput={(axis) => {
+					// Typing a width keeps the height automatic; a height fixes both.
+					if (sizing === 'fixed') return;
+					setSizing(axis === 'w' ? 'fixed-width' : 'fixed');
+				}}
 				menu={
 					<>
 						<CustomCollapse
@@ -85,17 +105,43 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 								</Button>
 							</div>
 
-							<div className='flex flex-auto flex-row text-xs'>
-								<Label className='my-auto text-xs text-muted-foreground'>
-									Text
-								</Label>
-								<Input
-									className='ml-2 h-8 flex w-full flex-auto text-sm'
-									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
+							<div className='flex flex-col gap-1.5 text-xs'>
+								<Label className='text-xs text-muted-foreground'>Text</Label>
+								<Textarea
+									className='min-h-16 text-sm'
+									rows={2}
+									onChange={(ev) => {
 										setText(ev.target.value);
 									}}
 									value={text}
-								></Input>
+								></Textarea>
+							</div>
+
+							<div className='flex flex-col gap-1.5 text-xs'>
+								<Label className='text-xs text-muted-foreground'>
+									Resizing
+								</Label>
+								<ToggleGroup
+									type='single'
+									variant='outline'
+									size='sm'
+									className='w-full'
+									value={sizing}
+									onValueChange={(value) =>
+										value && setSizing(value as TextSizing)
+									}
+								>
+									{TEXT_SIZING_OPTIONS.map((option) => (
+										<ToggleGroupItem
+											key={option.value}
+											value={option.value}
+											title={option.hint}
+											className='flex-1 text-xs'
+										>
+											{option.label}
+										</ToggleGroupItem>
+									))}
+								</ToggleGroup>
 							</div>
 
 							<div className='flex flex-auto flex-row text-xs'>
@@ -125,9 +171,14 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 			>
 				<p
 					style={{ color, fontSize: textSize + 'px' }}
-					className={`my-auto flex flex-auto select-none overflow-hidden whitespace-pre-wrap hover:border hover:border-blue-500 ${
-						isBold && 'poppins-font-family font-bold'
-					} ${isItalic && 'italic'} ${isUnderline && 'underline'}`}
+					className={cn(
+						// An outline, not a border: the hover must not resize the block.
+						'my-auto flex flex-auto select-none overflow-hidden whitespace-pre-wrap hover:outline hover:outline-1 hover:outline-blue-500',
+						sizing !== 'fixed' && 'break-words',
+						isBold && 'poppins-font-family font-bold',
+						isItalic && 'italic',
+						isUnderline && 'underline',
+					)}
 				>
 					{text}
 				</p>

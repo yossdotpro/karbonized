@@ -12,6 +12,7 @@ import {
 } from '@/lib/canvas/selection';
 import { generateNewId } from '@/lib/utils';
 import { getRandomNumber } from '@/utils/getRandom';
+import { isTextSizing, sizingForSize } from '@/lib/blocks/text-sizing';
 import {
 	HTML_BLOCK_CODE_KEYS,
 	getBlockProperties,
@@ -382,7 +383,8 @@ export const addBlock = (input: AddBlockInput): Item => {
 		isVisible: true,
 	};
 
-	// Text blocks don't grow with their text: size them to fit it.
+	// New text blocks fit their text once rendered; estimate that box now so
+	// they can be centered.
 	const fitted =
 		input.type === 'text' &&
 		input.width === undefined &&
@@ -417,6 +419,9 @@ export const addBlock = (input: AddBlockInput): Item => {
 	};
 	if (input.rotation !== undefined) {
 		initial.transform = withRotation('', input.rotation);
+	}
+	if (input.type === 'text' && !isTextSizing(input.properties?.sizing)) {
+		initial.sizing = sizingForSize('auto', input);
 	}
 
 	const controls = useControlsStore.getState();
@@ -453,29 +458,24 @@ export const updateBlock = (id: string, input: UpdateBlockInput): void => {
 		controls.toggleControlLock(id, requireWorkspace());
 	}
 
-	const textChanged =
+	const properties = { ...input.properties };
+	// Giving a text block a size fixes that dimension (as resizing it does).
+	if (
 		block.type === 'text' &&
-		input.width === undefined &&
-		input.height === undefined &&
-		['text', 'textSize', 'isBold'].some(
-			(key) => input.properties?.[key] !== undefined,
+		properties.sizing === undefined &&
+		(input.width !== undefined || input.height !== undefined)
+	) {
+		const current = propertyValue(block, 'sizing');
+		const next = sizingForSize(
+			isTextSizing(current) ? current : 'fixed',
+			input,
 		);
-	const value = (key: string) =>
-		input.properties?.[key] ?? propertyValue(block, key);
-	const geometry = textChanged
-		? {
-				...input,
-				...estimateTextSize(
-					String(value('text')),
-					Number(value('textSize')),
-					value('isBold') === true,
-				),
-			}
-		: input;
+		if (next !== current) properties.sizing = next;
+	}
 
 	setBlockProperties(id, {
-		...input.properties,
-		...geometryProperties(block, geometry),
+		...properties,
+		...geometryProperties(block, input),
 	});
 };
 

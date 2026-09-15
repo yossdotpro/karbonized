@@ -249,10 +249,16 @@ export const LeftPanel: React.FC = () => {
 				icon: Type,
 				label: 'Text',
 				action: () => {
+					const id = `text-${getRandomNumber()}`;
+					// New text blocks fit their text.
+					addInitialProperty(
+						{ id: `${id}-sizing`, value: 'auto' },
+						currentWorkspaceID,
+					);
 					addControl(
 						{
 							type: 'text',
-							id: `text-${getRandomNumber()}`,
+							id,
 							isSelectable: true,
 							isDeleted: false,
 							name: `text ${getElementsByType('text')}`,
@@ -416,7 +422,9 @@ export const LeftPanel: React.FC = () => {
 		setCrop,
 		setWarp,
 		addControl,
+		addInitialProperty,
 		currentWorkspace,
+		currentWorkspaceID,
 	]);
 
 	// Calculate visible tools based on screen height

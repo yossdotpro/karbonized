@@ -4,7 +4,13 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { type ExportFormat, exportElement } from '@/lib/export/exporter';
-import React, { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import React, {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	type ReactNode,
+} from 'react';
 import { useControlState } from '../../hooks/useControlState';
 import {
 	useWorkspaceStore,
@@ -32,6 +38,13 @@ interface ControlProps {
 	maxWidth?: string;
 	minHeight?: string;
 	minWidth?: string;
+	/**
+	 * Let the content size the block: `both` fits width and height, `height`
+	 * keeps the stored width and grows the height. The stored size follows.
+	 */
+	autoSize?: 'none' | 'both' | 'height';
+	/** The width or height was typed in the position panel. */
+	onSizeInput?: (axis: 'w' | 'h') => void;
 
 	onClick?: () => void;
 	onCreateDynamicBackground?: () => Promise<void> | void;
@@ -53,6 +66,8 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	minWidth = '300px',
 	defaultHeight = '50px',
 	defaultWidth = '80px',
+	autoSize = 'none',
+	onSizeInput,
 	onCreateDynamicBackground,
 }) => {
 	// App Store
@@ -155,6 +170,49 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		false,
 		`${id}-maskRepeat`,
 	);
+
+	/* Blocks sized by their content: keep the stored size in step with it, so
+	   the position panel, alignment and tools see the real box. */
+	const syncContentSize = useRef(() => {});
+	useLayoutEffect(() => {
+		syncContentSize.current = () => {
+			const element = document.getElementById(id);
+			if (!element) return;
+
+			const next = { w: element.offsetWidth, h: element.offsetHeight };
+			if (next.w === Number(size.w) && next.h === Number(size.h)) return;
+
+			// Write the store, not the local state: the block reads it back, and
+			// writing both at once makes them chase each other.
+			const sizeId = `${id}-control_size`;
+			const { ControlProperties, addControlProperty } =
+				useControlsStore.getState();
+			const stored = ControlProperties.find((item) => item.id === sizeId);
+			if (stored?.value?.w !== next.w || stored?.value?.h !== next.h) {
+				addControlProperty(
+					{ id: sizeId, value: next },
+					useWorkspaceStore.getState().currentWorkspaceID,
+				);
+			}
+		};
+	});
+
+	// After every render (content, font size…). Reading the layout works even
+	// when the window is not painting, unlike observers.
+	useLayoutEffect(() => {
+		if (autoSize !== 'none' && visibility) syncContentSize.current();
+	});
+
+	// Changes that don't re-render the block, such as web fonts loading.
+	useEffect(() => {
+		if (autoSize === 'none' || !visibility) return;
+		const element = document.getElementById(id);
+		if (!element) return;
+
+		const observer = new ResizeObserver(() => syncContentSize.current());
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [autoSize, id, visibility]);
 
 	/* Sync the selected control with the shared editor state on selection */
 	useEffect(() => {
@@ -350,8 +408,8 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 								className={`absolute flex flex-auto select-none block-${id}`}
 								style={{
 									zIndex,
-									height: size.h + 'px',
-									width: size.w + 'px',
+									height: autoSize === 'none' ? size.h + 'px' : 'auto',
+									width: autoSize === 'both' ? 'max-content' : size.w + 'px',
 									maxHeight,
 									maxWidth,
 									minHeight,
@@ -435,6 +493,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 					Masks={Masks}
 					controlPos={controlPos}
 					controlSize={controlSize}
+					onSizeInput={onSizeInput}
 					pastHistory={pastHistory}
 					setPastHistory={setPastHistory}
 					setFutureHistory={setFutureHistory}
