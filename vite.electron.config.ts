@@ -58,7 +58,12 @@ export default defineConfig({
 			"@": path.resolve(__dirname, "./src"),
 		},
 	},
-	
+
+	// The web config has different plugins, so sharing the dependency cache
+	// makes every switch between `dev` and `electron:dev` re-optimize all deps
+	// from scratch, which leaves the first load stuck for a long time.
+	cacheDir: 'node_modules/.vite-electron',
+
 	server: {
 		watch: {
 			usePolling: true,
