@@ -151,7 +151,8 @@ export const renderImage = (
 const safeFileName = (name: string) =>
 	name.trim().replace(/[\\/:*?"<>|]+/g, '-') || 'karbonized';
 
-const saveDataUrl = async (
+/** Save a rendered image: save dialog on native targets, download on the web. */
+export const saveDataUrl = async (
 	dataUrl: string,
 	name: string,
 	format: ExportFormat,
