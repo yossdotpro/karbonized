@@ -17,6 +17,7 @@ import {
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
 import { redo, undo } from '@/lib/editor/history';
+import { useBeedlyUI } from '@/lib/beedly/ui-store';
 import {
 	alignSelection,
 	distributeSelection,
@@ -71,6 +72,12 @@ const RightPanel = React.lazy(
 const InfiniteViewer = React.lazy(
 	async () => await import('react-infinite-viewer'),
 );
+const BeedlyPanel = React.lazy(
+	async () => await import('../components/Beedly/BeedlyPanel'),
+);
+const BeedlyCommands = React.lazy(
+	async () => await import('../components/Beedly/BeedlyCommands'),
+);
 
 export const Editor: React.FC = () => {
 	const { viewerRef } = useContext(AppContext);
@@ -91,6 +98,7 @@ export const Editor: React.FC = () => {
 	const aspectRatio = useUIStore((state) => state.lockAspect);
 	const setAspectRatio = useUIStore((state) => state.setLockAspect);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
+	const beedlyOpen = useBeedlyUI((state) => state.panelOpen);
 
 	/* Copy/Paste System */
 	const controlID = useControlsStore((state) => state.currentControlID);
@@ -486,9 +494,21 @@ export const Editor: React.FC = () => {
 						<Suspense>
 							<RightPanel></RightPanel>
 						</Suspense>
+						{beedlyOpen && (
+							<>
+								<ResizableHandle className='w-0 bg-transparent' />
+								<Suspense>
+									<BeedlyPanel />
+								</Suspense>
+							</>
+						)}
 					</ResizablePanelGroup>
 				</div>
 			</div>
+
+			<Suspense>
+				<BeedlyCommands />
+			</Suspense>
 
 			<StatusBar></StatusBar>
 		</div>

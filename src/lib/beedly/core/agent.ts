@@ -110,6 +110,57 @@ export const repairToolResults = (messages: ChatMessage[]): ChatMessage[] => {
 	return repaired;
 };
 
+export const OMITTED_IMAGE = '[Earlier canvas image omitted]';
+
+/**
+ * Replace the images of all but the most recent tool results with a note:
+ * every request resends the whole conversation, and old snapshots only cost
+ * tokens. Images the user attached are kept.
+ */
+export const pruneToolImages = (
+	messages: ChatMessage[],
+	keep = 1,
+): ChatMessage[] => {
+	let kept = 0;
+
+	return messages
+		.slice()
+		.reverse()
+		.map((message) => {
+			if (message.role !== 'user') return message;
+
+			let changed = false;
+			const content = message.content
+				.slice()
+				.reverse()
+				.map((part) => {
+					if (
+						part.type !== 'tool_result' ||
+						!part.content.some((item) => item.type === 'image')
+					) {
+						return part;
+					}
+					if (kept < keep) {
+						kept += 1;
+						return part;
+					}
+					changed = true;
+					return {
+						...part,
+						content: part.content.map((item) =>
+							item.type === 'image'
+								? { type: 'text' as const, text: OMITTED_IMAGE }
+								: item,
+						),
+					};
+				})
+				.reverse();
+
+			return changed ? { ...message, content } : message;
+		})
+		.reverse();
+};
+
 const addUsage = (total: Usage, usage?: Usage) => {
 	if (!usage) return;
 	total.inputTokens = (total.inputTokens ?? 0) + (usage.inputTokens ?? 0);
@@ -164,7 +215,7 @@ export async function* runAgent(
 			for await (const event of stream(
 				profile,
 				transport,
-				{ system, messages, tools: toolSpecs },
+				{ system, messages: pruneToolImages(messages), tools: toolSpecs },
 				signal,
 			)) {
 				if (event.type === 'done') {

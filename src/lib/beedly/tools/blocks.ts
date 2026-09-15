@@ -18,6 +18,7 @@ import {
 	updateBlock,
 	waitForBlock,
 } from '@/lib/editor/actions';
+import { languages } from '@/utils/Languages';
 import { themes } from '@/utils/PrismThemes';
 import { ToolError, defineTool } from './registry';
 
@@ -27,6 +28,30 @@ const blockTypes = BLOCK_TYPES.map((spec) => spec.type) as [
 ];
 
 const HTML_CODE_KEYS = ['html', 'css', 'js'];
+
+const themeNames = themes.map((theme) => theme.label);
+
+/** Common short names models use for Prism language ids. */
+const LANGUAGE_ALIASES: Record<string, string> = {
+	ts: 'typescript',
+	js: 'javascript',
+	py: 'python',
+	sh: 'bash',
+	shell: 'bash',
+	zsh: 'bash',
+	html: 'markup',
+	xml: 'markup',
+	svg: 'markup',
+	rs: 'rust',
+	golang: 'go',
+	yml: 'yaml',
+	md: 'markdown',
+	'c++': 'cpp',
+	'c#': 'csharp',
+	cs: 'csharp',
+	kt: 'kotlin',
+	rb: 'ruby',
+};
 
 /** Check property values against the catalog; returns normalized values. */
 export const validateBlockProperties = (
@@ -57,8 +82,36 @@ export const validateBlockProperties = (
 		}
 
 		const result = validatePropertyValue(spec, value);
-		if (result.ok) values[key] = result.value;
-		else errors.push(result.error);
+		if (!result.ok) {
+			errors.push(result.error);
+			return;
+		}
+
+		// Option lists too long for the catalog.
+		if (type === 'code' && key === 'lang') {
+			const lang = String(result.value).toLowerCase();
+			const id = LANGUAGE_ALIASES[lang] ?? lang;
+			if (!languages.includes(id)) {
+				errors.push(
+					`Unknown language "${lang}". Use a Prism id such as typescript, tsx, javascript, python, rust, go, bash or json.`,
+				);
+				return;
+			}
+			values[key] = id;
+			return;
+		}
+		if (
+			type === 'code' &&
+			key === 'theme' &&
+			!themeNames.includes(String(result.value))
+		) {
+			errors.push(
+				`Unknown theme "${String(result.value)}". Themes: ${themeNames.join(', ')}`,
+			);
+			return;
+		}
+
+		values[key] = result.value;
 	});
 
 	if (errors.length > 0) throw new ToolError(errors.join('\n'));
@@ -146,7 +199,10 @@ export const addBlockTool = defineTool({
 		return addBlock({ ...args, properties: values });
 	},
 	settle: async (block) => {
-		await waitForBlock(block.id);
+		// Let the block run its mount effects (they may adjust properties).
+		if (await waitForBlock(block.id)) {
+			await new Promise((resolve) => setTimeout(resolve, 80));
+		}
 		return compactBlock(block.id);
 	},
 });

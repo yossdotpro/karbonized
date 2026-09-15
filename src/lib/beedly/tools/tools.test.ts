@@ -125,6 +125,37 @@ describe('executeTool', () => {
 		});
 	});
 
+	it('folds steps recorded while a tool settles into its undo step', async () => {
+		const tool = defineTool({
+			name: 'two_steps',
+			title: 'Two steps',
+			description: 'Changes something, then a block reacts.',
+			input: z.object({}),
+			mutates: true,
+			execute: () =>
+				useHistoryStore
+					.getState()
+					.commitBatch([{ id: 'a-pos', previous: 1, next: 2 }]),
+			settle: async () => {
+				await Promise.resolve();
+				useHistoryStore
+					.getState()
+					.commitBatch([{ id: 'a-color', previous: 'red', next: 'blue' }]);
+			},
+		});
+
+		const pending = executeTool([tool], 'two_steps', {}, context);
+		await vi.advanceTimersByTimeAsync(1000);
+		const execution = await pending;
+		expect(useHistoryStore.getState().pastHistory).toEqual([
+			execution.historyEntry,
+		]);
+		expect(execution.historyEntry?.value).toEqual([
+			{ id: 'a-pos', value: 1 },
+			{ id: 'a-color', value: 'red' },
+		]);
+	});
+
 	it('adds a block as one undo step and returns it', async () => {
 		const execution = await run('add_block', {
 			type: 'text',
@@ -162,6 +193,30 @@ describe('executeTool', () => {
 		});
 		expect(text(invalid)).toContain('hex color');
 		expect(workspace().controls).toHaveLength(0);
+	});
+
+	it('normalizes code languages and rejects unknown ones', async () => {
+		const added = JSON.parse(
+			text(
+				await run('add_block', {
+					type: 'code',
+					properties: { lang: 'TS', theme: 'atomDark' },
+				}),
+			),
+		);
+		expect(added.properties).toMatchObject({
+			lang: 'typescript',
+			theme: 'atomDark',
+		});
+
+		expect(
+			text(
+				await run('update_block', {
+					id: added.id,
+					properties: { lang: 'klingon', theme: 'neon' },
+				}),
+			),
+		).toMatch(/Unknown language "klingon"[\s\S]*Unknown theme "neon"/);
 	});
 
 	it('updates several things of a block in one undo step', async () => {

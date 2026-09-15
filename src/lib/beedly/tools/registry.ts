@@ -70,10 +70,11 @@ export interface ToolDescriptor {
 export type JsonSchema = Record<string, unknown>;
 
 export const toJsonSchema = (schema: z.ZodType): JsonSchema => {
-	const { $schema: _ignored, ...json } = z.toJSONSchema(schema, {
+	const json = z.toJSONSchema(schema, {
 		io: 'input',
 		unrepresentable: 'any',
 	}) as JsonSchema;
+	delete json.$schema;
 	return json;
 };
 
@@ -112,6 +113,17 @@ export interface ToolExecution {
 	historyEntry: History | null;
 }
 
+/** Time for blocks to apply a change and re-render before the next call. */
+const EDITOR_SETTLE_MS = 60;
+
+/**
+ * Blocks apply property changes in effects, so the canvas reflects a change a
+ * moment later. Tools that measure rendered blocks (align, distribute) must
+ * not run before that, or they would read stale positions.
+ */
+const settleEditor = () =>
+	new Promise((resolve) => setTimeout(resolve, EDITOR_SETTLE_MS));
+
 const describeError = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
@@ -140,27 +152,46 @@ export const executeTool = async (
 		};
 	}
 
-	let historyEntry: History | null = null;
+	const history = useHistoryStore.getState();
+	const before = new Set(history.pastHistory);
+
+	/**
+	 * One undo step for the whole call: the transaction, plus steps that blocks
+	 * record on their own while they render (e.g. a code block applying its
+	 * theme colors) and steps of commands it ran.
+	 */
+	const collapseCall = (): History | null =>
+		useHistoryStore
+			.getState()
+			.collapseTrailing(
+				new Set(
+					useHistoryStore
+						.getState()
+						.pastHistory.filter((entry) => !before.has(entry)),
+				),
+			);
 
 	try {
 		let output: unknown;
 
 		if (tool.mutates) {
-			const run = useHistoryStore
-				.getState()
-				.transaction(() => tool.execute(parsed.data, context));
-			historyEntry = run.entry;
-			output = run.result;
+			output = history.transaction(() =>
+				tool.execute(parsed.data, context),
+			).result;
 			if (output instanceof Promise) {
 				throw new Error(`Tool ${name} must mutate synchronously.`);
 			}
+			await settleEditor();
 		} else {
 			output = await tool.execute(parsed.data, context);
 		}
 
 		const settled = tool.settle ? await tool.settle(output, context) : output;
-		return { result: toToolResult(settled), historyEntry };
+		return { result: toToolResult(settled), historyEntry: collapseCall() };
 	} catch (error) {
-		return { result: errorResult(describeError(error)), historyEntry };
+		return {
+			result: errorResult(describeError(error)),
+			historyEntry: collapseCall(),
+		};
 	}
 };

@@ -2,7 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { chunksOf, collect, sseBody } from '../test-utils';
 import { defineTool, textResult } from '../tools/registry';
-import { type AgentEvent, repairToolResults, runAgent } from './agent';
+import {
+	type AgentEvent,
+	OMITTED_IMAGE,
+	pruneToolImages,
+	repairToolResults,
+	runAgent,
+} from './agent';
 import { type ProviderProfile, listModels, streamChat } from './client';
 import { ProviderError, networkError } from './errors';
 import type { ChatMessage, HttpRequest, StreamEvent, Transport } from './types';
@@ -246,6 +252,45 @@ describe('runAgent', () => {
 			},
 			{ type: 'finish', reason: 'aborted', usage: {} },
 		]);
+	});
+});
+
+describe('pruneToolImages', () => {
+	it('keeps only the latest tool result image', () => {
+		const snapshot = (callId: string): ChatMessage => ({
+			role: 'user',
+			content: [
+				{
+					type: 'tool_result',
+					callId,
+					name: 'get_canvas_snapshot',
+					content: [
+						{ type: 'text', text: 'Canvas' },
+						{ type: 'image', mimeType: 'image/png', data: callId },
+					],
+				},
+			],
+		});
+		const attached: ChatMessage = {
+			role: 'user',
+			content: [{ type: 'image', mimeType: 'image/png', data: 'mine' }],
+		};
+
+		const pruned = pruneToolImages([
+			attached,
+			snapshot('old'),
+			userMessage,
+			snapshot('new'),
+		]);
+
+		expect(pruned[0]).toBe(attached);
+		expect(pruned[1].content[0]).toMatchObject({
+			content: [
+				{ type: 'text', text: 'Canvas' },
+				{ type: 'text', text: OMITTED_IMAGE },
+			],
+		});
+		expect(pruned[3]).toEqual(snapshot('new'));
 	});
 });
 

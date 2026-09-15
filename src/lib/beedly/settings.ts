@@ -17,6 +17,8 @@ interface BeedlySettingsState {
 	activeProfileId: string | null;
 	/** Profiles with a stored key (keys themselves live in the key store). */
 	profilesWithKey: string[];
+	/** `profilesWithKey` was read from the key store at least once. */
+	keysChecked: boolean;
 }
 
 interface BeedlySettingsActions {
@@ -61,6 +63,7 @@ export const useBeedlySettings = create<BeedlySettings>()(
 			profiles: [],
 			activeProfileId: null,
 			profilesWithKey: [],
+			keysChecked: false,
 
 			addProfile: (kind) => {
 				const profile = createProfile(kind, get().profiles);
@@ -126,6 +129,7 @@ export const useBeedlySettings = create<BeedlySettings>()(
 				);
 				set({
 					profilesWithKey: results.filter((id): id is string => id !== null),
+					keysChecked: true,
 				});
 			},
 		}),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { chunksOf, collect, splitEvery } from '../test-utils';
-import { withAuthHeader } from '../transport/browser';
+import { decodeBody, withAuthHeader } from '../transport/browser';
 import { REDACTED, redactSecrets } from './redact';
 import { parseSSE } from './sse';
 
@@ -72,5 +72,29 @@ describe('withAuthHeader', () => {
 		expect(
 			withAuthHeader({ ...request, auth: { header: 'x-api-key' } }, 'k'),
 		).toMatchObject({ 'x-api-key': 'k' });
+	});
+});
+
+describe('decodeBody', () => {
+	it('decodes chunks and stops with an AbortError when aborted', async () => {
+		const encoder = new TextEncoder();
+		const controller = new AbortController();
+		// A body that never ends on its own.
+		const body = new ReadableStream<Uint8Array>({
+			start(stream) {
+				stream.enqueue(encoder.encode('héllo'));
+			},
+		});
+
+		const chunks: string[] = [];
+		const reading = (async () => {
+			for await (const chunk of decodeBody(body, controller.signal)) {
+				chunks.push(chunk);
+				controller.abort();
+			}
+		})();
+
+		await expect(reading).rejects.toMatchObject({ name: 'AbortError' });
+		expect(chunks).toEqual(['héllo']);
 	});
 });
