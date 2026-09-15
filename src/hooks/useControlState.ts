@@ -68,6 +68,7 @@ export function useControlState<T>(
 				(prop === '/src/assets/logo.svg' ||
 					prop === '/src/assets/karbonized.svg')
 			) {
+				// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the controls store
 				setState(default_logo as T);
 			} else {
 				setState(prop);
@@ -86,6 +87,7 @@ export function useControlState<T>(
 				: undefined;
 
 		if (entry && serialize(entry.value) !== serialize(state)) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the history store
 			setState(entry.value);
 		}
 	}, [controlState, id, state]);
@@ -96,6 +98,7 @@ export function useControlState<T>(
 			storedProperty !== undefined &&
 			serialize(storedProperty.value) !== serialize(state)
 		) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the controls store
 			setState(storedProperty.value);
 		}
 	}, [ControlProperties, controlRef, currentControlID, id]);

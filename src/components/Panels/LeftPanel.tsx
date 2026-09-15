@@ -458,14 +458,16 @@ export const LeftPanel: React.FC = () => {
 		})),
 	);
 
-	useEffect(() => {
+	const [syncedMode, setSyncedMode] = useState(workspaceMode);
+	if (workspaceMode !== syncedMode) {
+		setSyncedMode(workspaceMode);
 		if (workspaceMode === 'design') {
 			setShowMenu(true);
 			setTab('hierarchy');
 		} else if (workspaceMode !== 'custom') {
 			setShowMenu(false);
 		}
-	}, [workspaceMode]);
+	}
 
 	return (
 		<div

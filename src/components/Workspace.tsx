@@ -147,6 +147,13 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		return getGroupDescendantIds(currentControls, currentControl.id);
 	}, [currentControl, currentControls]);
 
+	const canTransformControl =
+		currentControl !== undefined &&
+		!currentControl.locked &&
+		!currentControl.isDeleted &&
+		Boolean(currentControl.isVisible);
+	const showMoveable = selectedControlIDs.length > 1 || canTransformControl;
+
 	const [moveableTarget, setMoveableTarget] = useState<
 		HTMLElement | HTMLElement[] | null
 	>(null);
@@ -197,15 +204,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 			};
 		}
 
-		if (
-			currentControl === undefined ||
-			currentControl.locked ||
-			currentControl.isDeleted ||
-			!currentControl.isVisible
-		) {
-			setMoveableTarget(null);
-			return;
-		}
+		if (!canTransformControl) return;
 
 		if (currentControl.type === 'group') {
 			let frame = 0;
@@ -266,6 +265,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		currentControls,
 		currentWorkspaceID,
 		selectedControlIDs,
+		canTransformControl,
 	]);
 
 	const syncGroupTargetsToStore = (
@@ -550,7 +550,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 			{editing && !isExporting && (
 				<Moveable
 					useResizeObserver
-					target={moveableTarget}
+					target={showMoveable ? moveableTarget : null}
 					origin={true}
 					/* Resize event edges */
 					edge={false}

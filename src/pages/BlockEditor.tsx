@@ -201,7 +201,6 @@ const BlockEditor: React.FC = () => {
 
 	const [activeTab, setActiveTab] = useState<CodeTab>('html');
 	const [showPreview, setShowPreview] = useState(true);
-	const [isDirty, setIsDirty] = useState(false);
 	const [showExplorer, setShowExplorer] = useState(true);
 	const [activePreviewTab, setActivePreviewTab] =
 		useState<PreviewTab>('preview');
@@ -311,7 +310,6 @@ const BlockEditor: React.FC = () => {
 			...previousState,
 			cssContent: nextCSS,
 		}));
-		setIsDirty(true);
 	};
 
 	const handleUpdateJSVariable = (varName: string, newValue: any) => {
@@ -325,26 +323,39 @@ const BlockEditor: React.FC = () => {
 			...previousState,
 			jsContent: nextJS,
 		}));
-		setIsDirty(true);
 	};
 
-	useEffect(() => {
-		if (blockId) {
-			const findProp = (suffix: string) =>
-				ControlProperties.find((p) => p.id === `${blockId}-${suffix}`)?.value;
+	/* Load the block's stored code whenever the block or its properties change */
+	const [loadedFrom, setLoadedFrom] = useState<{
+		blockId?: string;
+		properties?: typeof ControlProperties;
+	}>({});
 
-			const newState = {
-				htmlContent: findProp('html') || defaultHTMLContent,
-				cssContent: findProp('css') || defaultCSSContent,
-				jsContent: findProp('js') || defaultJSContent,
-				allowScriptExecution: findProp('allow-scripts') || false,
-			};
+	if (
+		blockId &&
+		(loadedFrom.blockId !== blockId ||
+			loadedFrom.properties !== ControlProperties)
+	) {
+		const findProp = (suffix: string) =>
+			ControlProperties.find((p) => p.id === `${blockId}-${suffix}`)?.value;
 
-			setEditorState(newState);
-			setSavedState(newState);
-			setTimeout(() => setIsDirty(false), 100);
-		}
-	}, [blockId, ControlProperties]);
+		const newState = {
+			htmlContent: findProp('html') || defaultHTMLContent,
+			cssContent: findProp('css') || defaultCSSContent,
+			jsContent: findProp('js') || defaultJSContent,
+			allowScriptExecution: findProp('allow-scripts') || false,
+		};
+
+		setLoadedFrom({ blockId, properties: ControlProperties });
+		setEditorState(newState);
+		setSavedState(newState);
+	}
+
+	const isDirty =
+		editorState.htmlContent !== savedState.htmlContent ||
+		editorState.cssContent !== savedState.cssContent ||
+		editorState.jsContent !== savedState.jsContent ||
+		editorState.allowScriptExecution !== savedState.allowScriptExecution;
 
 	const createScopedDocument = (
 		shadowRoot: ShadowRoot,
@@ -465,18 +476,8 @@ const BlockEditor: React.FC = () => {
 					fileUtils,
 				};
 
-				(
-					window as Window & {
-						htmlBlockAPI?: typeof htmlBlockAPI;
-						safeQuerySelector?: typeof safeQuerySelector;
-					}
-				).htmlBlockAPI = htmlBlockAPI;
-				(
-					window as Window & {
-						htmlBlockAPI?: typeof htmlBlockAPI;
-						safeQuerySelector?: typeof safeQuerySelector;
-					}
-				).safeQuerySelector = safeQuerySelector;
+				// Expose the API to block scripts.
+				Object.assign(window, { htmlBlockAPI, safeQuerySelector });
 
 				const parsedJavaScript = parseJavaScript(editorState.jsContent);
 				const actionRegistrations = generateActionRegistrations(
@@ -531,7 +532,6 @@ const BlockEditor: React.FC = () => {
 			});
 
 			setSavedState(editorState);
-			setIsDirty(false);
 
 			setTimeout(() => {
 				import('@/stores').then((m) => {
@@ -617,7 +617,6 @@ const BlockEditor: React.FC = () => {
 			...previousState,
 			allowScriptExecution: checked ?? !previousState.allowScriptExecution,
 		}));
-		setIsDirty(true);
 	};
 
 	const openBinding = (tab: PreviewTab) => {
@@ -803,7 +802,6 @@ const BlockEditor: React.FC = () => {
 			...(activeTab === 'css' && { cssContent: nextValue }),
 			...(activeTab === 'js' && { jsContent: nextValue }),
 		}));
-		setIsDirty(true);
 	};
 
 	const previewTabs: Array<{ id: PreviewTab; label: string; count?: number }> =

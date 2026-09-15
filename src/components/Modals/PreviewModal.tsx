@@ -52,7 +52,7 @@ const CHECKERBOARD: React.CSSProperties = {
 };
 
 export const PreviewModal: React.FC<Props> = ({ open, onClose }) => {
-	const [previewImage, setPreviewImage] = useState('');
+	const [preview, setPreview] = useState({ key: '', image: '' });
 	const [busy, setBusy] = useState<'export' | 'copy' | 'share' | null>(null);
 
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
@@ -69,12 +69,14 @@ export const PreviewModal: React.FC<Props> = ({ open, onClose }) => {
 	const workspaceElement = () => document.getElementById('workspace');
 
 	/* Render a lightweight preview that reflects the transparency setting */
+	const previewKey = `${open}:${transparentOutput}`;
+	const previewImage = preview.key === previewKey ? preview.image : '';
+
 	useEffect(() => {
 		const element = workspaceElement();
 		if (!open || !element) return;
 
 		let cancelled = false;
-		setPreviewImage('');
 
 		renderImage(element, {
 			format: 'png',
@@ -82,7 +84,10 @@ export const PreviewModal: React.FC<Props> = ({ open, onClose }) => {
 			transparent: transparentOutput,
 			quality: 1,
 		})
-			.then((dataUrl) => !cancelled && setPreviewImage(dataUrl))
+			.then(
+				(dataUrl) =>
+					!cancelled && setPreview({ key: previewKey, image: dataUrl }),
+			)
 			.catch((error) => console.error(error));
 
 		return () => {

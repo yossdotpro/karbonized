@@ -1,6 +1,7 @@
 import {
 	type ComponentType,
 	useEffect,
+	useLayoutEffect,
 	useRef,
 	useSyncExternalStore,
 } from 'react';
@@ -103,7 +104,10 @@ export const runCommand = (id: string): boolean => {
  */
 export const useCommands = (commands: Command[]): void => {
 	const latest = useRef(commands);
-	latest.current = commands;
+
+	useLayoutEffect(() => {
+		latest.current = commands;
+	});
 
 	useEffect(() => commandRegistry.register(() => latest.current), []);
 };

@@ -86,19 +86,21 @@ export const RightPanel: React.FC = () => {
 		return () => cancelAnimationFrame(frame);
 	}, [showMenu]);
 
-	useEffect(() => {
+	const [syncedMode, setSyncedMode] = useState(workspaceMode);
+	if (workspaceMode !== syncedMode) {
+		setSyncedMode(workspaceMode);
 		if (workspaceMode === 'edit') {
 			setShowMenu(true);
 		} else if (workspaceMode !== 'custom') {
 			setShowMenu(false);
 		}
-	}, [workspaceMode]);
+	}
 
-	useEffect(() => {
-		if (workspaceTab === 'control') {
-			setTab('control');
-		}
-	}, [workspaceTab]);
+	const [syncedTab, setSyncedTab] = useState(workspaceTab);
+	if (workspaceTab !== syncedTab) {
+		setSyncedTab(workspaceTab);
+		if (workspaceTab === 'control') setTab('control');
+	}
 
 	return (
 		<ResizablePanel

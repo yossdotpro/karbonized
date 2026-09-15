@@ -130,9 +130,7 @@ const SessionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [initialPath] = useState(() => location.pathname);
 	const [landed, setLanded] = useState(false);
 
-	useEffect(() => {
-		if (ready && location.pathname === '/editor') setLanded(true);
-	}, [ready, location.pathname]);
+	if (ready && !landed && location.pathname === '/editor') setLanded(true);
 
 	if (!ready) {
 		return (
