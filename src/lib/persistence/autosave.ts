@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import localforage from 'localforage';
 import { create } from 'zustand';
-import { useControlsStore, useWorkspaceStore } from '@/stores';
+import { useControlsStore, useHistoryStore, useWorkspaceStore } from '@/stores';
 import type { History, Workspace } from '@/types';
 
 /**
  * Session autosave.
  *
- * Workspaces and their control properties are written to IndexedDB (through
- * localforage, so large data URLs fit) a moment after every change, and are
- * restored on startup.
+ * Workspaces, their control properties and the undo history are written to
+ * IndexedDB (through localforage, so large data URLs fit) a moment after every
+ * change, and are restored on startup.
  *
  * Restored properties are loaded as `initialProperties`, not straight into
  * `ControlProperties`: blocks consume initial properties when they mount (see
@@ -20,6 +20,8 @@ import type { History, Workspace } from '@/types';
 const STORAGE_KEY = 'karbonized:session';
 const SCHEMA_VERSION = 1;
 const SAVE_DELAY_MS = 800;
+/** Undo and redo steps kept across reloads (layer snapshots can be large). */
+export const MAX_SAVED_HISTORY = 100;
 
 interface SessionSnapshot {
 	version: number;
@@ -27,6 +29,8 @@ interface SessionSnapshot {
 	workspaces: Workspace[];
 	currentWorkspaceID: string;
 	properties: History[];
+	/** Added after v1 shipped, so it is optional. */
+	history?: { past: History[]; future: History[] };
 }
 
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -77,8 +81,21 @@ const buildSnapshot = (): SessionSnapshot => {
 		properties: collectProperties().filter((item) =>
 			liveIds.has(item.id.split('-').slice(0, 2).join('-')),
 		),
+		history: trimHistory(useHistoryStore.getState()),
 	};
 };
+
+/** The most recent undo steps and the next redo steps, capped. */
+export const trimHistory = ({
+	pastHistory,
+	futureHistory,
+}: {
+	pastHistory: History[];
+	futureHistory: History[];
+}): { past: History[]; future: History[] } => ({
+	past: pastHistory.slice(-MAX_SAVED_HISTORY),
+	future: futureHistory.slice(0, MAX_SAVED_HISTORY),
+});
 
 export const saveSession = async (): Promise<void> => {
 	useAutosaveStatus.setState({ status: 'saving' });
@@ -127,6 +144,17 @@ const restoreSession = async (): Promise<boolean> => {
 			initialProperties: snapshot.properties ?? [],
 			ControlProperties: [],
 			currentControlID: '',
+		});
+
+		useHistoryStore.setState({
+			pastHistory: Array.isArray(snapshot.history?.past)
+				? snapshot.history.past
+				: [],
+			futureHistory: Array.isArray(snapshot.history?.future)
+				? snapshot.history.future
+				: [],
+			// Nothing to apply on mount: blocks restore from their properties.
+			controlState: null,
 		});
 
 		useAutosaveStatus.setState({ status: 'saved', savedAt: snapshot.savedAt });
@@ -192,9 +220,19 @@ export const useSessionAutosave = (): { ready: boolean; restored: boolean } => {
 				},
 			);
 
+			const unsubscribeHistory = useHistoryStore.subscribe((next, previous) => {
+				if (
+					next.pastHistory !== previous.pastHistory ||
+					next.futureHistory !== previous.futureHistory
+				) {
+					scheduleSave();
+				}
+			});
+
 			unsubscribe = () => {
 				unsubscribeWorkspaces();
 				unsubscribeControls();
+				unsubscribeHistory();
 			};
 
 			window.addEventListener('pagehide', flush);

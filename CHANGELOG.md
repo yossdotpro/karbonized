@@ -16,6 +16,7 @@
 - **Multiple selection**: drag on the canvas to select blocks, `Shift`+click to add or remove one, `Ctrl+A` selects every block and `Esc` clears the selection; selected blocks move together
 - **Align and distribute** from the properties panel or with shortcuts (`Alt+A/H/D` left/center/right, `Alt+W/V/S` top/middle/bottom, `Alt+Shift+H/V` distribute); a single block aligns to the canvas
 - Duplicate, delete and arrow keys apply to the whole selection; aligning, distributing and moving several blocks undo in one step
+- **Undo history is saved with the session**: the last 100 steps can still be undone after reloading or reopening the app
 
 ### 🐛 Fixes
 
