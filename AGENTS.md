@@ -140,6 +140,7 @@ Before refactoring platform integration, verify which runtime path is actually u
 - `yarn electron:dev`: desktop development with Electron
 - `yarn build`: web build
 - `yarn electron:build`: desktop build
+- `yarn test`: run the Vitest unit tests
 - `yarn lint`: lint `src` (should report 0 errors)
 - `yarn format`: run Prettier on `src`
 
@@ -161,7 +162,7 @@ Before refactoring platform integration, verify which runtime path is actually u
 - `react-hooks` React Compiler rules (`set-state-in-effect`, `immutability`, `refs`) are warnings: existing code still has those patterns
 - Part of the templates/community system is commented out or incomplete
 - The central store is large and mixes many responsibilities
-- There does not appear to be an automated test suite in the repo
+- Unit tests (Vitest, jsdom) live next to the code as `*.test.ts`; they cover shortcuts, commands, viewer helpers, block parsers and `.kcomponent` files, not React components or canvas interactions
 - TypeScript is pinned to 6.0 because typescript-eslint does not support TS 7 yet
 
 If you make deep changes, manually validate at least:

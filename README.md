@@ -118,6 +118,7 @@ The generated binaries are in `./release/{version}/`. Platform-specific builds a
 ### ✅ Code quality
 
 ``` bash
+yarn test     # Vitest unit tests
 yarn lint     # ESLint (should report no errors)
 yarn format   # Prettier
 ```

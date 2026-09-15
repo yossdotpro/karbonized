@@ -28,6 +28,8 @@
 		"android:build": "yarn build && npx cap sync && cd android && gradle build && cd ..",
 		"android:icons": "npx capacitor-assets generate --android --iconBackgroundColor '#141313' --logoSplashScale '0.6'",
 		"lint": "eslint src",
+		"test": "vitest run",
+		"test:watch": "vitest",
 		"format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
 	},
 	"dependencies": {
@@ -142,6 +144,7 @@
 		"eslint-plugin-react": "^7.37.0",
 		"eslint-plugin-react-hooks": "^7.0.1",
 		"eslint-plugin-react-refresh": "^0.5.2",
+		"jsdom": "^26",
 		"postcss": "^8.5.10",
 		"prettier": "^3.4.2",
 		"react-router-dom": "^6.4.3",
@@ -149,7 +152,8 @@
 		"typescript": "~6.0.3",
 		"vite": "^7.3.0",
 		"vite-plugin-electron": "^0.29.0",
-		"vite-plugin-pwa": "^1.2.0"
+		"vite-plugin-pwa": "^1.2.0",
+		"vitest": "^4.1.11"
 	},
 	"packageManager": "yarn@4.18.0"
 }
