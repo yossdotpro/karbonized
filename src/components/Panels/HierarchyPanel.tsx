@@ -87,7 +87,8 @@ const flattenVisibleTree = (nodes: LayerNode[]): Item[] =>
 	]);
 
 const areStringArraysEqual = (left: string[], right: string[]): boolean =>
-	left.length === right.length && left.every((value, index) => value === right[index]);
+	left.length === right.length &&
+	left.every((value, index) => value === right[index]);
 
 export const HierarchyPanel: React.FC = () => {
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
@@ -150,7 +151,9 @@ export const HierarchyPanel: React.FC = () => {
 		const validIds = new Set(visibleControls.map((item) => item.id));
 		setSelectedLayerIDs((current) => {
 			const nextSelected = current.filter((id) => validIds.has(id));
-			return areStringArraysEqual(current, nextSelected) ? current : nextSelected;
+			return areStringArraysEqual(current, nextSelected)
+				? current
+				: nextSelected;
 		});
 		if (selectionAnchorID !== '' && !validIds.has(selectionAnchorID)) {
 			setSelectionAnchorID('');

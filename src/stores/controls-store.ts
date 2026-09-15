@@ -1,23 +1,23 @@
 import { create } from 'zustand';
 import { getRandomNumber } from '../utils/getRandom';
-import { 
-	cloneControls, 
-	getSubtreeIds, 
+import {
+	cloneControls,
+	getSubtreeIds,
 	generateNewId,
 	moveItemBlock,
 	reorderAmongSiblings,
-	moveToSiblingEdge
+	moveToSiblingEdge,
 } from '../lib/utils';
 import { useWorkspaceStore } from './workspace-store';
 import { useHistoryStore } from './history-store';
-import type { 
-	Item, 
-	History, 
-	LayerMovePosition, 
-	LayerStepDirection, 
+import type {
+	Item,
+	History,
+	LayerMovePosition,
+	LayerStepDirection,
 	LayerEdgePosition,
 	ControlSize,
-	ControlPosition
+	ControlPosition,
 } from '../types';
 
 interface ControlsState {
@@ -44,42 +44,77 @@ interface ControlsActions {
 	getCurrentControl: (currentWorkspace: any) => Item | undefined;
 	getControlsClass: (currentWorkspace: any) => string[];
 	getVisibleControls: (currentWorkspace: any) => Item[];
-	
+
 	// Additional actions that were in the original store
 	addControl: (control: Item, workspaceId: string) => void;
-	
+
 	// Actions that return data instead of directly mutating other stores
-	toggleControlVisibility: (controlId: string, currentWorkspace: any) => {
+	toggleControlVisibility: (
+		controlId: string,
+		currentWorkspace: any,
+	) => {
 		nextControls: Item[];
 		nextSelection: string;
 	};
 	toggleControlLock: (controlId: string, currentWorkspace: any) => Item[];
-	renameControl: (payload: { id: string; name: string }, currentWorkspace: any) => Item[];
-	deleteControl: (controlId: string, currentWorkspace: any) => {
+	renameControl: (
+		payload: { id: string; name: string },
+		currentWorkspace: any,
+	) => Item[];
+	deleteControl: (
+		controlId: string,
+		currentWorkspace: any,
+	) => {
 		nextControls: Item[];
 		nextSelection: string;
 	};
-	duplicateControl: (controlId: string, currentWorkspace: any, workspaceId: string) => {
+	duplicateControl: (
+		controlId: string,
+		currentWorkspace: any,
+		workspaceId: string,
+	) => {
 		nextControls: Item[];
 		newProperties: History[];
 		nextSelection: string;
 	};
-	addGroup: (payload?: { name?: string; parentId?: string | null; childIds?: string[] }, currentWorkspace?: any) => {
+	addGroup: (
+		payload?: { name?: string; parentId?: string | null; childIds?: string[] },
+		currentWorkspace?: any,
+	) => {
 		nextControls: Item[];
 		nextSelection: string;
 	};
-	groupControl: (controlId: string, currentWorkspace: any) => {
+	groupControl: (
+		controlId: string,
+		currentWorkspace: any,
+	) => {
 		nextControls: Item[];
 		nextSelection: string;
 	};
-	ungroupControl: (groupId: string, currentWorkspace: any) => {
+	ungroupControl: (
+		groupId: string,
+		currentWorkspace: any,
+	) => {
 		nextControls: Item[];
 		nextSelection: string;
 	};
 	toggleGroupCollapsed: (controlId: string, currentWorkspace: any) => Item[];
-	moveControlLayer: (payload: { draggedId: string; targetId: string; position: LayerMovePosition }, currentWorkspace: any) => Item[];
-	moveControlByStep: (payload: { id: string; direction: LayerStepDirection }, currentWorkspace: any) => Item[];
-	moveControlToEdge: (payload: { id: string; position: LayerEdgePosition }, currentWorkspace: any) => Item[];
+	moveControlLayer: (
+		payload: {
+			draggedId: string;
+			targetId: string;
+			position: LayerMovePosition;
+		},
+		currentWorkspace: any,
+	) => Item[];
+	moveControlByStep: (
+		payload: { id: string; direction: LayerStepDirection },
+		currentWorkspace: any,
+	) => Item[];
+	moveControlToEdge: (
+		payload: { id: string; position: LayerEdgePosition },
+		currentWorkspace: any,
+	) => Item[];
 }
 
 type ControlsStore = ControlsState & ControlsActions;
@@ -131,26 +166,29 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 	initialProperties: [],
 	readyToSave: false,
 
-	getCurrentControlProperties: () => get().ControlProperties.filter(item =>
-		item.id.includes(get().currentControlID)
-	),
+	getCurrentControlProperties: () =>
+		get().ControlProperties.filter((item) =>
+			item.id.includes(get().currentControlID),
+		),
 
-	getCurrentControl: (currentWorkspace: any) => 
-		currentWorkspace?.controls.find((item: Item) => item.id === get().currentControlID),
+	getCurrentControl: (currentWorkspace: any) =>
+		currentWorkspace?.controls.find(
+			(item: Item) => item.id === get().currentControlID,
+		),
 
 	getControlsClass: (currentWorkspace: any) => {
 		const controlsClass: string[] = [];
-		
+
 		currentWorkspace?.controls.forEach((item: Item) => {
 			if (item.id !== get().currentControlID) {
 				controlsClass.push('.block-' + item.id);
 			}
 		});
-		
+
 		return controlsClass;
 	},
 
-	getVisibleControls: (currentWorkspace: any) => 
+	getVisibleControls: (currentWorkspace: any) =>
 		currentWorkspace?.controls?.filter((item: Item) => !item.isDeleted) ?? [],
 
 	setCurrentControlID: (id) => {
@@ -168,38 +206,48 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 
 	addControlProperty: (payload, workspaceId) => {
 		const state = get();
-		const element = state.ControlProperties.filter(item => item.id === payload.id);
+		const element = state.ControlProperties.filter(
+			(item) => item.id === payload.id,
+		);
 
 		if (element.length === 0) {
-			set(state => ({
-				ControlProperties: [...state.ControlProperties, {
-					...payload,
-					workspace: workspaceId,
-				}]
+			set((state) => ({
+				ControlProperties: [
+					...state.ControlProperties,
+					{
+						...payload,
+						workspace: workspaceId,
+					},
+				],
 			}));
 		} else {
-			set(state => ({
-				ControlProperties: state.ControlProperties.map(item =>
+			set((state) => ({
+				ControlProperties: state.ControlProperties.map((item) =>
 					item.id === payload.id
 						? { id: payload.id, value: payload.value, workspace: workspaceId }
-						: item
-				)
+						: item,
+				),
 			}));
 		}
 	},
 
 	addInitialProperty: (payload, workspaceId) => {
-		set(state => ({
-			initialProperties: [...state.initialProperties, {
-				...payload,
-				workspace: workspaceId,
-			}]
+		set((state) => ({
+			initialProperties: [
+				...state.initialProperties,
+				{
+					...payload,
+					workspace: workspaceId,
+				},
+			],
 		}));
 	},
 
 	removeInitialProperty: (id) => {
-		set(state => ({
-			initialProperties: state.initialProperties.filter(item => item.id !== id)
+		set((state) => ({
+			initialProperties: state.initialProperties.filter(
+				(item) => item.id !== id,
+			),
 		}));
 	},
 
@@ -234,32 +282,47 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 	toggleControlVisibility: (controlId, currentWorkspace) => {
 		if (!currentWorkspace) return { nextControls: [], nextSelection: '' };
 
-		const target = currentWorkspace.controls.find((item: Item) => item.id === controlId);
+		const target = currentWorkspace.controls.find(
+			(item: Item) => item.id === controlId,
+		);
 		if (!target) return { nextControls: [], nextSelection: '' };
 
-		const subtreeIds = new Set(getSubtreeIds(currentWorkspace.controls, controlId));
+		const subtreeIds = new Set(
+			getSubtreeIds(currentWorkspace.controls, controlId),
+		);
 		const nextVisibility = !target.isVisible;
 		const nextControls = currentWorkspace.controls.map((item: Item) =>
-			subtreeIds.has(item.id) ? { ...item, isVisible: nextVisibility } : item
+			subtreeIds.has(item.id) ? { ...item, isVisible: nextVisibility } : item,
 		);
-		const nextSelection = !nextVisibility && subtreeIds.has(get().currentControlID)
-			? ''
-			: get().currentControlID;
+		const nextSelection =
+			!nextVisibility && subtreeIds.has(get().currentControlID)
+				? ''
+				: get().currentControlID;
 
-		commitControlsMutation(get, set, currentWorkspace, nextControls, nextSelection);
+		commitControlsMutation(
+			get,
+			set,
+			currentWorkspace,
+			nextControls,
+			nextSelection,
+		);
 		return { nextControls, nextSelection };
 	},
 
 	toggleControlLock: (controlId, currentWorkspace) => {
 		if (!currentWorkspace) return [];
 
-		const target = currentWorkspace.controls.find((item: Item) => item.id === controlId);
+		const target = currentWorkspace.controls.find(
+			(item: Item) => item.id === controlId,
+		);
 		if (!target) return [];
 
-		const subtreeIds = new Set(getSubtreeIds(currentWorkspace.controls, controlId));
+		const subtreeIds = new Set(
+			getSubtreeIds(currentWorkspace.controls, controlId),
+		);
 		const nextLocked = !target.locked;
 		const nextControls = currentWorkspace.controls.map((item: Item) =>
-			subtreeIds.has(item.id) ? { ...item, locked: nextLocked } : item
+			subtreeIds.has(item.id) ? { ...item, locked: nextLocked } : item,
 		);
 
 		commitControlsMutation(get, set, currentWorkspace, nextControls);
@@ -273,7 +336,7 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		if (nextName === '') return [];
 
 		const nextControls = currentWorkspace.controls.map((item: Item) =>
-			item.id === payload.id ? { ...item, name: nextName } : item
+			item.id === payload.id ? { ...item, name: nextName } : item,
 		);
 
 		commitControlsMutation(get, set, currentWorkspace, nextControls);
@@ -283,28 +346,38 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 	deleteControl: (controlId, currentWorkspace) => {
 		if (!currentWorkspace) return { nextControls: [], nextSelection: '' };
 
-		const subtreeIds = new Set(getSubtreeIds(currentWorkspace.controls, controlId));
+		const subtreeIds = new Set(
+			getSubtreeIds(currentWorkspace.controls, controlId),
+		);
 		const nextControls = currentWorkspace.controls.map((item: Item) =>
 			subtreeIds.has(item.id)
 				? { ...item, isDeleted: true, isVisible: false }
-				: item
+				: item,
 		);
 		const nextSelection = subtreeIds.has(get().currentControlID)
 			? ''
 			: get().currentControlID;
 
-		commitControlsMutation(get, set, currentWorkspace, nextControls, nextSelection);
+		commitControlsMutation(
+			get,
+			set,
+			currentWorkspace,
+			nextControls,
+			nextSelection,
+		);
 		return { nextControls, nextSelection };
 	},
 
 	duplicateControl: (controlId, currentWorkspace, workspaceId) => {
-		if (!currentWorkspace) return { nextControls: [], newProperties: [], nextSelection: '' };
+		if (!currentWorkspace)
+			return { nextControls: [], newProperties: [], nextSelection: '' };
 
 		const subtreeIds = getSubtreeIds(currentWorkspace.controls, controlId);
 		const subtreeItems = currentWorkspace.controls.filter((item: Item) =>
-			subtreeIds.includes(item.id)
+			subtreeIds.includes(item.id),
 		);
-		if (subtreeItems.length === 0) return { nextControls: [], newProperties: [], nextSelection: '' };
+		if (subtreeItems.length === 0)
+			return { nextControls: [], newProperties: [], nextSelection: '' };
 
 		const idMap = new Map<string, string>();
 		subtreeItems.forEach((item: Item) => {
@@ -326,11 +399,13 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		});
 
 		const subtreeIdSet = new Set(subtreeIds);
-		const targetIndex = currentWorkspace.controls.reduce(
-			(acc: number, item: Item, index: number) => (subtreeIdSet.has(item.id) ? index : acc),
-			-1
-		) + 1;
-		
+		const targetIndex =
+			currentWorkspace.controls.reduce(
+				(acc: number, item: Item, index: number) =>
+					subtreeIdSet.has(item.id) ? index : acc,
+				-1,
+			) + 1;
+
 		const nextControls = [
 			...currentWorkspace.controls.slice(0, targetIndex),
 			...duplicatedItems,
@@ -339,24 +414,35 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 
 		// Duplicate properties
 		const state = get();
-		const newProperties = state.ControlProperties.flatMap(property => {
+		const newProperties = state.ControlProperties.flatMap((property) => {
 			const [type, originalId, propName] = property.id.split('-');
 			const originalControlId = `${type}-${originalId}`;
 			const nextControlId = idMap.get(originalControlId);
 
 			if (nextControlId === undefined || propName === undefined) return [];
 
-			return [{
-				...property,
-				id: `${nextControlId}-${propName}`,
-				workspace: workspaceId,
-			}];
+			return [
+				{
+					...property,
+					id: `${nextControlId}-${propName}`,
+					workspace: workspaceId,
+				},
+			];
 		});
 
 		const nextSelection = idMap.get(controlId) ?? state.currentControlID;
-		const mergedProperties = mergeProperties(state.ControlProperties, newProperties);
+		const mergedProperties = mergeProperties(
+			state.ControlProperties,
+			newProperties,
+		);
 
-		commitControlsMutation(get, set, currentWorkspace, nextControls, nextSelection);
+		commitControlsMutation(
+			get,
+			set,
+			currentWorkspace,
+			nextControls,
+			nextSelection,
+		);
 		set({
 			ControlProperties: mergedProperties,
 			readyToSave: true,
@@ -371,8 +457,10 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		const children = payload?.childIds ?? [];
 		const groupId = generateNewId('group');
 		const firstChildId = children[0];
-		const firstChildIndex = currentWorkspace.controls.findIndex((item: Item) => item.id === firstChildId);
-		
+		const firstChildIndex = currentWorkspace.controls.findIndex(
+			(item: Item) => item.id === firstChildId,
+		);
+
 		const group: Item = {
 			id: groupId,
 			type: 'group',
@@ -389,7 +477,7 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 
 		if (children.length > 0) {
 			nextControls = nextControls.map((item: Item) =>
-				children.includes(item.id) ? { ...item, parentId: groupId } : item
+				children.includes(item.id) ? { ...item, parentId: groupId } : item,
 			);
 		}
 
@@ -410,12 +498,16 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 	groupControl: (controlId, currentWorkspace) => {
 		if (!currentWorkspace) return { nextControls: [], nextSelection: '' };
 
-		const target = currentWorkspace.controls.find((item: Item) => item.id === controlId);
+		const target = currentWorkspace.controls.find(
+			(item: Item) => item.id === controlId,
+		);
 		if (!target) return { nextControls: [], nextSelection: '' };
 
 		const groupId = generateNewId('group');
-		const targetIndex = currentWorkspace.controls.findIndex((item: Item) => item.id === controlId);
-		
+		const targetIndex = currentWorkspace.controls.findIndex(
+			(item: Item) => item.id === controlId,
+		);
+
 		const group: Item = {
 			id: groupId,
 			type: 'group',
@@ -429,9 +521,9 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		};
 
 		const updatedControls = currentWorkspace.controls.map((item: Item) =>
-			item.id === controlId ? { ...item, parentId: groupId } : item
+			item.id === controlId ? { ...item, parentId: groupId } : item,
 		);
-		
+
 		const nextControls = [
 			...updatedControls.slice(0, targetIndex),
 			group,
@@ -445,18 +537,30 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 	ungroupControl: (groupId, currentWorkspace) => {
 		if (!currentWorkspace) return { nextControls: [], nextSelection: '' };
 
-		const group = currentWorkspace.controls.find((item: Item) => item.id === groupId);
-		if (!group || group.type !== 'group') return { nextControls: [], nextSelection: '' };
+		const group = currentWorkspace.controls.find(
+			(item: Item) => item.id === groupId,
+		);
+		if (!group || group.type !== 'group')
+			return { nextControls: [], nextSelection: '' };
 
 		const nextControls = currentWorkspace.controls
 			.filter((item: Item) => item.id !== groupId)
 			.map((item: Item) =>
-				item.parentId === groupId ? { ...item, parentId: group.parentId ?? null } : item
+				item.parentId === groupId
+					? { ...item, parentId: group.parentId ?? null }
+					: item,
 			);
-		
-		const nextSelection = get().currentControlID === groupId ? '' : get().currentControlID;
 
-		commitControlsMutation(get, set, currentWorkspace, nextControls, nextSelection);
+		const nextSelection =
+			get().currentControlID === groupId ? '' : get().currentControlID;
+
+		commitControlsMutation(
+			get,
+			set,
+			currentWorkspace,
+			nextControls,
+			nextSelection,
+		);
 		return { nextControls, nextSelection };
 	},
 
@@ -466,7 +570,7 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		const nextControls = currentWorkspace.controls.map((item: Item) =>
 			item.id === controlId && item.type === 'group'
 				? { ...item, collapsed: !item.collapsed }
-				: item
+				: item,
 		);
 
 		commitControlsMutation(get, set, currentWorkspace, nextControls);
@@ -480,7 +584,7 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 			currentWorkspace.controls,
 			payload.draggedId,
 			payload.targetId,
-			payload.position
+			payload.position,
 		);
 
 		commitControlsMutation(get, set, currentWorkspace, nextControls);
@@ -493,7 +597,7 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		const nextControls = reorderAmongSiblings(
 			currentWorkspace.controls,
 			payload.id,
-			payload.direction
+			payload.direction,
 		);
 
 		commitControlsMutation(get, set, currentWorkspace, nextControls);
@@ -506,7 +610,7 @@ export const useControlsStore = create<ControlsStore>((set, get) => ({
 		const nextControls = moveToSiblingEdge(
 			currentWorkspace.controls,
 			payload.id,
-			payload.position
+			payload.position,
 		);
 
 		commitControlsMutation(get, set, currentWorkspace, nextControls);

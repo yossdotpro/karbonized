@@ -107,9 +107,7 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 			<Dialog open={showIconPicker} onOpenChange={setShowIconPicker}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>
-							Select Icon
-						</DialogTitle>
+						<DialogTitle>Select Icon</DialogTitle>
 					</DialogHeader>
 
 					<div className='flex flex-auto select-none flex-col overflow-hidden'>

@@ -41,11 +41,16 @@ export function parseKComponent(yamlContent: string): KComponent {
 			js: parsed.js,
 		};
 	} catch (error) {
-		throw new Error(`Failed to parse .kcomponent file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		throw new Error(
+			`Failed to parse .kcomponent file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+		);
 	}
 }
 
-export function validateKComponentFile(content: string): { valid: boolean; error?: string } {
+export function validateKComponentFile(content: string): {
+	valid: boolean;
+	error?: string;
+} {
 	try {
 		parseKComponent(content);
 		return { valid: true };

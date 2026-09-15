@@ -243,7 +243,9 @@ export const MenuItem: React.FC<MenuItemProps> = ({
 								/>
 							) : (
 								<>
-									<p className='truncate text-[13px] text-foreground'>{item.name}</p>
+									<p className='truncate text-[13px] text-foreground'>
+										{item.name}
+									</p>
 									<div className='flex items-center gap-2 text-[11px] capitalize text-muted-foreground'>
 										<span>
 											{isGroup ? 'Group' : item.type.replace('_', ' ')}

@@ -51,7 +51,9 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 							<ColorPicker
 								isGradientEnable={false}
 								color={variable.value as string}
-								onColorChange={(color) => onUpdateVariable(variable.name, color)}
+								onColorChange={(color) =>
+									onUpdateVariable(variable.name, color)
+								}
 								label=''
 							/>
 						</div>
@@ -146,7 +148,9 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 							<ColorPicker
 								isGradientEnable={false}
 								color={variable.value as string}
-								onColorChange={(color) => onUpdateVariable(variable.name, color)}
+								onColorChange={(color) =>
+									onUpdateVariable(variable.name, color)
+								}
 								label=''
 							/>
 						</div>
@@ -207,7 +211,9 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 							<div className='flex items-center gap-2'>
 								<Slider
 									className='flex-1'
-									onValueChange={(value) => onUpdateVariable(variable.name, value[0])}
+									onValueChange={(value) =>
+										onUpdateVariable(variable.name, value[0])
+									}
 									value={[variable.value as number]}
 									min={variable.min || 0}
 									max={variable.max || 100}
@@ -260,7 +266,8 @@ export const HTMLBlockJSVariablesControls: React.FC<JSControlsProps> = ({
 						<div key={variable.name} className='space-y-2'>
 							<ObjectEditor
 								value={
-									typeof variable.value === 'object' && !Array.isArray(variable.value)
+									typeof variable.value === 'object' &&
+									!Array.isArray(variable.value)
 										? variable.value
 										: {}
 								}

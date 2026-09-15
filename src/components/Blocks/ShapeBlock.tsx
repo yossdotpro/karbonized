@@ -109,9 +109,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 			<Dialog open={showModal} onOpenChange={setShowModal}>
 				<DialogContent>
 					<DialogHeader>
-						<DialogTitle>
-							Shapes
-						</DialogTitle>
+						<DialogTitle>Shapes</DialogTitle>
 					</DialogHeader>
 
 					<div className='flex flex-auto select-none flex-col overflow-hidden'>

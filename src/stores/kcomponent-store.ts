@@ -47,7 +47,9 @@ export const useKComponentStore = create<KComponentStore>()(
 
 			removeImportedComponent: (id) => {
 				set((state) => ({
-					importedComponents: state.importedComponents.filter((c) => c.id !== id),
+					importedComponents: state.importedComponents.filter(
+						(c) => c.id !== id,
+					),
 				}));
 			},
 

@@ -76,9 +76,7 @@ export const NewsPanel: React.FC = () => {
 												'https://karbon-apps.github.io/news/news/' + item.img
 											}
 										></img>
-										<h2 className='mt-2 text-lg'>
-											{item.title}
-										</h2>
+										<h2 className='mt-2 text-lg'>{item.title}</h2>
 										<p className='mt-1 text-xs text-muted-foreground'>
 											{item.description}
 										</p>

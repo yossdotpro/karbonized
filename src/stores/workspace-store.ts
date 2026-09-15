@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { getRandomNumber } from '../utils/getRandom';
-import type { Workspace, WorkspaceGradientSettings, WorkspaceDynamicSettings, TextureColors } from '../types';
+import type {
+	Workspace,
+	WorkspaceGradientSettings,
+	WorkspaceDynamicSettings,
+	TextureColors,
+} from '../types';
 
 interface WorkspaceState {
 	workspaces: Workspace[];
@@ -18,7 +23,9 @@ interface WorkspaceActions {
 	setWorkspaceControls: (controls: any[]) => void;
 	setWorkspaceGradient: (settings: WorkspaceGradientSettings) => void;
 	setWorkspaceDynamic: (settings: WorkspaceDynamicSettings) => void;
-	setWorkspaceDynamicType: (type: 'mesh' | 'lava' | 'starfield' | 'galaxy') => void;
+	setWorkspaceDynamicType: (
+		type: 'mesh' | 'lava' | 'starfield' | 'galaxy',
+	) => void;
 	setWorkspaceBlur: (blur: number) => void;
 	setWorkspaceNoise: (noise: number) => void;
 	generateDynamicSeed: () => void;
@@ -62,7 +69,10 @@ type WorkspaceStore = WorkspaceState & WorkspaceActions;
 const buildNextWorkspaceState = (
 	workspaces: Workspace[],
 	currentWorkspaceID: string,
-): Pick<WorkspaceState, 'workspaces' | 'currentWorkspaceID' | 'currentWorkspace'> => ({
+): Pick<
+	WorkspaceState,
+	'workspaces' | 'currentWorkspaceID' | 'currentWorkspace'
+> => ({
 	workspaces,
 	currentWorkspaceID,
 	currentWorkspace:
@@ -70,17 +80,14 @@ const buildNextWorkspaceState = (
 });
 
 export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
-	...buildNextWorkspaceState(
-		[],
-		'',
-	),
+	...buildNextWorkspaceState([], ''),
 
 	addWorkspace: (id, name) => {
 		const newId = id || getRandomNumber().toString();
 		const workspaceName = name || `Workspace ${get().workspaces.length + 1}`;
 		const newWorkspace = createDefaultWorkspace(newId, workspaceName);
-		
-		set(state =>
+
+		set((state) =>
 			buildNextWorkspaceState(
 				[...state.workspaces, newWorkspace],
 				state.currentWorkspaceID,
@@ -99,9 +106,9 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 			return;
 		}
 
-		const newIndex = state.workspaces.findIndex(item => item.id === id);
-		const newWorkspaces = state.workspaces.filter(item => item.id !== id);
-		
+		const newIndex = state.workspaces.findIndex((item) => item.id === id);
+		const newWorkspaces = state.workspaces.filter((item) => item.id !== id);
+
 		let newCurrentId = state.currentWorkspaceID;
 		if (newIndex >= 0) {
 			const targetIndex = newIndex > 0 ? newIndex - 1 : 0;
@@ -117,7 +124,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
 		set(
 			buildNextWorkspaceState(
-				state.workspaces.filter(item => item.id === id),
+				state.workspaces.filter((item) => item.id === id),
 				id,
 			),
 		);
@@ -125,8 +132,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
 	closeWorkspacesToRight: (id) => {
 		const state = get();
-		const currentIndex = state.workspaces.findIndex(item => item.id === id);
-		
+		const currentIndex = state.workspaces.findIndex((item) => item.id === id);
+
 		if (currentIndex !== -1 && currentIndex < state.workspaces.length - 1) {
 			set(
 				buildNextWorkspaceState(
@@ -139,8 +146,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 
 	closeWorkspacesToLeft: (id) => {
 		const state = get();
-		const currentIndex = state.workspaces.findIndex(item => item.id === id);
-		
+		const currentIndex = state.workspaces.findIndex((item) => item.id === id);
+
 		if (currentIndex > 0) {
 			set(buildNextWorkspaceState(state.workspaces.slice(currentIndex), id));
 		}
@@ -312,9 +319,7 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 	cleanWorkspace: () => {
 		set((state) => {
 			const workspaces = state.workspaces.map((item) =>
-				item.id === state.currentWorkspaceID
-					? { ...item, controls: [] }
-					: item,
+				item.id === state.currentWorkspaceID ? { ...item, controls: [] } : item,
 			);
 			return buildNextWorkspaceState(workspaces, state.currentWorkspaceID);
 		});

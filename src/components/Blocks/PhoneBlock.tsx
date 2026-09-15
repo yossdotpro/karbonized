@@ -582,9 +582,7 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 			<Dialog open={showModal} onOpenChange={setShowModal}>
 				<DialogContent className='overflow-hidden'>
 					<DialogHeader>
-						<DialogTitle>
-							Devices
-						</DialogTitle>
+						<DialogTitle>Devices</DialogTitle>
 					</DialogHeader>
 
 					<div className='flex flex-auto select-none flex-col overflow-hidden'>

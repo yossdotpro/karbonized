@@ -83,9 +83,7 @@ export const Templates: React.FC<TemplatesProps> = ({
 											alt={item.name}
 										/>
 
-										<p className='mt-2 text-foreground'>
-											{item.name}
-										</p>
+										<p className='mt-2 text-foreground'>{item.name}</p>
 										<p className='text-xs'>{item.user}</p>
 
 										{current?.workspace.id === item.data.workspace.id && (

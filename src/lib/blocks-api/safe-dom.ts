@@ -114,11 +114,13 @@ export const createSafeDOM = (shadowRoot: ShadowRoot): SafeDOMAPI => {
 		// Safe get style property
 		getStyle: (element: Element, property: string) => {
 			try {
-				return getComputedStyle(element as HTMLElement).getPropertyValue(property);
+				return getComputedStyle(element as HTMLElement).getPropertyValue(
+					property,
+				);
 			} catch (error) {
 				console.error('Error in safeDOM.getStyle:', error);
 				return null;
 			}
-		}
+		},
 	};
 };

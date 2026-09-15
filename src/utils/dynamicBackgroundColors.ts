@@ -51,10 +51,10 @@ export const buildDynamicBackgroundColors = async (
 ): Promise<string[]> => {
 	await waitForImage(image);
 
-	const dominant = await getColor(image) as Color;
-	const palette = await getPalette(image, { colorCount: 5 }) as Color[];
+	const dominant = (await getColor(image)) as Color;
+	const palette = (await getPalette(image, { colorCount: 5 })) as Color[];
 
-	console.log(dominant)
+	console.log(dominant);
 	const sourceColors = [dominant, ...palette].filter(Boolean);
 
 	const toRGB = (color: Color): RGB => {

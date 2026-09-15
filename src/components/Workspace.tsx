@@ -133,8 +133,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	};
 
 	const groupTargetIds = useMemo(() => {
-		if (currentControl?.type !== 'group')
-			return [];
+		if (currentControl?.type !== 'group') return [];
 
 		return getGroupDescendantIds(currentControls, currentControl.id);
 	}, [currentControl, currentControls]);

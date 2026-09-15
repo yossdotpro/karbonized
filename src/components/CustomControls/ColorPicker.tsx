@@ -20,7 +20,12 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog';
 import { Slider } from '@/components/ui/slider';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 
 interface Props {
@@ -105,7 +110,9 @@ export const ColorPicker: React.FC<Props> = ({
 						} `}
 					>
 						{showLabel && (
-							<label className='my-auto cursor-pointer font-mono text-xs uppercase text-muted-foreground'>{color}</label>
+							<label className='my-auto cursor-pointer font-mono text-xs uppercase text-muted-foreground'>
+								{color}
+							</label>
 						)}
 
 						<div
@@ -462,7 +469,9 @@ export const ColorPicker: React.FC<Props> = ({
 										value={[gradientDeg]}
 										className='my-auto flex-1'
 									></Slider>
-									<p className='my-auto font-mono text-xs text-muted-foreground'>deg</p>
+									<p className='my-auto font-mono text-xs text-muted-foreground'>
+										deg
+									</p>
 								</div>
 							</>
 						)}
@@ -474,7 +483,10 @@ export const ColorPicker: React.FC<Props> = ({
 			{!isHorizontal && (
 				// @ts-ignore
 				<Portal>
-					<Dialog open={showColor && !isHorizontal} onOpenChange={(open) => setShowColor(open)}>
+					<Dialog
+						open={showColor && !isHorizontal}
+						onOpenChange={(open) => setShowColor(open)}
+					>
 						<DialogContent className='w-70 overflow-hidden'>
 							<DialogHeader>
 								<DialogTitle>Color</DialogTitle>
@@ -512,251 +524,269 @@ export const ColorPicker: React.FC<Props> = ({
 									</div>
 								)}
 
-							{/* Simgle Color */}
-							{mode === 'Single' && (
-								<>
-									{type === 'Hex' ? (
-										<HexColorPicker
-											color={color}
-											onChange={(color) => {
-												onColorChange(color);
-											}}
-											className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
-										></HexColorPicker>
-									) : (
-										<HexAlphaColorPicker
-											color={color}
-											onChange={(color) => {
-												onColorChange(color);
-											}}
-											className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
-										></HexAlphaColorPicker>
-									)}
-									{/* Predefined colors */}
-									<div className='mx-auto flex flex-auto flex-row gap-x-0.5'>
-										<button
-											style={{ background: '#dc4040' }}
-											onClick={() => {
-												onColorChange('#dc4040');
-											}}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
+								{/* Simgle Color */}
+								{mode === 'Single' && (
+									<>
+										{type === 'Hex' ? (
+											<HexColorPicker
+												color={color}
+												onChange={(color) => {
+													onColorChange(color);
+												}}
+												className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
+											></HexColorPicker>
+										) : (
+											<HexAlphaColorPicker
+												color={color}
+												onChange={(color) => {
+													onColorChange(color);
+												}}
+												className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
+											></HexAlphaColorPicker>
+										)}
+										{/* Predefined colors */}
+										<div className='mx-auto flex flex-auto flex-row gap-x-0.5'>
+											<button
+												style={{ background: '#dc4040' }}
+												onClick={() => {
+													onColorChange('#dc4040');
+												}}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
 
-										<button
-											style={{ background: '#db8f40' }}
-											onClick={() => {
-												onColorChange('#db8f40');
-											}}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
+											<button
+												style={{ background: '#db8f40' }}
+												onClick={() => {
+													onColorChange('#db8f40');
+												}}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
 
-										<button
-											style={{ background: '#6ebb45' }}
-											onClick={() => {
-												onColorChange('#6ebb45');
-											}}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
+											<button
+												style={{ background: '#6ebb45' }}
+												onClick={() => {
+													onColorChange('#6ebb45');
+												}}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
 
-										<button
-											style={{ background: '#45ba97' }}
-											onClick={() => {
-												onColorChange('#45ba97');
-											}}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
+											<button
+												style={{ background: '#45ba97' }}
+												onClick={() => {
+													onColorChange('#45ba97');
+												}}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
 
-										<button
-											style={{ background: '#4582ba' }}
-											onClick={() => {
-												onColorChange('#4582ba');
-											}}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
+											<button
+												style={{ background: '#4582ba' }}
+												onClick={() => {
+													onColorChange('#4582ba');
+												}}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
 
-										<button
-											style={{ background: '#5545ba' }}
-											onClick={() => {
-												onColorChange('#5545ba');
-											}}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
+											<button
+												style={{ background: '#5545ba' }}
+												onClick={() => {
+													onColorChange('#5545ba');
+												}}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
 
-										<button
-											style={{ background: '#cc63b5' }}
-											onClick={() => {
-												onColorChange('#cc63b5');
-											}}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-									</div>
+											<button
+												style={{ background: '#cc63b5' }}
+												onClick={() => {
+													onColorChange('#cc63b5');
+												}}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
+										</div>
 
-									{/* Input */}
-									<div className='flex flex-auto flex-row text-foreground'>
-										<div
-											className='my-auto size-8 shrink-0 rounded-[5px] border border-border'
-											style={{ backgroundColor: color }}
-										></div>
-										<Input
-											spellCheck={false}
-											onInput={(ev) => {
-												onColorChange(ev.currentTarget.value);
-											}}
-											className='my-auto ml-2 flex w-24 flex-auto'
-											value={color}
-										></Input>
-									</div>
-								</>
-							)}
+										{/* Input */}
+										<div className='flex flex-auto flex-row text-foreground'>
+											<div
+												className='my-auto size-8 shrink-0 rounded-[5px] border border-border'
+												style={{ backgroundColor: color }}
+											></div>
+											<Input
+												spellCheck={false}
+												onInput={(ev) => {
+													onColorChange(ev.currentTarget.value);
+												}}
+												className='my-auto ml-2 flex w-24 flex-auto'
+												value={color}
+											></Input>
+										</div>
+									</>
+								)}
 
-							{/* Gradient */}
-							{mode === 'Gradient' && (
-								<>
-									{gradientMode === 'Color1' ? (
-										<HexAlphaColorPicker
-											color={colorGradient1}
-											className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
-											onChange={(color) => {
-												onGradientChange &&
-													onGradientChange(color, colorGradient2);
-											}}
-										></HexAlphaColorPicker>
-									) : (
-										<HexAlphaColorPicker
-											color={colorGradient2}
-											className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
-											onChange={(color) => {
-												onGradientChange &&
-													onGradientChange(colorGradient1, color);
-											}}
-										></HexAlphaColorPicker>
-									)}
+								{/* Gradient */}
+								{mode === 'Gradient' && (
+									<>
+										{gradientMode === 'Color1' ? (
+											<HexAlphaColorPicker
+												color={colorGradient1}
+												className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
+												onChange={(color) => {
+													onGradientChange &&
+														onGradientChange(color, colorGradient2);
+												}}
+											></HexAlphaColorPicker>
+										) : (
+											<HexAlphaColorPicker
+												color={colorGradient2}
+												className='mx-auto flex max-h-44 w-36 max-w-xs flex-auto'
+												onChange={(color) => {
+													onGradientChange &&
+														onGradientChange(colorGradient1, color);
+												}}
+											></HexAlphaColorPicker>
+										)}
 
-									{/* Predefined Gradients */}
-									<div className='mx-auto flex flex-auto flex-row gap-0.5'>
-										<button
-											style={{ background: 'linear-gradient(#bf86da,#144ab4)' }}
-											onClick={() =>
-												onGradientChange &&
-												onGradientChange('#bf86da', '#144ab4')
-											}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-
-										<button
-											style={{ background: 'linear-gradient(#06BEB6,#48B1BF)' }}
-											onClick={() =>
-												onGradientChange &&
-												onGradientChange('#06BEB6', '#48B1BF')
-											}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-
-										<button
-											style={{ background: 'linear-gradient(#00B4DB,#0083B0)' }}
-											onClick={() =>
-												onGradientChange &&
-												onGradientChange('#00B4DB', '#0083B0')
-											}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-
-										<button
-											style={{ background: 'linear-gradient(#FF9A9E,#FECFEF)' }}
-											onClick={() =>
-												onGradientChange &&
-												onGradientChange('#FF9A9E', '#FECFEF')
-											}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-
-										<button
-											style={{ background: 'linear-gradient(#5adb00,#0083b0)' }}
-											onClick={() =>
-												onGradientChange &&
-												onGradientChange('#5adb00', '#0083b0')
-											}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-
-										<button
-											style={{ background: 'linear-gradient(#ed7b6b,#b07f00)' }}
-											onClick={() =>
-												onGradientChange &&
-												onGradientChange('#ed7b6b', '#b07f00')
-											}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-
-										<button
-											style={{ background: 'linear-gradient(#ffe03a,#b94bdd)' }}
-											onClick={() =>
-												onGradientChange &&
-												onGradientChange('#ffe03a', '#b94bdd')
-											}
-											className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
-										></button>
-									</div>
-
-									{/* Preview Colors */}
-									<div className='mx-auto mt-2 flex flex-auto flex-row gap-2 text-foreground'>
-										<button
-											className={`my-auto flex h-4 flex-auto cursor-pointer rounded-[5px] border border-border p-4 ${
-												gradientMode === 'Color1' && 'ring-2 ring-foreground/70'
-											}`}
-											onMouseDown={() => {
-												setGradientMode('Color1');
-											}}
-											style={{ background: colorGradient1 }}
-										></button>
-
-										<Input
-											spellCheck={false}
-											onInput={(ev) => {
-												if (onGradientChange) {
-													gradientMode === 'Color1'
-														? onGradientChange(
-																ev.currentTarget.value,
-																colorGradient2,
-															)
-														: onGradientChange(
-																colorGradient1,
-																ev.currentTarget.value,
-															);
+										{/* Predefined Gradients */}
+										<div className='mx-auto flex flex-auto flex-row gap-0.5'>
+											<button
+												style={{
+													background: 'linear-gradient(#bf86da,#144ab4)',
+												}}
+												onClick={() =>
+													onGradientChange &&
+													onGradientChange('#bf86da', '#144ab4')
 												}
-											}}
-											className='mx-2 my-auto flex w-24 flex-auto'
-											value={
-												gradientMode === 'Color1'
-													? colorGradient1
-													: colorGradient2
-											}
-										></Input>
-										<button
-											className={`my-auto flex h-4 flex-auto cursor-pointer rounded-[5px] border border-border p-4 ${
-												gradientMode === 'Color2' && 'ring-2 ring-foreground/70'
-											}`}
-											onMouseDown={() => {
-												setGradientMode('Color2');
-											}}
-											style={{ background: colorGradient2 }}
-										></button>
-									</div>
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
 
-									<div className='flex flex-auto flex-row items-center gap-2'>
-										<Slider
-											min={0}
-											max={180}
-											onValueChange={(value) =>
-												onGradientDegChange && onGradientDegChange(value[0])
-											}
-											value={[gradientDeg]}
-											className='my-auto flex-1'
-										></Slider>
-										<p className='my-auto font-mono text-xs text-muted-foreground'>deg</p>
-									</div>
-								</>
-							)}
+											<button
+												style={{
+													background: 'linear-gradient(#06BEB6,#48B1BF)',
+												}}
+												onClick={() =>
+													onGradientChange &&
+													onGradientChange('#06BEB6', '#48B1BF')
+												}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
+
+											<button
+												style={{
+													background: 'linear-gradient(#00B4DB,#0083B0)',
+												}}
+												onClick={() =>
+													onGradientChange &&
+													onGradientChange('#00B4DB', '#0083B0')
+												}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
+
+											<button
+												style={{
+													background: 'linear-gradient(#FF9A9E,#FECFEF)',
+												}}
+												onClick={() =>
+													onGradientChange &&
+													onGradientChange('#FF9A9E', '#FECFEF')
+												}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
+
+											<button
+												style={{
+													background: 'linear-gradient(#5adb00,#0083b0)',
+												}}
+												onClick={() =>
+													onGradientChange &&
+													onGradientChange('#5adb00', '#0083b0')
+												}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
+
+											<button
+												style={{
+													background: 'linear-gradient(#ed7b6b,#b07f00)',
+												}}
+												onClick={() =>
+													onGradientChange &&
+													onGradientChange('#ed7b6b', '#b07f00')
+												}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
+
+											<button
+												style={{
+													background: 'linear-gradient(#ffe03a,#b94bdd)',
+												}}
+												onClick={() =>
+													onGradientChange &&
+													onGradientChange('#ffe03a', '#b94bdd')
+												}
+												className='cursor-pointer rounded-[4px] border border-border p-3 hover:border-foreground/50 transition-colors'
+											></button>
+										</div>
+
+										{/* Preview Colors */}
+										<div className='mx-auto mt-2 flex flex-auto flex-row gap-2 text-foreground'>
+											<button
+												className={`my-auto flex h-4 flex-auto cursor-pointer rounded-[5px] border border-border p-4 ${
+													gradientMode === 'Color1' &&
+													'ring-2 ring-foreground/70'
+												}`}
+												onMouseDown={() => {
+													setGradientMode('Color1');
+												}}
+												style={{ background: colorGradient1 }}
+											></button>
+
+											<Input
+												spellCheck={false}
+												onInput={(ev) => {
+													if (onGradientChange) {
+														gradientMode === 'Color1'
+															? onGradientChange(
+																	ev.currentTarget.value,
+																	colorGradient2,
+																)
+															: onGradientChange(
+																	colorGradient1,
+																	ev.currentTarget.value,
+																);
+													}
+												}}
+												className='mx-2 my-auto flex w-24 flex-auto'
+												value={
+													gradientMode === 'Color1'
+														? colorGradient1
+														: colorGradient2
+												}
+											></Input>
+											<button
+												className={`my-auto flex h-4 flex-auto cursor-pointer rounded-[5px] border border-border p-4 ${
+													gradientMode === 'Color2' &&
+													'ring-2 ring-foreground/70'
+												}`}
+												onMouseDown={() => {
+													setGradientMode('Color2');
+												}}
+												style={{ background: colorGradient2 }}
+											></button>
+										</div>
+
+										<div className='flex flex-auto flex-row items-center gap-2'>
+											<Slider
+												min={0}
+												max={180}
+												onValueChange={(value) =>
+													onGradientDegChange && onGradientDegChange(value[0])
+												}
+												value={[gradientDeg]}
+												className='my-auto flex-1'
+											></Slider>
+											<p className='my-auto font-mono text-xs text-muted-foreground'>
+												deg
+											</p>
+										</div>
+									</>
+								)}
 							</div>
 
 							<DialogFooter>
