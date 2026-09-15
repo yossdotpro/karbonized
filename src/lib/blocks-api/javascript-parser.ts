@@ -196,9 +196,10 @@ const getDefaultValueForType = (type: JSVariable['type']) => {
 const parseJSValue = (value: string, type: JSVariable['type']) => {
 	try {
 		switch (type) {
-			case 'number':
+			case 'number': {
 				const num = parseFloat(value);
 				return isNaN(num) ? 0 : num;
+			}
 			case 'boolean':
 				return value.toLowerCase() === 'true';
 			case 'object':

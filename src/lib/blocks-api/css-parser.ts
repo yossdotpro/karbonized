@@ -95,13 +95,14 @@ export const parseCSSVariables = (css: string): CSSVariable[] => {
 					case 'color':
 						parsedValue = value.startsWith('#') ? value : `#${value}`;
 						break;
-					case 'number':
+					case 'number': {
 						const numericParse = parseNumericValue(value);
 						if (numericParse) {
 							parsedValue = numericParse.number;
 							unit = unit || numericParse.unit;
 						}
 						break;
+					}
 					case 'boolean':
 						parsedValue = value === 'true';
 						break;

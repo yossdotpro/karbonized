@@ -158,8 +158,8 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 								?.filter((icon) =>
 									icon.label.toUpperCase().includes(query.toUpperCase()),
 								)
-								.map((el, i) => (
-									<Suspense fallback={<></>}>
+								.map((el) => (
+									<Suspense key={el.label} fallback={<></>}>
 										<div
 											className='inline-flex flex-auto cursor-pointer rounded-control bg-muted/50 p-2 text-3xl hover:bg-accent'
 											onMouseDown={() => {

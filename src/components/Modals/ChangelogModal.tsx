@@ -342,7 +342,7 @@ export const ChangelogModal: React.FC<Props> = ({ open, onClose }) => {
 			<DialogContent className='flex max-h-[80vh] flex-col overflow-hidden sm:max-w-xl'>
 				<DialogHeader>
 					<DialogTitle>Changelog</DialogTitle>
-					<DialogDescription>What's new in Karbonized</DialogDescription>
+					<DialogDescription>What&apos;s new in Karbonized</DialogDescription>
 				</DialogHeader>
 
 				<DialogBody className='-mb-5 border-t border-border pb-5'>

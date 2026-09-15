@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useWorkspaceStore, useDrawingStore } from '../stores';
 
-export const Canvas: React.FC = ({}) => {
+export const Canvas: React.FC = () => {
 	const [isDrawing, setIsDrawing] = useState(false);
 
 	const canvasRef = useRef<HTMLCanvasElement>(null);

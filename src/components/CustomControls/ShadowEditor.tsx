@@ -283,7 +283,7 @@ export const ShadowEditor: React.FC<Props> = ({ value, onChange, label }) => {
 
 			{shadows.length === 0 && (
 				<div className='text-center text-xs text-muted-foreground py-4 border border-dashed border-border rounded-control'>
-					No shadows defined. Click "Add Shadow" to create one.
+					No shadows defined. Click &ldquo;Add Shadow&rdquo; to create one.
 				</div>
 			)}
 

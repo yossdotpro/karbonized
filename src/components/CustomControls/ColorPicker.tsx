@@ -369,7 +369,7 @@ export const ColorPicker: React.FC<Props> = ({
 										{/* Custom Gradients */}
 										<div className='flex max-h-28 flex-auto flex-row flex-wrap gap-0.5 overflow-y-auto overflow-x-hidden'>
 											{customGradients.map(({ color1, color2 }) => (
-												<TooltipProvider>
+												<TooltipProvider key={`${color1}-${color2}`}>
 													<Tooltip>
 														<TooltipTrigger asChild>
 															<button

@@ -250,7 +250,7 @@ export const NewProject: React.FC = () => {
 							})}
 							{filteredSizes.length === 0 && (
 								<li className='px-3 py-8 text-center text-[13px] text-muted-foreground'>
-									No sizes match "{searchQuery}"
+									No sizes match &ldquo;{searchQuery}&rdquo;
 								</li>
 							)}
 						</ul>

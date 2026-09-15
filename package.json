@@ -27,7 +27,7 @@
 		"build:linux": "npm run build:electron && electron-builder --linux --config -c.snap.publish=github",
 		"android:build": "yarn build && npx cap sync && cd android && gradle build && cd ..",
 		"android:icons": "npx capacitor-assets generate --android --iconBackgroundColor '#141313' --logoSplashScale '0.6'",
-		"lint": "eslint src --ext .ts,.tsx",
+		"lint": "eslint src",
 		"format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\""
 	},
 	"dependencies": {
@@ -146,7 +146,7 @@
 		"prettier": "^3.4.2",
 		"react-router-dom": "^6.4.3",
 		"tailwindcss": "^4.2.2",
-		"typescript": "*",
+		"typescript": "~6.0.3",
 		"vite": "^7.3.0",
 		"vite-plugin-electron": "^0.29.0",
 		"vite-plugin-pwa": "^1.2.0"

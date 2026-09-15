@@ -591,7 +591,7 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 						{/* Devices List */}
 						<div className='mx-auto flex max-h-80 flex-auto flex-wrap gap-3 overflow-auto '>
 							{devices.map((item) => (
-								<div className='flex w-32 flex-auto flex-col'>
+								<div key={item.name} className='flex w-32 flex-auto flex-col'>
 									<button
 										onClick={() => {
 											setTemplate(item.name);
