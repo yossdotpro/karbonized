@@ -17,7 +17,8 @@ export interface CSSVariable {
 // Helper function to parse shadow values
 const isShadowValue = (value: string): boolean => {
 	// Check if value looks like a CSS shadow
-	const shadowPattern = /^(inset\s+)?([a-f0-9#]+|rgba?\([^)]+\)|\w+)\s+(-?\d+px)\s+(-?\d+px)\s+(\d+px)\s+(\d+px)$/i;
+	const shadowPattern =
+		/^(inset\s+)?([a-f0-9#]+|rgba?\([^)]+\)|\w+)\s+(-?\d+px)\s+(-?\d+px)\s+(\d+px)\s+(\d+px)$/i;
 	return shadowPattern.test(value) || value === 'none';
 };
 
@@ -68,7 +69,8 @@ export const parseCSSVariables = (css: string): CSSVariable[] => {
 	if (match) {
 		const varsContent = match[1];
 		// Match variables with optional preceding comment
-		const varRegex = /(?:\/\*\s*([^*]+)\*\/\s*)?--([a-zA-Z0-9-]+)\s*:\s*([^;]+);/g;
+		const varRegex =
+			/(?:\/\*\s*([^*]+)\*\/\s*)?--([a-zA-Z0-9-]+)\s*:\s*([^;]+);/g;
 		let varMatch;
 
 		while ((varMatch = varRegex.exec(varsContent)) !== null) {
@@ -89,19 +91,20 @@ export const parseCSSVariables = (css: string): CSSVariable[] => {
 				max = annotation.max;
 				step = annotation.step;
 				unit = annotation.unit;
-				
+
 				// Parse value based on annotated type
 				switch (type) {
 					case 'color':
 						parsedValue = value.startsWith('#') ? value : `#${value}`;
 						break;
-					case 'number':
+					case 'number': {
 						const numericParse = parseNumericValue(value);
 						if (numericParse) {
 							parsedValue = numericParse.number;
 							unit = unit || numericParse.unit;
 						}
 						break;
+					}
 					case 'boolean':
 						parsedValue = value === 'true';
 						break;
@@ -218,7 +221,7 @@ export const updateCSSVariable = (
 	cssContent: string,
 	varName: string,
 	newValue: string | number | boolean,
-	variables: CSSVariable[]
+	variables: CSSVariable[],
 ): string => {
 	// Find the variable to get its unit information
 	const variable = variables.find((v) => v.name === varName);
@@ -243,8 +246,7 @@ export const scopeCSS = (css: string, scopeSelector: string): string => {
 	return css
 		.replace(/([^\r\n,{}]+)(?=[^{}]*{)/g, (match) => {
 			const trimmed = match.trim();
-			if (trimmed.startsWith('@') || trimmed.startsWith(':root'))
-				return match;
+			if (trimmed.startsWith('@') || trimmed.startsWith(':root')) return match;
 			return `${scopeSelector} ${trimmed}`;
 		})
 		.replace(/:root/g, scopeSelector);

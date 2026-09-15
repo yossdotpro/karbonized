@@ -1,9 +1,10 @@
-import React, { Suspense, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import {
 	BrowserRouter as Router,
 	Routes,
 	Route,
 	Navigate,
+	useLocation,
 } from 'react-router-dom';
 import './App.css';
 import { AppContext } from './AppContext';
@@ -12,16 +13,146 @@ import { useTheme } from './hooks/useTheme';
 import './utils.css';
 import { isElectron } from './utils/isElectron';
 import { Spinner } from '@/components/ui/spinner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { KarbonizedLogoFlat } from './components/Icons/Icons';
+import {
+	CommandPalette,
+	CommandPaletteTrigger,
+	ShortcutManager,
+} from './components/CommandPalette';
+import { useSessionAutosave } from './lib/persistence/autosave';
 
 const Editor = React.lazy(async () => await import('./pages/Editor'));
 const NewProject = React.lazy(async () => await import('./pages/NewProject'));
+const BlockEditor = React.lazy(async () => await import('./pages/BlockEditor'));
 const TitleBar = React.lazy(
 	async () => await import('./components/Base/TitleBar'),
 );
-const MenuBar = React.lazy(
-	async () => await import('./components/Base/MenuBar'),
+const ContextualMenuBar = React.lazy(
+	async () => await import('./components/Base/ContextualMenuBar'),
 );
+
+const AppShell: React.FC<{
+	isHorizontal: boolean;
+}> = ({ isHorizontal }) => {
+	return (
+		<>
+			{isHorizontal ? (
+				<>
+					{isElectron() ? (
+						Boolean(
+							(window as any).electron.ipcRenderer.isLinuxOrWindows(),
+						) && (
+							<Suspense>
+								<TitleBar></TitleBar>
+							</Suspense>
+						)
+					) : (
+						<header className='flex h-10 shrink-0 items-center gap-2 border-b border-border bg-sidebar pl-3 pr-2'>
+							<Suspense>
+								<KarbonizedLogoFlat className='size-4 shrink-0' />
+
+								<ContextualMenuBar></ContextualMenuBar>
+							</Suspense>
+
+							<CommandPaletteTrigger className='ml-auto shrink-0' />
+						</header>
+					)}
+
+					<div
+						className='relative flex h-full w-full flex-auto overflow-hidden'
+						id='body'
+					>
+						<Routes>
+							<Route
+								path='/new'
+								element={
+									<Suspense
+										fallback={
+											<div className='flex h-full w-full items-center justify-center'>
+												<Spinner className='size-5 text-muted-foreground' />
+											</div>
+										}
+									>
+										<NewProject />
+									</Suspense>
+								}
+							/>
+							<Route
+								path='/editor'
+								element={
+									<Suspense
+										fallback={
+											<div className='flex h-full w-full items-center justify-center'>
+												<Spinner className='size-5 text-muted-foreground' />
+											</div>
+										}
+									>
+										<Editor />
+									</Suspense>
+								}
+							/>
+							<Route
+								path='/block-editor'
+								element={
+									<Suspense
+										fallback={
+											<div className='flex h-full w-full items-center justify-center'>
+												<Spinner className='size-5 text-muted-foreground' />
+											</div>
+										}
+									>
+										<BlockEditor />
+									</Suspense>
+								}
+							/>
+							<Route path='*' element={<Navigate to='/new' replace />} />
+						</Routes>
+					</div>
+				</>
+			) : (
+				<div
+					className='relative flex h-full w-full flex-auto flex-col overflow-hidden'
+					id='body'
+				>
+					<p>Open In Desktop</p>
+				</div>
+			)}
+		</>
+	);
+};
+
+/** Waits for the previous session to be restored before showing the app. */
+const SessionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const { ready, restored } = useSessionAutosave();
+	const location = useLocation();
+	const [initialPath] = useState(() => location.pathname);
+	const [landed, setLanded] = useState(false);
+
+	useEffect(() => {
+		if (ready && location.pathname === '/editor') setLanded(true);
+	}, [ready, location.pathname]);
+
+	if (!ready) {
+		return (
+			<div className='flex h-full w-full items-center justify-center'>
+				<Spinner className='size-5 text-muted-foreground' />
+			</div>
+		);
+	}
+
+	// A restored session opens straight in the editor instead of "New project".
+	if (
+		restored &&
+		!landed &&
+		['/', '/new'].includes(initialPath) &&
+		location.pathname !== '/editor'
+	) {
+		return <Navigate to='/editor' replace />;
+	}
+
+	return <>{children}</>;
+};
 
 const App: React.FC = () => {
 	const [theme, toggleTheme] = useTheme();
@@ -30,142 +161,29 @@ const App: React.FC = () => {
 
 	return (
 		<Router>
-			<AppContext.Provider
-				value={{
-					viewerRef,
-					theme,
-					toggleTheme,
-				}}
-			>
-				<div
-					onContextMenu={(event) => {
-						event.preventDefault();
+			<TooltipProvider delayDuration={400} skipDelayDuration={200}>
+				<AppContext.Provider
+					value={{
+						viewerRef,
+						theme,
+						toggleTheme,
 					}}
-					className='grid-background flex h-screen w-screen flex-auto flex-col overflow-hidden bg-background text-foreground transition-all ease-in-out'
 				>
-					{/* Noise Background */}
-					<svg
-						className='fixed'
-						xmlns='http://www.w3.org/2000/svg'
-						version='1.1'
-						viewBox='0 0 700 700'
+					<div
+						onContextMenu={(event) => {
+							event.preventDefault();
+						}}
+						className='flex h-screen w-screen flex-auto flex-col overflow-hidden bg-background text-foreground'
 					>
-						<defs>
-							<filter
-								id='nnnoise-filter'
-								x='-20%'
-								y='-20%'
-								width='140%'
-								height='140%'
-								filterUnits='objectBoundingBox'
-								primitiveUnits='userSpaceOnUse'
-								colorInterpolationFilters='linearRGB'
-							>
-								<feTurbulence
-									type='fractalNoise'
-									baseFrequency='0.102'
-									numOctaves='4'
-									seed='15'
-									stitchTiles='stitch'
-									x='0%'
-									y='0%'
-									width='100%'
-									height='100%'
-									result='turbulence'
-								></feTurbulence>
-								<feSpecularLighting
-									surfaceScale='15'
-									specularConstant='0.75'
-									specularExponent='20'
-									lightingColor='#1a1a18'
-									x='0%'
-									y='0%'
-									width='100%'
-									height='100%'
-									in='turbulence'
-									result='specularLighting'
-								>
-									<feDistantLight azimuth='3' elevation='100'></feDistantLight>
-								</feSpecularLighting>
-							</filter>
-						</defs>
-						<rect width='700' height='700' fill='transparent'></rect>
-						<rect
-							width='700'
-							height='700'
-							fill='#2D2D2A'
-							filter='url(#nnnoise-filter)'
-						></rect>
-					</svg>
+						<SessionGate>
+							<AppShell isHorizontal={isHorizontal} />
+						</SessionGate>
+					</div>
 
-					{isHorizontal ? (
-						<>
-							{isElectron() ? (
-								Boolean(
-									(window as any).electron.ipcRenderer.isLinuxOrWindows(),
-								) && (
-									<Suspense>
-										<TitleBar></TitleBar>
-									</Suspense>
-								)
-							) : (
-								<div className='my-1 flex items-center'>
-									<Suspense>
-										<KarbonizedLogoFlat className='size-6 ml-4 mr-2' />
-
-										<MenuBar></MenuBar>
-									</Suspense>
-								</div>
-							)}
-
-							{/* Body */}
-							<div
-								className='relative flex h-full w-full flex-auto overflow-hidden'
-								id='body'
-							>
-								<Routes>
-									<Route
-										path='/new'
-										element={
-											<Suspense
-												fallback={
-													<div className='flex items-center justify-center'>
-														<Spinner className='h-8 w-8' />
-													</div>
-												}
-											>
-												<NewProject />
-											</Suspense>
-										}
-									/>
-									<Route
-										path='/editor'
-										element={
-											<Suspense
-												fallback={
-													<div className='flex items-center justify-center'>
-														<Spinner className='h-8 w-8' />
-													</div>
-												}
-											>
-												<Editor />
-											</Suspense>
-										}
-									/>
-									<Route path='*' element={<Navigate to='/new' replace />} />
-								</Routes>
-							</div>
-						</>
-					) : (
-						<div
-							className='relative flex h-full w-full flex-auto flex-col overflow-hidden'
-							id='body'
-						>
-							<p>Open In Desktop</p>
-						</div>
-					)}
-				</div>
-			</AppContext.Provider>
+					<ShortcutManager />
+					<CommandPalette />
+				</AppContext.Provider>
+			</TooltipProvider>
 		</Router>
 	);
 };

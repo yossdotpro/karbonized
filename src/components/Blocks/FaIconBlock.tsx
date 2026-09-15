@@ -3,8 +3,14 @@ import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { ControlTemplate } from './ControlTemplate';
 import { FaIcon } from '../FaIcon';
 import { type IconType } from '../../utils/FaIconList';
-import { Button, Modal } from 'react-daisyui';
-import { Portal } from 'react-portal';
+import { Button } from '../ui/button';
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from '../ui/dialog';
 import { IconSearch, IconSticker } from '@tabler/icons-react';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { useControlState } from '../../hooks/useControlState';
@@ -63,7 +69,7 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 									Select Icon
 								</Label>
 								<div
-									className='hover:bg-neutral ml-2 flex w-20 cursor-pointer rounded-2xl bg-base-100 p-4'
+									className='hover:bg-accent ml-2 flex w-20 cursor-pointer rounded-surface bg-muted/50 p-4'
 									onMouseDown={() => {
 										setShowIconPicker(true);
 									}}
@@ -98,100 +104,89 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 				></FaIcon>
 			</ControlTemplate>
 
-			{showIconPicker && (
-				// @ts-ignore
-				<Portal>
-					<Modal.Legacy
-						onClickBackdrop={() => {
-							setShowIconPicker(false);
-						}}
-						open={true}
-						className='bg-base-200'
-					>
-						<Modal.Header className='font-bold dark:text-white'>
-							<p className='poppins-font-family text-center text-2xl md:text-left md:text-xl'>
-								Select Icon
-							</p>
-						</Modal.Header>
+			<Dialog open={showIconPicker} onOpenChange={setShowIconPicker}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Select Icon</DialogTitle>
+					</DialogHeader>
 
-						<Modal.Body className='flex flex-auto select-none flex-col overflow-hidden'>
-							{/* Search */}
-							<div className='flex flex-auto flex-row'>
-								<IconSearch className='my-auto mr-2 dark:text-white'></IconSearch>
-								<Input
-									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
-										setQuery(ev.currentTarget.value);
-									}}
-									value={query}
-									className='flex flex-auto h-8 text-sm'
-								></Input>
-							</div>
-
-							{/* Licence */}
-							<p className='my-2 text-xs text-neutral-500'>
-								Icons From{' '}
-								<span>
-									<a
-										className='text-neutral-400'
-										href='https://fontawesome.com/'
-										target={'_blank'}
-										rel='noreferrer'
-									>
-										Font Awesome
-									</a>
-								</span>
-								<span> Licence:</span>
-								<span>
-									<a
-										className='text-neutral-400'
-										href='https://creativecommons.org/licenses/by/4.0/'
-										target={'_blank'}
-										rel='noreferrer'
-									>
-										{' '}
-										CC BY 4.0 License
-									</a>
-								</span>
-							</p>
-
-							{/* Icon List */}
-							<div className='mt-2 flex max-h-64 flex-auto flex-row flex-wrap gap-3 overflow-y-auto'>
-								{faIcons
-									?.filter((icon) =>
-										icon.label.toUpperCase().includes(query.toUpperCase()),
-									)
-									.map((el, i) => (
-										<Suspense fallback={<></>}>
-											<div
-												className='inline-flex flex-auto cursor-pointer rounded-xl bg-base-100 p-2 text-3xl hover:bg-base-200 dark:text-neutral-400'
-												onMouseDown={() => {
-													setIcon(el.label);
-													setShowIconPicker(false);
-												}}
-											>
-												<div className='mx-auto my-auto'>
-													<FaIcon icon={el.label}></FaIcon>
-												</div>
-											</div>
-										</Suspense>
-									))}
-							</div>
-						</Modal.Body>
-
-						<Modal.Actions>
-							<Button
-								color='neutral'
-								className='dark:text-white'
-								onClick={() => {
-									setShowIconPicker(false);
+					<div className='flex flex-auto select-none flex-col overflow-hidden'>
+						{/* Search */}
+						<div className='flex flex-auto flex-row'>
+							<IconSearch className='my-auto mr-2 dark:text-white'></IconSearch>
+							<Input
+								onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
+									setQuery(ev.currentTarget.value);
 								}}
-							>
-								Cancel
-							</Button>
-						</Modal.Actions>
-					</Modal.Legacy>
-				</Portal>
-			)}
+								value={query}
+								className='flex flex-auto h-8 text-sm'
+							></Input>
+						</div>
+
+						{/* Licence */}
+						<p className='my-2 text-xs text-muted-foreground'>
+							Icons From{' '}
+							<span>
+								<a
+									className='text-muted-foreground'
+									href='https://fontawesome.com/'
+									target={'_blank'}
+									rel='noreferrer'
+								>
+									Font Awesome
+								</a>
+							</span>
+							<span> Licence:</span>
+							<span>
+								<a
+									className='text-muted-foreground'
+									href='https://creativecommons.org/licenses/by/4.0/'
+									target={'_blank'}
+									rel='noreferrer'
+								>
+									{' '}
+									CC BY 4.0 License
+								</a>
+							</span>
+						</p>
+
+						{/* Icon List */}
+						<div className='mt-2 flex max-h-64 flex-auto flex-row flex-wrap gap-3 overflow-y-auto'>
+							{faIcons
+								?.filter((icon) =>
+									icon.label.toUpperCase().includes(query.toUpperCase()),
+								)
+								.map((el) => (
+									<Suspense key={el.label} fallback={<></>}>
+										<div
+											className='inline-flex flex-auto cursor-pointer rounded-control bg-muted/50 p-2 text-3xl hover:bg-accent'
+											onMouseDown={() => {
+												setIcon(el.label);
+												setShowIconPicker(false);
+											}}
+										>
+											<div className='mx-auto my-auto'>
+												<FaIcon icon={el.label}></FaIcon>
+											</div>
+										</div>
+									</Suspense>
+								))}
+						</div>
+					</div>
+
+					<DialogFooter>
+						<Button
+							variant='outline'
+							className='dark:text-white'
+							onClick={() => {
+								setShowIconPicker(false);
+							}}
+						>
+							Cancel
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 };

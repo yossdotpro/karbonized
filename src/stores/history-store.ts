@@ -52,8 +52,8 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
 	pastHistory: [],
 
 	addToHistory: (payload) => {
-		set(state => ({
-			History: [payload, ...state.History]
+		set((state) => ({
+			History: [payload, ...state.History],
 		}));
 	},
 
@@ -88,11 +88,11 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
 					type: 'workspace-update' as const,
 					snapshot: next.value as LayerSnapshot,
 					historyId: next.id,
-			  }
+				}
 			: {
 					type: 'control-update' as const,
 					historyId: next.id,
-			  };
+				};
 	},
 
 	undo: () => {
@@ -119,11 +119,11 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
 					type: 'workspace-update' as const,
 					snapshot: previous.value as LayerSnapshot,
 					historyId: previous.id,
-			  }
+				}
 			: {
 					type: 'control-update' as const,
 					historyId: previous.id,
-			  };
+				};
 	},
 
 	setPast: (payload) => {
@@ -146,18 +146,21 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
 			onReadyToSave,
 			onEditingChange,
 		} = params;
-		
+
 		const historyId = getWorkspaceHistoryId(currentWorkspaceID);
-		
+
 		if (!currentWorkspace) return;
 
-		const previous = createLayerSnapshot(currentWorkspace.controls, currentControlID);
+		const previous = createLayerSnapshot(
+			currentWorkspace.controls,
+			currentControlID,
+		);
 		const nextSnapshot: LayerSnapshot = {
 			controls: nextControls,
 			currentControlID: nextSelection || currentControlID,
 		};
 
-		set(state => ({
+		set((state) => ({
 			pastHistory: [...state.pastHistory, { id: historyId, value: previous }],
 			futureHistory: [],
 			controlState: { id: historyId, value: nextSnapshot },

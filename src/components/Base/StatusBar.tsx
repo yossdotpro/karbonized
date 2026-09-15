@@ -8,12 +8,49 @@ import {
 	Box,
 	CircleDashed,
 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React from 'react';
+import { useCommands } from '@/lib/commands/registry';
 import { useWorkspaceStore, useControlsStore, useUIStore } from '../../stores';
 import { Button } from '../ui/button';
 import { ViewPanel } from '../Panels/ViewPanel';
 import useMousePosition from '@/hooks/useMousePosition';
 import { Separator } from '../ui/separator';
+import { useAutosaveStatus } from '@/lib/persistence/autosave';
+
+const AutosaveIndicator: React.FC = () => {
+	const status = useAutosaveStatus((state) => state.status);
+	const savedAt = useAutosaveStatus((state) => state.savedAt);
+
+	if (status === 'idle') return null;
+
+	const label = {
+		saving: 'Saving…',
+		saved: 'Saved',
+		error: 'Autosave failed',
+	}[status];
+
+	return (
+		<span
+			className='flex items-center gap-1.5'
+			title={
+				savedAt
+					? `Last saved ${new Date(savedAt).toLocaleTimeString()}`
+					: undefined
+			}
+		>
+			<span
+				className={`size-1.5 rounded-full ${
+					status === 'error'
+						? 'bg-destructive'
+						: status === 'saving'
+							? 'animate-pulse bg-muted-foreground'
+							: 'bg-emerald-500'
+				}`}
+			/>
+			{label}
+		</span>
+	);
+};
 
 export const StatusBar: React.FC = () => {
 	/* Component State */
@@ -37,96 +74,90 @@ export const StatusBar: React.FC = () => {
 		}
 
 		setWorkspaceMode(modes[i] as any);
-
-		console.log(modes[i]);
 	};
 
-	const onKeyDown = (event: KeyboardEvent): void => {
-		if (event.ctrlKey && event.key === 'Tab') {
-			event.preventDefault();
-			handleChangeMode();
-		}
-	};
-
-	/* Handle Key Shortcuts */
-	useEffect(() => {
-		window.addEventListener('keydown', onKeyDown);
-
-		return () => {
-			window.removeEventListener('keydown', onKeyDown);
-		};
-	}, [workspaceMode]);
+	useCommands([
+		{
+			id: 'view.cycle-mode',
+			title: 'Cycle workspace mode',
+			group: 'View',
+			icon: Box,
+			shortcut: 'Mod+Period',
+			keywords: ['design', 'edit', 'zen', 'mode'],
+			run: handleChangeMode,
+		},
+	]);
 
 	return (
-		<div className='flex h-9 w-full items-center gap-3 border-t border-border bg-background px-3 text-xs text-muted-foreground shadow-sm'>
-			<>;)</>
-
+		<div className='flex h-7 w-full shrink-0 items-center gap-2 border-t border-border bg-sidebar px-2 text-[11px] text-muted-foreground'>
 			{/* Layout Mode */}
 			<Button
-				className='h-7 gap-1.5 px-2.5 font-medium text-xs'
+				className='h-5 gap-1 rounded-[4px] px-1.5 text-[11px] font-normal'
 				onClick={handleChangeMode}
 				variant={'ghost'}
 			>
 				{workspaceMode === 'design' && (
 					<>
-						<Box className='h-3.5 w-3.5' />
+						<Box className='size-3' />
 						<span>Design</span>
 					</>
 				)}
 
 				{workspaceMode === 'zen' && (
 					<>
-						<CircleDashed className='h-3.5 w-3.5' />
+						<CircleDashed className='size-3' />
 						<span>Zen</span>
 					</>
 				)}
 
 				{workspaceMode === 'edit' && (
 					<>
-						<PencilRuler className='h-3.5 w-3.5' />
+						<PencilRuler className='size-3' />
 						<span>Edit</span>
 					</>
 				)}
 
 				{workspaceMode === 'custom' && (
 					<>
-						<PencilRuler className='h-3.5 w-3.5' />
+						<PencilRuler className='size-3' />
 						<span>Custom</span>
 					</>
 				)}
 			</Button>
 
-			<Separator orientation='vertical' className='h-4' />
+			<Separator orientation='vertical' className='h-3' />
 
 			{/* Mouse Position */}
-			<div className='flex items-center gap-2'>
-				<MousePointer2 className='h-3.5 w-3.5 text-muted-foreground' />
-				<span className='font-mono'>
+			<div className='flex items-center gap-1.5'>
+				<MousePointer2 className='size-3' />
+				<span className='font-mono tabular-nums'>
 					x: {Math.round(mousePosition.x)} y: {Math.round(mousePosition.y)}
 				</span>
 			</div>
 
 			{/* Control Position */}
-			<div className='flex items-center gap-2'>
-				<Layers className='h-3.5 w-3.5 text-muted-foreground' />
-				<span className='font-mono'>
+			<div className='flex items-center gap-1.5'>
+				<Layers className='size-3' />
+				<span className='font-mono tabular-nums'>
 					x: {Math.round(controlPosition?.x as any)} y:{' '}
 					{Math.round(controlPosition?.y as any)}
 				</span>
 			</div>
 
-			<Separator orientation='vertical' className='h-4' />
+			<Separator orientation='vertical' className='h-3' />
 
 			{/* Workspace Name */}
-			<div className='flex items-center gap-2'>
-				<Tag className='h-3.5 w-3.5 text-muted-foreground' />
-				<span className='font-medium'>{currentWorkspace?.workspaceName}</span>
+			<div className='flex items-center gap-1.5'>
+				<Tag className='size-3' />
+				<span className='text-foreground/80'>
+					{currentWorkspace?.workspaceName}
+				</span>
 			</div>
 
 			{/* Workspace Settings Size */}
-			<div className='flex items-center gap-2'>
-				<Square className='h-3.5 w-3.5 text-muted-foreground' />
-				<span className='font-mono'>
+			<div className='flex items-center gap-1.5'>
+				<Square className='size-3' />
+				<span className='font-mono tabular-nums'>
 					{currentWorkspace?.workspaceWidth}
 					{' × '}
 					{currentWorkspace?.workspaceHeight}
@@ -135,15 +166,19 @@ export const StatusBar: React.FC = () => {
 
 			<div className='flex-auto' />
 
+			<AutosaveIndicator />
+
+			<Separator orientation='vertical' className='h-3' />
+
 			<ViewPanel />
 
-			<Separator orientation='vertical' className='h-4' />
+			<Separator orientation='vertical' className='h-3' />
 
 			{/* Source Code */}
 			<Button
 				variant={'ghost'}
 				size={'sm'}
-				className='h-7 gap-1.5 text-xs'
+				className='h-5 gap-1 rounded-[4px] px-1.5 text-[11px] font-normal'
 				asChild
 			>
 				<a
@@ -151,7 +186,7 @@ export const StatusBar: React.FC = () => {
 					target={'_blank'}
 					rel='noreferrer'
 				>
-					<GitBranch className='h-3.5 w-3.5' />
+					<GitBranch className='size-3' />
 					<span>Source</span>
 				</a>
 			</Button>

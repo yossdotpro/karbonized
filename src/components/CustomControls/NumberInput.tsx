@@ -1,6 +1,6 @@
-import { IconCaretDown, IconCaretUp } from '@tabler/icons-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useState } from 'react';
-import { Input } from 'react-daisyui';
+import { Input } from '../ui/input';
 
 interface Props {
 	number: number;
@@ -12,30 +12,30 @@ export const NumberInput: React.FC<Props> = ({
 	onChange = () => {},
 }) => {
 	return (
-		<div className='flex flex-auto flex-row'>
+		<div className='flex flex-auto flex-row items-center'>
 			<Input
-				contentEditable
-				className='flex w-full flex-auto flex-col rounded bg-base-100 text-center'
+				type='number'
+				className='h-7 flex-auto text-center font-mono tabular-nums'
 				onChange={(e) => {
-					onChange(parseInt(e.currentTarget.value));
+					onChange(parseInt(e.currentTarget.value) || 0);
 				}}
 				value={number || 0}
-			></Input>
+			/>
 
-			<div className='ml-2 flex flex-auto flex-col'>
-				<div className='mx-auto flex flex-auto flex-col '>
-					<IconCaretUp
-						className='flex flex-auto hover:text-neutral-800'
+			<div className='ml-1 flex flex-col text-muted-foreground'>
+				<div className='flex flex-col'>
+					<ChevronUp
+						className='size-3.5 hover:text-foreground'
 						onMouseDown={() => {
 							onChange(number + 1);
 						}}
-					></IconCaretUp>
-					<IconCaretDown
-						className='flex flex-auto hover:text-neutral-900'
+					></ChevronUp>
+					<ChevronDown
+						className='size-3.5 hover:text-foreground'
 						onMouseDown={() => {
 							onChange(number - 1);
 						}}
-					></IconCaretDown>
+					></ChevronDown>
 				</div>
 			</div>
 		</div>

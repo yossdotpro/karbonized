@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { 
-	useControlsStore, 
+import {
+	useControlsStore,
 	useHistoryStore,
-	useWorkspaceStore 
+	useWorkspaceStore,
 } from '../stores';
 import default_logo from '../assets/logo.svg';
 
@@ -12,8 +12,12 @@ export function useControlState<T>(
 	manual: boolean = false,
 ): [T, (newState: T) => void] {
 	const controlState = useHistoryStore((state) => state.controlState);
-	const ControlProperties = useControlsStore((state) => state.ControlProperties);
-	const initialProperties = useControlsStore((state) => state.initialProperties);
+	const ControlProperties = useControlsStore(
+		(state) => state.ControlProperties,
+	);
+	const initialProperties = useControlsStore(
+		(state) => state.initialProperties,
+	);
 	const currentControlID = useControlsStore((state) => state.currentControlID);
 	const removeInitialProperty = useControlsStore(
 		(state) => state.removeInitialProperty,
@@ -85,7 +89,6 @@ export function useControlState<T>(
 	useEffect(() => {
 		const storedProperty = ControlProperties.find((item) => item.id === id);
 		if (
-			currentControlID !== controlRef &&
 			storedProperty !== undefined &&
 			serialize(storedProperty.value) !== serialize(state)
 		) {
@@ -97,9 +100,11 @@ export function useControlState<T>(
 	useEffect(() => {
 		const currentWorkspaceID = useWorkspaceStore.getState().currentWorkspaceID;
 		const storedProperty = ControlProperties.find((item) => item.id === id);
-		const currentValue = storedProperty ? serialize(storedProperty.value) : serialize(initialState);
+		const currentValue = storedProperty
+			? serialize(storedProperty.value)
+			: serialize(initialState);
 		const newValue = serialize(state);
-		
+
 		// Only update if the value has actually changed to prevent infinite loops
 		if (currentValue !== newValue) {
 			addControlProperty({ id, value: state }, currentWorkspaceID);

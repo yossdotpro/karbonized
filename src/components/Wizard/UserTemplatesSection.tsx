@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -60,7 +61,7 @@ export const UserTemplatesSection: React.FC<UserTemplatesSectionProps> = ({
 					)}
 				</div>
 			) : (
-				<span className='loading loading-spinner loading-lg mx-auto my-auto text-center' />
+				<Spinner className='mx-auto my-auto size-5 text-muted-foreground' />
 			)}
 		</>
 	);

@@ -9,7 +9,6 @@
 		],
 		"allowJs": false,
 		"skipLibCheck": true,
-		"esModuleInterop": false,
 		"allowSyntheticDefaultImports": true,
 		"strict": true,
 		"forceConsistentCasingInFileNames": true,
@@ -19,13 +18,11 @@
 		"isolatedModules": true,
 		"noEmit": true,
 		"jsx": "react-jsx",
-		"baseUrl": ".",
 		"paths": {
 			"@/*": [
 				"./src/*"
 			]
-		},
-		"ignoreDeprecations": "6.0"
+		}
 	},
 	"include": [
 		"src"

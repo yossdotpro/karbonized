@@ -40,87 +40,87 @@ export const ViewPanel: React.FC = () => {
 
 	return (
 		<>
-			<div className='ml-auto flex items-center gap-1'>
+			<div className='ml-auto flex items-center gap-0.5'>
 				{/* Change Theme */}
 				{!isElectron() && (
 					<>
 						<Button
 							size='icon'
 							variant={'ghost'}
-							className='h-7 w-7'
+							className='size-5 rounded-[4px]'
 							onClick={() => {
 								toggleTheme();
 							}}
 						>
 							{theme === 'light' ? (
-								<Moon className='h-4 w-4' />
+								<Moon className='size-3' />
 							) : (
-								<Sun className='h-4 w-4' />
+								<Sun className='size-3' />
 							)}
 						</Button>
 
-						<Separator orientation='vertical' className='h-4 mx-1' />
+						<Separator orientation='vertical' className='mx-1 h-3' />
 					</>
 				)}
 
 				{/* Lock Aspect Ratio */}
 				<Button
 					size='icon'
-					className='h-7 w-7'
+					className={`size-5 rounded-[4px] ${aspectRatio ? 'bg-accent text-foreground' : ''}`}
 					onClick={() => {
 						setAspectRatio(!aspectRatio);
 					}}
-					variant={aspectRatio ? 'default' : 'ghost'}
+					variant='ghost'
 				>
-					<Lock className='h-3.5 w-3.5' />
+					<Lock className='size-3' />
 				</Button>
 
-				<Separator orientation='vertical' className='h-4 mx-1' />
+				<Separator orientation='vertical' className='mx-1 h-3' />
 
 				{/* Zoom Out */}
 				<Button
 					size='icon'
 					variant={'ghost'}
-					className='h-7 w-7'
+					className='size-5 rounded-[4px]'
 					onClick={() =>
 						viewerRef.current?.setZoom(viewerRef.current?.getZoom() - 0.2)
 					}
 				>
-					<ZoomOut className='h-3.5 w-3.5' />
+					<ZoomOut className='size-3' />
 				</Button>
 
 				{/* Zoom In */}
 				<Button
 					size='icon'
 					variant={'ghost'}
-					className='h-7 w-7'
+					className='size-5 rounded-[4px]'
 					onClick={() =>
 						viewerRef.current?.setZoom(viewerRef.current?.getZoom() + 0.2)
 					}
 				>
-					<ZoomIn className='h-3.5 w-3.5' />
+					<ZoomIn className='size-3' />
 				</Button>
 
 				{/* Zoom Reset */}
 				<Button
 					size='icon'
 					variant={'ghost'}
-					className='h-7 w-7'
+					className='size-5 rounded-[4px]'
 					onClick={() => viewerRef.current?.setZoom(0.7)}
 				>
-					<RotateCcw className='h-3.5 w-3.5' />
+					<RotateCcw className='size-3' />
 				</Button>
 
 				{/* Center View */}
 				<Button
 					size='icon'
 					variant={'ghost'}
-					className='h-7 w-7'
+					className='size-5 rounded-[4px]'
 					onClick={() => {
 						centerView();
 					}}
 				>
-					<Focus className='h-3.5 w-3.5' />
+					<Focus className='size-3' />
 				</Button>
 			</div>
 		</>

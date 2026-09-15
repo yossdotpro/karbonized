@@ -8,7 +8,14 @@ import {
 	IconWifi,
 } from '@tabler/icons-react';
 import React, { useRef, useState } from 'react';
-import { Button, Modal } from 'react-daisyui';
+import { Button } from '../ui/button';
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from '../ui/dialog';
 import { Checkbox } from '../ui/checkbox';
 import karbonized from '../../assets/logo.svg';
 import { ColorPicker } from '../CustomControls/ColorPicker';
@@ -262,7 +269,7 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 								onClick={() => {
 									setShowModal(true);
 								}}
-								className='btn h-20 cursor-pointer rounded-2xl border-none bg-base-300 p-4 hover:bg-neutral'
+								className='inline-flex items-center justify-center transition-colors h-20 cursor-pointer rounded-surface bg-muted/60 p-4 hover:bg-accent'
 							>
 								<div className='flex gap-2'>
 									<img
@@ -572,56 +579,46 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 				</div>
 			</ControlTemplate>
 
-			{showModal && (
-				// @ts-ignore
-				<Portal>
-					<Modal.Legacy
-						open
-						onClickBackdrop={() => {
-							setShowModal(false);
-						}}
-						className='overflow-hidden bg-base-200'
-					>
-						<Modal.Header className='font-bold dark:text-white'>
-							<label className='poppins-font-family text-center text-2xl md:text-left md:text-xl'>
-								Devices
-							</label>
-						</Modal.Header>
+			<Dialog open={showModal} onOpenChange={setShowModal}>
+				<DialogContent className='overflow-hidden'>
+					<DialogHeader>
+						<DialogTitle>Devices</DialogTitle>
+					</DialogHeader>
 
-						<Modal.Body className='flex flex-auto select-none flex-col overflow-hidden'>
-							{/* Devices List */}
-							<div className='mx-auto flex max-h-80 flex-auto flex-wrap gap-3 overflow-auto '>
-								{devices.map((item) => (
-									<div className='flex w-32 flex-auto flex-col'>
-										<button
-											onClick={() => {
-												setTemplate(item.name);
-											}}
-											className='btn h-28 rounded-2xl bg-base-300 p-3'
-										>
-											<img
-												className='mx-auto flex h-full '
-												src={item.thumb}
-											></img>
-										</button>
-										<p className='mx-auto'>{item.name}</p>
-									</div>
-								))}
-							</div>
-						</Modal.Body>
+					<div className='flex flex-auto select-none flex-col overflow-hidden'>
+						{/* Devices List */}
+						<div className='mx-auto flex max-h-80 flex-auto flex-wrap gap-3 overflow-auto '>
+							{devices.map((item) => (
+								<div key={item.name} className='flex w-32 flex-auto flex-col'>
+									<button
+										onClick={() => {
+											setTemplate(item.name);
+										}}
+										className='h-28 rounded-surface bg-muted/60 p-3 hover:bg-accent'
+									>
+										<img
+											className='mx-auto flex h-full '
+											src={item.thumb}
+										></img>
+									</button>
+									<p className='mx-auto'>{item.name}</p>
+								</div>
+							))}
+						</div>
+					</div>
 
-						<Modal.Actions>
-							<Button
-								onClick={() => {
-									setShowModal(false);
-								}}
-							>
-								Cancel
-							</Button>
-						</Modal.Actions>
-					</Modal.Legacy>
-				</Portal>
-			)}
+					<DialogFooter>
+						<Button
+							variant='outline'
+							onClick={() => {
+								setShowModal(false);
+							}}
+						>
+							Cancel
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</>
 	);
 };

@@ -4,6 +4,96 @@
 
 ### 🚀 Features
 
+- **New interface** — neutral design tokens (light/dark), Geist typography and compact controls across menus, panels, dialogs and the status bar
+- **Command palette** (`Ctrl/⌘+K`) listing every available action with its shortcut
+- **Session autosave** — workspaces and block properties are stored in IndexedDB and restored on startup
+- **Block editor** redesigned as a code editor: activity bar, explorer, file tabs with unsaved state, resizable preview panel and Monaco themes that match the app
+- **Block editor console** (`Ctrl+Shift+Y`) showing `console.*` and `htmlBlockAPI.log/warn/error` output, uncaught script errors and failing actions, with error and warning counts in the status bar
+- **Monaco is bundled** with the app (HTML, CSS and JavaScript only) instead of loading from a CDN, so the block editor works offline and in the desktop app
+
+### ⌨️ Shortcuts
+
+- Shortcuts are handled in one place and no longer fire while typing in inputs or the code editor
+- Tools: `V` select, `H` pan, `C` crop, `W` warp (were `Ctrl+W/E/Y/G`)
+- `Ctrl+Shift+L` lock aspect ratio (was `Ctrl+R`), `Shift+1` zoom to fit (was `Ctrl+Space`)
+- `Ctrl++` / `Ctrl+−` / `Shift+0` zoom in / out / reset
+- `Alt+N` new project (was `Ctrl+N`), `Ctrl+O` open project, `Ctrl+Shift+E` export (was `Ctrl+P`)
+- `Ctrl+.` cycle workspace mode (was `Ctrl+Tab`)
+- Block editor: `Ctrl+J` toggle preview panel (was `Ctrl+\`), `Ctrl+Enter` refresh preview (was `Ctrl+R`)
+
+### 🐛 Fixes
+
+- `Ctrl+Y` triggered both redo and crop
+- The editor crashed on load when the properties panel tried to expand before it was registered
+- Block editor preview stayed blank after hiding and showing it, and did not match the canvas rendering
+- Tooltips and menus opened from buttons could not anchor to them because `Button` did not forward refs
+
+## v 2.0.0 - Beta 3
+
+### 🐛 Fixes
+
+- Fix HTML Block custom actions declared as local functions so `// @action:...` handlers now invoke the declared function when triggered from the Actions panel
+- Fix Blocks API file picker behavior in embedded runtimes by mounting the temporary file input before opening the native selector
+- Fix `uploadFile` validation flow to reject when `maxFiles` is exceeded or when no selected files pass validation
+
+### 📝 Documentation
+
+- Update `docs/html-block-api.md` with the real `@action` execution model, `Allow Script Execution` requirement, and file upload error-handling notes
+
+## v 2.0.0 - Beta 2
+
+### 🚀 Features
+
+- **NEW Custom Component System (.kcomponent)**
+  - **YAML-based component format** with manifest, HTML, CSS, and JavaScript sections
+  - **CSS Variables System** with type annotations for automatic UI control generation
+    - Color variables with color pickers
+    - Number variables with sliders (min, max, step, unit)
+    - Shadow variables with shadow editors
+    - Boolean variables with toggle switches
+  - **JavaScript Variables System** with typed controls
+  - **Custom Actions System** with button generation from JavaScript comments
+  - **Shadow DOM Integration** for secure encapsulation
+  - **Component validation** with error messages
+
+- **Component Import System**
+  - **MenuBar → Components → Import Components** menu option
+  - **File upload support** for .kcomponent files
+  - **Direct YAML paste** for quick import
+  - **Component preview** before import
+  - **Example component download** for reference
+  - **Automatic validation** with helpful error messages
+
+- **Component Gallery in Left Panel**
+  - **Components button** in main toolbar for quick access
+  - **Search functionality** filtering by name, author, description, category, and tags
+  - **Component cards** with metadata (name, author, description, category, tags)
+  - **Add to canvas** button for quick component insertion
+  - **Delete component** button for library management
+  - **Empty state** with helpful guidance
+  - **Persistent storage** using Zustand persist
+
+- **Documentation**
+  - **kcomponent-format.md**: Complete format specification with examples
+  - **kcomponent-guide.md**: Step-by-step guide for importing and producing components
+  - **CSS variable types documentation** with all supported annotations
+  - **JavaScript actions documentation** with HTML Block API reference
+  - **Best practices** and troubleshooting sections
+
+### 📦 Dependencies
+
+- Add js-yaml: ^4.1.0
+- Add @types/js-yaml: ^4.0.9
+
+### 📝 Documentation
+
+- Add docs/kcomponent-format.md
+- Add docs/kcomponent-guide.md
+
+## v 2.0.0 - Beta 1 (Internal testing)
+
+### 🚀 Features
+
 - **NEW HTML Block Component** with comprehensive capabilities
   - **Shadow DOM Architecture** for secure encapsulation and CSS scoping
   - **Live HTML/CSS/JavaScript Editor** with real-time preview

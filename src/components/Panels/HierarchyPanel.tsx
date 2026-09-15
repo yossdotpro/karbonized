@@ -87,7 +87,8 @@ const flattenVisibleTree = (nodes: LayerNode[]): Item[] =>
 	]);
 
 const areStringArraysEqual = (left: string[], right: string[]): boolean =>
-	left.length === right.length && left.every((value, index) => value === right[index]);
+	left.length === right.length &&
+	left.every((value, index) => value === right[index]);
 
 export const HierarchyPanel: React.FC = () => {
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
@@ -150,7 +151,9 @@ export const HierarchyPanel: React.FC = () => {
 		const validIds = new Set(visibleControls.map((item) => item.id));
 		setSelectedLayerIDs((current) => {
 			const nextSelected = current.filter((id) => validIds.has(id));
-			return areStringArraysEqual(current, nextSelected) ? current : nextSelected;
+			return areStringArraysEqual(current, nextSelected)
+				? current
+				: nextSelected;
 		});
 		if (selectionAnchorID !== '' && !validIds.has(selectionAnchorID)) {
 			setSelectionAnchorID('');
@@ -507,12 +510,12 @@ export const HierarchyPanel: React.FC = () => {
 					</p>
 				)}
 				{filteredTree.length > 0 ? (
-					<div className='flex flex-col gap-2 pb-4'>
+					<div className='flex flex-col gap-0.5 pb-4'>
 						{filteredTree.map((node) => renderNode(node))}
 					</div>
 				) : (
-					<div className='flex flex-1 items-center justify-center rounded-3xl border border-dashed border-border bg-card/40 p-6'>
-						<p className='max-w-52 text-center text-sm text-muted-foreground'>
+					<div className='flex flex-1 items-center justify-center rounded-surface border border-dashed border-border p-6'>
+						<p className='max-w-52 text-center text-[13px] text-muted-foreground'>
 							No layers match the current search. Try a different keyword or
 							reset the filters.
 						</p>

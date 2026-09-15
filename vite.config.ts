@@ -12,6 +12,21 @@ export default defineConfig({
 		VitePWA({
 			workbox: {
 				globPatterns: ['**/*.{js,css,html,ico,png,svg,ttf}'],
+				// Monaco's language workers are large (the TypeScript one is ~7 MB);
+				// cache them the first time the block editor needs them instead of
+				// on install.
+				globIgnores: ['**/*.worker-*.js'],
+				maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
+				runtimeCaching: [
+					{
+						urlPattern: /\/assets\/[\w-]+\.worker-[\w-]+\.js$/,
+						handler: 'CacheFirst',
+						options: {
+							cacheName: 'monaco-workers',
+							expiration: { maxEntries: 10 },
+						},
+					},
+				],
 			},
 			registerType: 'autoUpdate',
 			includeAssets: ['fonts/*.ttf', 'images/*.png'],

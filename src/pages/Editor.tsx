@@ -6,7 +6,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Spinner } from '@/components/ui/spinner';
-import { IconBrush, IconZoomIn } from '@tabler/icons-react';
 import React, {
 	Suspense,
 	useContext,
@@ -26,6 +25,18 @@ import {
 	useDrawingStore,
 } from '../stores';
 import { getRandomNumber } from '../utils/getRandom';
+import { useCommands } from '@/lib/commands/registry';
+import {
+	Brush,
+	Copy,
+	Focus,
+	Lock,
+	Redo2,
+	RotateCcw,
+	Undo2,
+	ZoomIn,
+	ZoomOut,
+} from 'lucide-react';
 
 const Workspace = React.lazy(
 	async () => await import('../components/Workspace'),
@@ -85,8 +96,6 @@ export const Editor: React.FC = () => {
 
 	/* Component Store and Actions */
 	const isHorizontal = useScreenDirection();
-
-	const [, setShowAbout] = useState(false);
 
 	const ref = useRef<HTMLDivElement>(null);
 
@@ -158,26 +167,85 @@ export const Editor: React.FC = () => {
 		}
 	};
 
-	const onKeyDown = (event: KeyboardEvent): void => {
-		if (event.ctrlKey && event.key === 'r') {
-			event.preventDefault();
-			setAspectRatio(!aspectRatio);
-		} else if (event.ctrlKey && event.key === 's') {
-			event.preventDefault();
-		} else if (event.ctrlKey && event.key === 'z') {
-			event.preventDefault();
-			applyHistoryResult(undo());
-		} else if (event.ctrlKey && event.key === 'y') {
-			event.preventDefault();
-			applyHistoryResult(redo());
-		} else if (event.ctrlKey && event.key === ' ') {
-			event.preventDefault();
-			centerView();
-		} else if (event.key === 'Escape') {
-			event.preventDefault();
-			setShowAbout(false);
-		}
+	const zoomBy = (delta: number): void => {
+		const zoom = viewerRef.current?.getZoom?.() ?? 1;
+		viewerRef.current?.setZoom(Math.max(0.05, zoom + delta));
 	};
+
+	useCommands([
+		{
+			id: 'edit.undo',
+			title: 'Undo',
+			group: 'Edit',
+			icon: Undo2,
+			shortcut: 'Mod+Z',
+			run: () => applyHistoryResult(undo()),
+		},
+		{
+			id: 'edit.redo',
+			title: 'Redo',
+			group: 'Edit',
+			icon: Redo2,
+			shortcut: ['Mod+Shift+Z', 'Mod+Y'],
+			run: () => applyHistoryResult(redo()),
+		},
+		{
+			id: 'edit.duplicate',
+			title: 'Duplicate selection',
+			group: 'Edit',
+			icon: Copy,
+			shortcut: 'Mod+D',
+			when: () => useControlsStore.getState().currentControlID !== '',
+			run: () =>
+				duplicateControl(
+					controlID,
+					currentWorkspace,
+					currentWorkspace?.id || '',
+				),
+		},
+		{
+			id: 'view.lock-aspect',
+			title: aspectRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio',
+			group: 'Edit',
+			icon: Lock,
+			shortcut: 'Mod+Shift+L',
+			keywords: ['proportion', 'ratio'],
+			run: () => setAspectRatio(!aspectRatio),
+		},
+		{
+			id: 'view.fit',
+			title: 'Zoom to fit',
+			group: 'View',
+			icon: Focus,
+			shortcut: 'Shift+1',
+			keywords: ['center', 'fit', 'centrar'],
+			run: centerView,
+		},
+		{
+			id: 'view.zoom-in',
+			title: 'Zoom in',
+			group: 'View',
+			icon: ZoomIn,
+			shortcut: 'Mod+Plus',
+			run: () => zoomBy(0.2),
+		},
+		{
+			id: 'view.zoom-out',
+			title: 'Zoom out',
+			group: 'View',
+			icon: ZoomOut,
+			shortcut: 'Mod+Minus',
+			run: () => zoomBy(-0.2),
+		},
+		{
+			id: 'view.zoom-reset',
+			title: 'Reset zoom',
+			group: 'View',
+			icon: RotateCcw,
+			shortcut: 'Shift+0',
+			run: () => viewerRef.current?.setZoom(0.7),
+		},
+	]);
 
 	/* Redirect to /new if no workspaces exist */
 	useEffect(() => {
@@ -186,36 +254,10 @@ export const Editor: React.FC = () => {
 		}
 	}, [workspaces, navigate]);
 
-	/* Handle Key Shortcuts and Center View on Change Some Workspace Properties */
+	/* Center view when the workspace, mode or aspect lock changes */
 	useEffect(() => {
 		centerView();
-
-		window.addEventListener('keydown', onKeyDown);
-
-		return () => {
-			window.removeEventListener('keydown', onKeyDown);
-		};
 	}, [currentWorkspace, workspaceMode, aspectRatio]);
-
-	/* Handle Duplicate Elements */
-	useEffect(() => {
-		const OnKeyDown = (event: KeyboardEvent): void => {
-			if (event.ctrlKey && event.key === 'd' && controlID !== '') {
-				event.preventDefault();
-				duplicateControl(
-					controlID,
-					currentWorkspace,
-					currentWorkspace?.id || '',
-				);
-			}
-		};
-
-		window.addEventListener('keydown', OnKeyDown);
-
-		return () => {
-			window.removeEventListener('keydown', OnKeyDown);
-		};
-	}, [controlID, currentWorkspace, duplicateControl]);
 
 	return (
 		<div className='flex h-full w-full flex-col overflow-hidden'>
@@ -230,9 +272,12 @@ export const Editor: React.FC = () => {
 					{/* Draw Bar */}
 					{(canDraw || isErasing) && (
 						<div className=' absolute flex h-full w-full'>
-							<div className=' z-50 mb-12 ml-auto mr-4 mt-auto flex flex-row gap-1 rounded-2xl bg-card/90 px-2 py-0.5 backdrop-blur-sm'>
+							<div className='z-50 mb-12 ml-auto mr-4 mt-auto flex flex-row items-center gap-1 rounded-[10px] border border-border bg-popover px-2 py-1 shadow-lg shadow-black/20'>
 								{/* Stroke Range */}
-								<IconBrush className='mx-1 my-auto text-foreground'></IconBrush>
+								<Brush
+									size={16}
+									className='mx-1 my-auto text-muted-foreground'
+								></Brush>
 								<Slider
 									className='my-auto flex flex-auto p-1'
 									min={0}
@@ -263,10 +308,7 @@ export const Editor: React.FC = () => {
 											setZoom(zoom + 0.2);
 										}}
 									>
-										<IconZoomIn
-											size={15}
-											className='text-foreground'
-										></IconZoomIn>
+										<ZoomIn size={15} className='text-foreground'></ZoomIn>
 									</Button>
 								</Tooltip>
 							</div>
@@ -274,11 +316,13 @@ export const Editor: React.FC = () => {
 					)}
 
 					{/* Workspace */}
-					<div className={`flex flex-auto flex-col ${drag && 'cursor-move'}`}>
+					<div
+						className={`canvas-grid flex flex-auto flex-col ${drag && 'cursor-move'}`}
+					>
 						{/* Ruler Horizontal */}
 						<InfiniteViewer
 							ref={viewerRef}
-							className='viewer my-2 flex flex-auto'
+							className='viewer flex flex-auto'
 							useAutoZoom
 							useMouseDrag={drag}
 							useGesture
@@ -301,7 +345,7 @@ export const Editor: React.FC = () => {
 								<Suspense
 									fallback={
 										<div className='flex items-center justify-center'>
-											<Spinner className='h-8 w-8' />
+											<Spinner className='size-5 text-muted-foreground' />
 										</div>
 									}
 								>
@@ -324,7 +368,7 @@ export const Editor: React.FC = () => {
 					{/* Right Panel */}
 					<ResizablePanelGroup orientation='horizontal'>
 						<ResizablePanel></ResizablePanel>
-						<ResizableHandle withHandle />
+						<ResizableHandle className='w-0 bg-transparent' />
 						<Suspense>
 							<RightPanel></RightPanel>
 						</Suspense>

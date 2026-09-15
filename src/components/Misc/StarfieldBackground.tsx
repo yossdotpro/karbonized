@@ -79,7 +79,12 @@ const normalizeSpaceColors = (colors: string[]) => {
 	return ['#ffffff', '#ffd4a3', '#a3c9ff', '#ffa3a3', '#d4a3ff'];
 };
 
-const createStars = (colors: string[], seed: number, width: number, height: number): Star[] => {
+const createStars = (
+	colors: string[],
+	seed: number,
+	width: number,
+	height: number,
+): Star[] => {
 	const random = createSeededRandom(seed);
 	const starCount = Math.floor((width * height) / 800);
 	const stars: Star[] = [];
@@ -87,7 +92,7 @@ const createStars = (colors: string[], seed: number, width: number, height: numb
 	for (let i = 0; i < starCount; i++) {
 		const colorIndex = Math.floor(random() * colors.length);
 		const baseColor = colors[colorIndex] || '#ffffff';
-		
+
 		stars.push({
 			id: `star-${i}`,
 			x: random() * 100,
@@ -109,7 +114,7 @@ const createNebulae = (colors: string[], seed: number): Nebula[] => {
 	for (let i = 0; i < nebulaCount; i++) {
 		const colorIndex = i % colors.length;
 		const baseColor = colors[colorIndex] || '#ffffff';
-		
+
 		nebulae.push({
 			id: `nebula-${i}`,
 			x: 15 + random() * 70,
@@ -143,17 +148,17 @@ export const StarfieldBackground: React.FC<Props> = ({
 	className = '',
 }) => {
 	const spaceColors = useMemo(() => normalizeSpaceColors(colors), [colors]);
-	
+
 	const stars = useMemo(
 		() => createStars(spaceColors, seed, width, height),
 		[spaceColors, seed, width, height],
 	);
-	
+
 	const nebulae = useMemo(
 		() => createNebulae(spaceColors, seed),
 		[spaceColors, seed],
 	);
-	
+
 	const backgroundGradient = useMemo(
 		() => createSpaceGradient(spaceColors),
 		[spaceColors],
@@ -230,7 +235,8 @@ export const StarfieldBackground: React.FC<Props> = ({
 			<div
 				className='absolute inset-0 pointer-events-none opacity-20'
 				style={{
-					background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
+					background:
+						'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
 				}}
 			/>
 		</div>

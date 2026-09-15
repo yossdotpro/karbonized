@@ -1,6 +1,6 @@
-import { IconCircleDashed, IconReload, IconSearch } from '@tabler/icons-react';
+import { CircleDashed, RotateCw, Search } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Input } from 'react-daisyui';
+import { Input } from '@/components/ui/input';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList } from 'react-window';
 import { type Extension } from '../../models/Extension';
@@ -68,13 +68,13 @@ export const ExtensionPanel: React.FC = () => {
 					<label className='my-auto ml-3 h-full select-none  text-xl font-bold'>
 						Extensions
 					</label>
-					<label className='poppins-font-family my-auto ml-2 rounded bg-primary px-2 py-0.5 text-xs text-white'>
+					<label className='my-auto ml-2 rounded bg-primary px-2 py-0.5 text-xs text-white'>
 						Beta
 					</label>
 				</div>
 
 				<div
-					className='hover:bg-neutral mb-1 ml-auto rounded-xl p-2  hover:cursor-pointer'
+					className='hover:bg-accent mb-1 ml-auto rounded-control p-2 hover:cursor-pointer'
 					onClick={() => {
 						setExtensions([]);
 
@@ -85,7 +85,7 @@ export const ExtensionPanel: React.FC = () => {
 						);
 					}}
 				>
-					<IconReload className='my-auto h-full' size={16}></IconReload>
+					<RotateCw className='my-auto h-full' size={16}></RotateCw>
 				</div>
 			</div>
 
@@ -101,9 +101,10 @@ export const ExtensionPanel: React.FC = () => {
 
 			{/* Search */}
 			<div className='flex h-12 shrink-0 flex-row gap-2'>
-				<IconSearch className='my-auto ml-2 h-full' size={18}></IconSearch>
+				<Search className='my-auto ml-2 h-full' size={18}></Search>
 				<Input
-					className='my-auto mb-2 flex  h-full w-full'
+					placeholder='Search extensions…'
+					className='my-auto w-full'
 					onChange={(ev) => {
 						setQuery(ev.target.value);
 					}}
@@ -113,10 +114,10 @@ export const ExtensionPanel: React.FC = () => {
 
 			{loading && extensions.length === 0 ? (
 				<div className=' my-auto  dark:text-neutral-300'>
-					<IconCircleDashed
+					<CircleDashed
 						size={56}
-						className='mx-auto my-auto animate-spin text-neutral-600'
-					></IconCircleDashed>
+						className='mx-auto my-auto animate-spin text-muted-foreground'
+					></CircleDashed>
 				</div>
 			) : (
 				<>
@@ -133,7 +134,7 @@ export const ExtensionPanel: React.FC = () => {
 														className='my-auto ml-1 h-8 rounded-xl'
 														src={item.logo}
 													></img>
-													<label className='poppins-font-family my-auto p-2 hover:cursor-pointer '>
+													<label className='my-auto p-2 hover:cursor-pointer'>
 														{item.info.name}
 													</label>
 												</>
@@ -155,7 +156,7 @@ export const ExtensionPanel: React.FC = () => {
 						</>
 					) : (
 						<div className='flex flex-auto'>
-							<p className='mx-auto my-auto select-none text-center text-xs text-neutral-700'>
+							<p className='mx-auto my-auto select-none text-center text-xs text-muted-foreground'>
 								No extensions installed
 							</p>
 						</div>
@@ -165,10 +166,10 @@ export const ExtensionPanel: React.FC = () => {
 
 			{loading && extensions.length > 0 && (
 				<div className='mt-2 dark:text-neutral-300'>
-					<IconCircleDashed
+					<CircleDashed
 						size={26}
-						className='mx-auto my-auto animate-spin text-neutral-600'
-					></IconCircleDashed>
+						className='mx-auto my-auto animate-spin text-muted-foreground'
+					></CircleDashed>
 				</div>
 			)}
 		</div>
@@ -215,7 +216,7 @@ const ItemsList = ({ data }: { data: any }) => {
 					handleAddItem(data[index].code, data[index].properties.name);
 				}}
 				style={{ ...style, height: style.height - 5, top: style.top + 5 }}
-				className='flex-r hover:bg-neutral my-2 flex flex-auto select-none  rounded-xl bg-base-100 hover:cursor-pointer'
+				className='flex-r hover:bg-accent my-2 flex flex-auto select-none rounded-control bg-muted/50 hover:cursor-pointer'
 			>
 				{data[index].image.startsWith('data:image/') ? (
 					<img

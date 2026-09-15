@@ -1,4 +1,4 @@
-import { IconChevronDown } from '@tabler/icons-react';
+import { ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, type ReactNode } from 'react';
 
@@ -21,15 +21,15 @@ export const CustomCollapse: React.FC<Props> = ({
 				onClick={() => {
 					setOpen(!open);
 				}}
-				className='my-auto border-b text-muted-foreground font-heading flex h-12 max-h-12 w-full cursor-pointer select-none items-center px-3'
+				className='group my-auto flex h-9 max-h-9 w-full select-none items-center border-b border-border px-2 text-muted-foreground transition-colors hover:text-foreground [&_label]:text-[13px] [&_label]:font-medium [&_svg]:size-3.5'
 			>
 				{menu}
 				<div className='ml-auto'>
 					<motion.div
-						animate={{ rotate: open ? 90 : 0 }}
-						transition={{ duration: 0.3, ease: 'easeInOut' }}
+						animate={{ rotate: open ? 0 : -90 }}
+						transition={{ duration: 0.15, ease: 'easeOut' }}
 					>
-						<IconChevronDown size={12}></IconChevronDown>
+						<ChevronDown size={12}></ChevronDown>
 					</motion.div>
 				</div>
 			</button>
@@ -39,10 +39,10 @@ export const CustomCollapse: React.FC<Props> = ({
 						initial={{ height: 0, opacity: 0 }}
 						animate={{ height: 'auto', opacity: 1 }}
 						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.3, ease: 'easeInOut' }}
+						transition={{ duration: 0.18, ease: 'easeOut' }}
 						className='overflow-hidden'
 					>
-						<div className='mt-2 flex cursor-pointer select-none flex-col gap-4 p-2'>
+						<div className='flex select-none flex-col gap-3 px-2 pb-3 pt-2.5'>
 							{children}
 						</div>
 					</motion.div>

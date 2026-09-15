@@ -22,19 +22,29 @@ interface ProjectActions {
 type ProjectStore = ProjectState & ProjectActions;
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
-	saveProject: ({ currentWorkspace, currentWorkspaceID, controlProperties }) => {
+	saveProject: ({
+		currentWorkspace,
+		currentWorkspaceID,
+		controlProperties,
+	}) => {
 		if (currentWorkspace) {
-			const controls = currentWorkspace.controls.filter((item: any) => !item.isDeleted);
+			const controls = currentWorkspace.controls.filter(
+				(item: any) => !item.isDeleted,
+			);
 			const project: Project = {
-				properties: controlProperties.filter((item: any) =>
-					item.workspace === currentWorkspaceID &&
-					controls.find((i: any) =>
-						item.id.split('-')[0] + '-' + item.id.split('-')[1] === i.id
-					)
+				properties: controlProperties.filter(
+					(item: any) =>
+						item.workspace === currentWorkspaceID &&
+						controls.find(
+							(i: any) =>
+								item.id.split('-')[0] + '-' + item.id.split('-')[1] === i.id,
+						),
 				),
 				workspace: {
 					...currentWorkspace,
-					controls: currentWorkspace.controls.filter((item: any) => !item.isDeleted),
+					controls: currentWorkspace.controls.filter(
+						(item: any) => !item.isDeleted,
+					),
 				},
 			};
 			return project;
@@ -55,10 +65,10 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 		const props: Array<{ id: string; value: any; workspace: string }> = [];
 		const controls: any[] = [];
 
-		project.workspace.controls.forEach(item => {
+		project.workspace.controls.forEach((item) => {
 			project.properties
-				.filter(items => items.id.startsWith(item.id))
-				.forEach(prop => {
+				.filter((items) => items.id.startsWith(item.id))
+				.forEach((prop) => {
 					if (
 						lastProp !==
 						item.id.split('-')[0] + '-' + item.id.split('-')[1]
@@ -80,7 +90,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 						lastProp = prop.id.split('-')[0] + '-' + prop.id.split('-')[1];
 
 						const newItem = project.workspace.controls.find(
-							control =>
+							(control) =>
 								control.id ===
 								prop.id.split('-')[0] + '-' + prop.id.split('-')[1],
 						);

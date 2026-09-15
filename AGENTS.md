@@ -20,7 +20,8 @@ There is no in-app agent system in this project. The closest thing to an extensi
 
 - Frontend: React 18, TypeScript, Vite
 - Global state: Easy Peasy
-- UI: Tailwind CSS v4, DaisyUI, Radix UI, shadcn/ui
+- UI: Tailwind CSS v4, Radix UI, shadcn/ui (`src/components/ui/`), cmdk command palette
+- Code editor: Monaco, bundled locally (`src/lib/monaco/setup.ts`)
 - Canvas interaction: `react-moveable`, `react-infinite-viewer`
 - Lightweight persistence: `localforage`
 - Desktop: Electron, plus signs of Tauri/Capacitor integration
@@ -29,9 +30,11 @@ There is no in-app agent system in this project. The closest thing to an extensi
 ## Key Folders
 
 - `src/`: main web/editor app
-- `src/pages/`: main screens such as `Editor` and `ProjectWizard`
+- `src/pages/`: main screens: `NewProject`, `Editor` and `BlockEditor` (HTML block code editor)
 - `src/components/`: canvas, blocks, panels, modals, and reusable controls
-- `src/stores/AppStore.ts`: global state, history, workspaces, controls, and main actions
+- `src/stores/`: Zustand stores split by concern (`workspace-store`, `controls-store`, `history-store`, `ui-store`, …)
+- `src/lib/commands/`: command registry and keyboard shortcuts (see below)
+- `src/lib/persistence/autosave.ts`: session autosave/restore (IndexedDB)
 - `src/utils/`: exporting, platform utilities, helper lists, and static data
 - `src/models/Extension.ts`: TypeScript contract for extensions
 - `docs/plugin_system.md`: functional documentation for the plugin system
@@ -137,7 +140,7 @@ Before refactoring platform integration, verify which runtime path is actually u
 - `yarn electron:dev`: desktop development with Electron
 - `yarn build`: web build
 - `yarn electron:build`: desktop build
-- `yarn lint`: lint `src`
+- `yarn lint`: lint `src` (should report 0 errors)
 - `yarn format`: run Prettier on `src`
 
 ## Practical Editing Conventions
@@ -145,17 +148,21 @@ Before refactoring platform integration, verify which runtime path is actually u
 - Prefer small, localized changes; editor state is fairly coupled.
 - Review `AppStore.ts` before changing selection, duplication, undo/redo, or workspaces.
 - For new block types, inspect `src/components/Blocks/` and `ControlHandler` first.
-- For UI work, try to preserve consistency between legacy DaisyUI components and `src/components/ui/` components.
+- For UI work, use the design tokens in `src/input.css` (`bg-background`, `bg-sidebar`, `border-border`, `text-muted-foreground`, …) and the `rounded-control` / `rounded-surface` radii. Do not change the generic radius scale or `font-block`: canvas blocks use them and exported images would change.
+- Monaco themes mirror the tokens in `src/lib/theme/editor-theme.ts`; keep both in sync.
+- Shortcuts and command palette entries are registered with `useCommands()` from `src/lib/commands/registry.ts`. Do not add `window.addEventListener('keydown')` handlers; a single handler dispatches every shortcut and skips inputs, Monaco and open overlays unless `allowInInput` is set.
+- Restored block properties go through `initialProperties` (consumed by `useControlState` on mount), not `ControlProperties`.
 - Use the `@/` alias when the surrounding file already follows that pattern; the repo mixes relative imports and alias-based imports.
 - Do not assume commented-out code is dead; some features are in transition, especially templates and desktop runtimes.
 
 ## Visible Risks and Technical Debt
 
 - Two Electron areas coexist: `electron/` and `src-electron/`
-- There is a mix of legacy UI components and newer UI primitives
+- `react-hooks` React Compiler rules (`set-state-in-effect`, `immutability`, `refs`) are warnings: existing code still has those patterns
 - Part of the templates/community system is commented out or incomplete
 - The central store is large and mixes many responsibilities
 - There does not appear to be an automated test suite in the repo
+- TypeScript is pinned to 6.0 because typescript-eslint does not support TS 7 yet
 
 If you make deep changes, manually validate at least:
 

@@ -1,21 +1,31 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { getRandomNumber } from '../utils/getRandom';
-import type { Item, LayerSnapshot, LayerMovePosition, LayerStepDirection, LayerEdgePosition } from '../types';
+import type {
+	Item,
+	LayerSnapshot,
+	LayerMovePosition,
+	LayerStepDirection,
+	LayerEdgePosition,
+} from '../types';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+	return twMerge(clsx(inputs));
 }
 
 export const cloneControls = (controls: Item[]): Item[] =>
 	controls.map((item) => ({ ...item }));
 
-export const normalizeParentId = (value?: string | null): string | null => value ?? null;
+export const normalizeParentId = (value?: string | null): string | null =>
+	value ?? null;
 
 export const getWorkspaceHistoryId = (workspaceId: string): string =>
 	`workspace-structure-${workspaceId}`;
 
-export const getChildren = (controls: Item[], parentId?: string | null): Item[] =>
+export const getChildren = (
+	controls: Item[],
+	parentId?: string | null,
+): Item[] =>
 	controls.filter(
 		(item) => normalizeParentId(item.parentId) === normalizeParentId(parentId),
 	);
@@ -46,9 +56,7 @@ export const moveItemBlock = (
 	if (draggedBlock.length === 0 || target === undefined) return controls;
 
 	const nextParentId =
-		position === 'inside'
-			? target.id
-			: normalizeParentId(target.parentId);
+		position === 'inside' ? target.id : normalizeParentId(target.parentId);
 
 	const updatedBlock = draggedBlock.map((item) =>
 		item.id === draggedId ? { ...item, parentId: nextParentId } : item,
@@ -87,7 +95,8 @@ export const reorderAmongSiblings = (
 	const siblings = controls.filter(
 		(item) =>
 			!item.isDeleted &&
-			normalizeParentId(item.parentId) === normalizeParentId(current.parentId) &&
+			normalizeParentId(item.parentId) ===
+				normalizeParentId(current.parentId) &&
 			item.id !== controlId,
 	);
 	const currentSiblings = controls.filter(
@@ -155,4 +164,5 @@ export const createLayerSnapshot = (
 	};
 };
 
-export const generateNewId = (type: string): string => `${type}-${getRandomNumber()}`;
+export const generateNewId = (type: string): string =>
+	`${type}-${getRandomNumber()}`;

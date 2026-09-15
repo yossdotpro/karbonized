@@ -50,7 +50,9 @@
 	-moz-osx-font-smoothing: grayscale;
 }
 
-#root {
+/* Canvas content keeps its original typeface so exported images don't change */
+#workspace,
+.viewport {
 	font-family: 'Poppins-Regular';
 }
 

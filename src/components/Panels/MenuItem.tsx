@@ -184,17 +184,17 @@ export const MenuItem: React.FC<MenuItemProps> = ({
 						onDragEnd={onDragEnd}
 						onClick={(event) => onSelect(item, event)}
 						onDoubleClick={() => onRenameStart(item)}
-						className={`group relative flex items-center gap-2 rounded border px-2 py-2 transition-all ${
+						className={`group relative flex items-center gap-1.5 rounded-control border px-1 py-1 transition-colors ${
 							isSelected
-								? 'border-primary/40 bg-primary/10 text-foreground shadow-sm'
+								? 'border-transparent bg-accent text-foreground'
 								: isFocused
-									? 'border-border/80 bg-muted/60 text-foreground'
-									: 'border-transparent bg-background/60 text-muted-foreground hover:border-border/70 hover:bg-muted/60 hover:text-foreground'
+									? 'border-border bg-muted/60 text-foreground'
+									: 'border-transparent text-muted-foreground hover:bg-muted hover:text-foreground'
 						}`}
 						style={{ marginLeft: depth * 14 }}
 					>
 						{dropPosition === 'inside' && (
-							<div className='absolute inset-0 rounded-2xl border border-dashed border-primary/70 bg-primary/5' />
+							<div className='absolute inset-0 rounded-control border border-dashed border-ring bg-accent/40' />
 						)}
 
 						{isGroup ? (
@@ -211,14 +211,14 @@ export const MenuItem: React.FC<MenuItemProps> = ({
 								{item.collapsed ? <ChevronRight /> : <ChevronDown />}
 							</Button>
 						) : (
-							<div className='size-6 shrink-0' />
+							<div className='w-0 shrink-0' />
 						)}
 
 						<div
-							className={`relative z-10 flex size-9 shrink-0 items-center justify-center rounded-2xl border ${
+							className={`relative z-10 flex size-7 shrink-0 items-center justify-center rounded-[5px] border [&_svg]:size-3.5 ${
 								isGroup
-									? 'border-amber-300/60 bg-amber-100/80 text-amber-700'
-									: 'border-border/80 bg-card text-foreground'
+									? 'border-amber-500/30 bg-amber-500/10 text-amber-500'
+									: 'border-border bg-card text-muted-foreground'
 							}`}
 						>
 							<MenuIcon type={item.type} />
@@ -239,12 +239,14 @@ export const MenuItem: React.FC<MenuItemProps> = ({
 										}
 									}}
 									onBlur={() => onRenameCommit(renameValue)}
-									className='h-8 bg-background'
+									className='h-7 bg-background'
 								/>
 							) : (
 								<>
-									<p className='truncate text-sm font-medium'>{item.name}</p>
-									<div className='flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-muted-foreground/90'>
+									<p className='truncate text-[13px] text-foreground'>
+										{item.name}
+									</p>
+									<div className='flex items-center gap-2 text-[11px] capitalize text-muted-foreground'>
 										<span>
 											{isGroup ? 'Group' : item.type.replace('_', ' ')}
 										</span>

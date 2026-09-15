@@ -101,20 +101,26 @@ const createGalaxyArms = (colors: string[], seed: number): GalaxyArm[] => {
 	for (let i = 0; i < armCount; i++) {
 		const baseAngle = (i * 2 * Math.PI) / armCount;
 		const spiralFactor = 0.3 + random() * 0.2;
-		
+
 		for (let j = 0; j < 3; j++) {
 			const distance = 20 + j * 25;
 			const angle = baseAngle + (distance * spiralFactor * Math.PI) / 180;
 			const spread = 10 + random() * 15;
-			
+
 			arms.push({
 				id: `arm-${i}-${j}`,
 				startX: 50 + Math.cos(angle) * distance,
 				startY: 50 + Math.sin(angle) * distance,
 				endX: 50 + Math.cos(angle + 0.3) * (distance + 20),
 				endY: 50 + Math.sin(angle + 0.3) * (distance + 20),
-				controlX: 50 + Math.cos(angle + 0.15) * (distance + 10) + (random() - 0.5) * spread,
-				controlY: 50 + Math.sin(angle + 0.15) * (distance + 10) + (random() - 0.5) * spread,
+				controlX:
+					50 +
+					Math.cos(angle + 0.15) * (distance + 10) +
+					(random() - 0.5) * spread,
+				controlY:
+					50 +
+					Math.sin(angle + 0.15) * (distance + 10) +
+					(random() - 0.5) * spread,
 				width: 15 + random() * 25,
 				color: colors[j % colors.length] || colors[0],
 				opacity: 0.3 + random() * 0.4,
@@ -133,7 +139,7 @@ const createStarClusters = (colors: string[], seed: number): StarCluster[] => {
 	for (let i = 0; i < clusterCount; i++) {
 		const angle = random() * 2 * Math.PI;
 		const distance = 15 + random() * 35;
-		
+
 		clusters.push({
 			id: `cluster-${i}`,
 			x: 50 + Math.cos(angle) * distance,
@@ -150,7 +156,7 @@ const createStarClusters = (colors: string[], seed: number): StarCluster[] => {
 
 const createGalaxyCore = (colors: string[], seed: number): GalaxyCore => {
 	const random = createSeededRandom(seed + 3000);
-	
+
 	return {
 		id: 'galaxy-core',
 		x: 50,
@@ -186,22 +192,22 @@ export const GalaxyBackground: React.FC<Props> = ({
 	className = '',
 }) => {
 	const galaxyColors = useMemo(() => normalizeGalaxyColors(colors), [colors]);
-	
+
 	const galaxyArms = useMemo(
 		() => createGalaxyArms(galaxyColors, seed),
 		[galaxyColors, seed],
 	);
-	
+
 	const starClusters = useMemo(
 		() => createStarClusters(galaxyColors, seed),
 		[galaxyColors, seed],
 	);
-	
+
 	const galaxyCore = useMemo(
 		() => createGalaxyCore(galaxyColors, seed),
 		[galaxyColors, seed],
 	);
-	
+
 	const backgroundGradient = useMemo(
 		() => createGalaxyGradient(galaxyColors),
 		[galaxyColors],
@@ -241,7 +247,10 @@ export const GalaxyBackground: React.FC<Props> = ({
 			/>
 
 			{/* Galaxy Arms */}
-			<svg className='absolute inset-0' style={{ width: '100%', height: '100%' }}>
+			<svg
+				className='absolute inset-0'
+				style={{ width: '100%', height: '100%' }}
+			>
 				<defs>
 					{galaxyArms.map((arm) => (
 						<linearGradient
@@ -253,7 +262,11 @@ export const GalaxyBackground: React.FC<Props> = ({
 							y2='100%'
 						>
 							<stop offset='0%' stopColor={arm.color} stopOpacity={0} />
-							<stop offset='50%' stopColor={arm.color} stopOpacity={arm.opacity} />
+							<stop
+								offset='50%'
+								stopColor={arm.color}
+								stopOpacity={arm.opacity}
+							/>
 							<stop offset='100%' stopColor={arm.color} stopOpacity={0} />
 						</linearGradient>
 					))}

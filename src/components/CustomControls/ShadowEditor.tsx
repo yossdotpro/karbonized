@@ -174,16 +174,18 @@ export const ShadowEditor: React.FC<Props> = ({ value, onChange, label }) => {
 
 			<div className='space-y-4'>
 				{shadows.map((shadow, index) => (
-					<div key={index} className='space-y-3 p-3 border rounded-lg'>
+					<div key={index} className='space-y-3 p-3 border rounded-surface'>
 						<div className='flex items-center justify-between'>
-							<span className='text-sm font-medium'>Shadow {index + 1}</span>
+							<span className='text-[13px] font-medium'>
+								Shadow {index + 1}
+							</span>
 							<Button
 								onClick={() => removeShadow(index)}
 								size='sm'
 								variant='ghost'
-								className='h-6 w-6 p-0 hover:bg-red-100'
+								className='h-6 w-6 p-0 hover:bg-destructive/15'
 							>
-								<X className='h-3 w-3 text-red-600' />
+								<X className='h-3 w-3 text-destructive' />
 							</Button>
 						</div>
 
@@ -262,7 +264,7 @@ export const ShadowEditor: React.FC<Props> = ({ value, onChange, label }) => {
 							</div>
 						</div>
 
-						<div className='mt-2 p-2 bg-muted rounded'>
+						<div className='mt-2 p-2 bg-muted/50 rounded-control'>
 							<code className='text-xs'>{formatShadow([shadow])}</code>
 						</div>
 					</div>
@@ -280,13 +282,13 @@ export const ShadowEditor: React.FC<Props> = ({ value, onChange, label }) => {
 			</Button>
 
 			{shadows.length === 0 && (
-				<div className='text-center text-xs text-muted-foreground py-4 border-2 border-dashed border-border rounded'>
-					No shadows defined. Click "Add Shadow" to create one.
+				<div className='text-center text-xs text-muted-foreground py-4 border border-dashed border-border rounded-control'>
+					No shadows defined. Click &ldquo;Add Shadow&rdquo; to create one.
 				</div>
 			)}
 
 			{shadows.length > 0 && (
-				<div className='mt-3 p-2 bg-muted rounded'>
+				<div className='mt-3 p-2 bg-muted/50 rounded-control'>
 					<div className='flex items-center justify-between mb-1'>
 						<span className='text-xs font-medium'>CSS Output:</span>
 						<Badge variant='secondary' className='text-xs'>

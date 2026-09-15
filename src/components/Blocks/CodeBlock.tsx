@@ -366,7 +366,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 								{!showTabs ? (
 									<p
 										style={{ color: controlsColor }}
-										className='text-[13px] font-sans font-medium text-gray-300 tracking-tight'
+										className='text-[13px] font-block font-medium text-gray-300 tracking-tight'
 									>
 										{title || 'zsh'}
 									</p>
@@ -375,7 +375,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 										<LanguajeTabIcon languaje={language} />
 										<span
 											style={{ color: controlsColor }}
-											className='text-[12px] font-sans text-gray-200'
+											className='text-[12px] font-block text-gray-200'
 										>
 											{title}
 										</span>
@@ -406,7 +406,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 											<LanguajeTabIcon languaje={language} />
 											<span
 												style={{ color: controlsColor }}
-												className='text-xs font-sans text-gray-200'
+												className='text-xs font-block text-gray-200'
 											>
 												{title}
 											</span>
@@ -426,7 +426,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 								) : (
 									<p
 										style={{ color: controlsColor }}
-										className='flex-1 text-xs font-sans text-gray-400 pl-4'
+										className='flex-1 text-xs font-block text-gray-400 pl-4'
 									>
 										{title}
 									</p>
@@ -524,7 +524,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 								{!showTabs && (
 									<p
 										style={{ color: controlsColor }}
-										className='text-xs font-bold text-[#eeeeee] font-sans drop-shadow-sm'
+										className='text-xs font-bold text-[#eeeeee] font-block drop-shadow-sm'
 									>
 										{title || 'Terminal'}
 									</p>
@@ -534,7 +534,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 										<LanguajeTabIcon languaje={language} />
 										<span
 											style={{ color: controlsColor }}
-											className='text-xs font-semibold text-[#eeeeee] font-sans'
+											className='text-xs font-semibold text-[#eeeeee] font-block'
 										>
 											{title}
 										</span>
@@ -598,7 +598,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 							<div className='flex flex-col items-center flex-1'>
 								<p
 									style={{ color: controlsColor }}
-									className='text-xs font-bold text-gray-200 font-sans tracking-wide mb-1'
+									className='text-xs font-bold text-gray-200 font-block tracking-wide mb-1'
 								>
 									{title || 'Terminal'}
 								</p>
@@ -627,7 +627,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 									<IconTerminal size={14} className='text-[#3daee9]' />
 									<span
 										style={{ color: controlsColor }}
-										className='text-[13px] font-sans font-medium text-[#eff0f1]'
+										className='text-[13px] font-block font-medium text-[#eff0f1]'
 									>
 										{title || 'Konsole'}
 									</span>
@@ -650,7 +650,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 								<div className='flex items-center bg-[#31363b] h-8 px-1 gap-0.5 border-b border-black/20'>
 									<div className='flex items-center gap-2 px-3 h-7 bg-[#232629] border-t-2 border-t-[#3daee9] rounded-t-sm shadow-sm'>
 										<LanguajeTabIcon languaje={language} />
-										<span className='text-xs font-sans text-[#eff0f1]'>
+										<span className='text-xs font-block text-[#eff0f1]'>
 											{title}
 										</span>
 										<button className='ml-1 p-0.5 hover:bg-white/10 rounded-full text-gray-400'>

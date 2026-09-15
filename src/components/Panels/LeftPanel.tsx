@@ -42,10 +42,18 @@ import { isElectron } from '../../utils/isElectron';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { Separator } from '../ui/separator';
 import { IconBrandHtml5, IconBrandX, IconHtml } from '@tabler/icons-react';
+import { ComponentsGalleryDialog } from '../Modals/ComponentsGalleryDialog';
+import { useKComponentStore } from '../../stores/kcomponent-store';
+import { KComponent } from '../../models/KComponent';
+import { Package } from 'lucide-react';
+import { useCommands } from '@/lib/commands/registry';
 
 export const LeftPanel: React.FC = () => {
 	/* App Store */
 	const addControl = useControlsStore((state) => state.addControl);
+	const addInitialProperty = useControlsStore(
+		(state) => state.addInitialProperty,
+	);
 	const workspaceMode = useUIStore((state) => state.workspaceMode);
 	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
 	const setWorkspaceTab = useUIStore((state) => state.setSelectedTab);
@@ -62,6 +70,12 @@ export const LeftPanel: React.FC = () => {
 		(state) => state.currentWorkspaceID,
 	);
 
+	/* KComponent Store */
+	const { importedComponents } = useKComponentStore();
+
+	/* Component Gallery Dialog State */
+	const [showComponentsDialog, setShowComponentsDialog] = useState(false);
+
 	/* Component State */
 	const isHorizontal = useScreenDirection();
 	const { theme, toggleTheme } = useContext(AppContext);
@@ -69,9 +83,48 @@ export const LeftPanel: React.FC = () => {
 	const [showMenu, setShowMenu] = useState(!isHorizontal);
 	const [tab, setTab] = useState('hierarchy');
 	const [visibleCount, setVisibleCount] = useState(10);
-	const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
 	const containerRef = useRef<HTMLDivElement>(null);
+
+	// Handler to add imported component to canvas
+	const handleAddKComponentToCanvas = (component: KComponent) => {
+		const getElementsByType = (type: string) => {
+			if (currentWorkspace !== undefined)
+				return (
+					currentWorkspace?.controls.filter((item) => item.type === type)
+						?.length + 1
+				);
+		};
+
+		// Create an HTML block with the imported component's content
+		const controlId = `html-${getRandomNumber()}`;
+		addControl(
+			{
+				type: 'html',
+				id: controlId,
+				isSelectable: true,
+				isDeleted: false,
+				name: component.manifest.name || `html ${getElementsByType('html')}`,
+				isVisible: true,
+			},
+			currentWorkspaceID,
+		);
+
+		// Set the HTML, CSS, and JS content from the imported component
+		// using the store's initialProperties mechanism
+		addInitialProperty(
+			{ id: `${controlId}-html`, value: component.html },
+			currentWorkspaceID,
+		);
+		addInitialProperty(
+			{ id: `${controlId}-css`, value: component.css },
+			currentWorkspaceID,
+		);
+		addInitialProperty(
+			{ id: `${controlId}-js`, value: component.js },
+			currentWorkspaceID,
+		);
+	};
 
 	// Tool configuration
 	const tools = useMemo(() => {
@@ -88,7 +141,7 @@ export const LeftPanel: React.FC = () => {
 				id: 'select',
 				icon: MousePointer2,
 				label: 'Select',
-				shortcut: 'Ctrl+W',
+				shortcut: 'V',
 				action: () => {
 					setEditing(true);
 					setDrag(false);
@@ -101,7 +154,7 @@ export const LeftPanel: React.FC = () => {
 				id: 'pan',
 				icon: Hand,
 				label: 'Pan',
-				shortcut: 'Ctrl+E',
+				shortcut: 'H',
 				action: () => {
 					setEditing(false);
 					setCrop(false);
@@ -114,7 +167,7 @@ export const LeftPanel: React.FC = () => {
 				id: 'crop',
 				icon: Crop,
 				label: 'Crop',
-				shortcut: 'Ctrl+Y',
+				shortcut: 'C',
 				action: () => {
 					setDrag(false);
 					setWarp(false);
@@ -126,7 +179,7 @@ export const LeftPanel: React.FC = () => {
 				id: 'warp',
 				icon: BoxSelect,
 				label: 'Warp',
-				shortcut: 'Ctrl+G',
+				shortcut: 'W',
 				action: () => {
 					setDrag(false);
 					setCrop(false);
@@ -343,6 +396,15 @@ export const LeftPanel: React.FC = () => {
 				},
 				isActive: false,
 			},
+			{
+				id: 'components',
+				icon: Package,
+				label: 'Components',
+				action: () => {
+					setShowComponentsDialog(true);
+				},
+				isActive: false,
+			},
 		];
 	}, [
 		editing,
@@ -362,7 +424,7 @@ export const LeftPanel: React.FC = () => {
 		const updateVisibleCount = () => {
 			if (containerRef.current) {
 				const containerHeight = containerRef.current.clientHeight;
-				const itemHeight = 44; // Button height + gap
+				const itemHeight = 34; // Button height + gap
 				const separatorHeight = 20;
 				const availableHeight = containerHeight - separatorHeight;
 				const maxVisible = Math.floor(availableHeight / itemHeight);
@@ -378,46 +440,23 @@ export const LeftPanel: React.FC = () => {
 	const visibleTools = tools.slice(0, visibleCount);
 	const overflowTools = tools.slice(visibleCount);
 
-	/* Show/Close Menu KeyShortcut */
-	const onKeyDown = (event: KeyboardEvent): void => {
-		if (event.ctrlKey && event.key === 'b') {
-			event.preventDefault();
-			setShowMenu(!showMenu);
-		} else if (event.ctrlKey && event.key === 'w') {
-			event.preventDefault();
-			setEditing(true);
-			setDrag(false);
-			setWarp(false);
-			setCrop(false);
-		} else if (event.ctrlKey && event.key === 'e') {
-			event.preventDefault();
-			setEditing(false);
-			setCrop(false);
-			setWarp(false);
-			setDrag(true);
-		} else if (event.ctrlKey && event.key === 'y') {
-			event.preventDefault();
-			setDrag(false);
-			setWarp(false);
-			setCrop(true);
-		} else if (event.ctrlKey && event.key === 'g') {
-			event.preventDefault();
-			setEditing(true);
-			setDrag(false);
-			setCrop(false);
-			setWarp(true);
-		} else if (event.ctrlKey && event.key === 's') {
-			event.preventDefault();
-		}
-	};
-
-	useEffect(() => {
-		window.addEventListener('keydown', onKeyDown);
-
-		return () => {
-			window.removeEventListener('keydown', onKeyDown);
-		};
-	}, [showMenu]);
+	/* Tools and inserts are available from shortcuts and the command palette */
+	useCommands(
+		tools.map((tool, index) => ({
+			id: `tools.${tool.id}`,
+			title:
+				index < 4
+					? `${tool.label} tool`
+					: tool.id === 'components'
+						? 'Open component gallery'
+						: `Add ${tool.label.toLowerCase()}`,
+			group: index < 4 ? 'Tools' : 'Insert',
+			icon: tool.icon,
+			shortcut: tool.shortcut,
+			keywords: ['insert', 'add', 'block', tool.id],
+			run: tool.action,
+		})),
+	);
 
 	useEffect(() => {
 		if (workspaceMode === 'design') {
@@ -434,37 +473,29 @@ export const LeftPanel: React.FC = () => {
 			ref={containerRef}
 		>
 			{/* Controls */}
-			<div className='bg-white dark:bg-dark-base-200 border border-neutral-200 dark:border-dark-base-100 flex w-10 flex-col items-center gap-2 text-foreground rounded-2xl px-6 py-3'>
+			<div className='flex w-fit flex-col items-center gap-0.5 rounded-[10px] border border-border bg-popover p-1 text-foreground shadow-lg shadow-black/5 dark:shadow-black/30'>
 				{visibleTools.map((tool, index) => (
 					<React.Fragment key={tool.id}>
-						<Tooltip
-							message={`${tool.label}${tool.shortcut ? ` (${tool.shortcut})` : ''}`}
-						>
+						<Tooltip message={tool.label} shortcut={tool.shortcut}>
 							<Button
 								onClick={tool.action}
-								variant={tool.isActive ? 'default' : 'ghost'}
-								size={'icon'}
-								className='liquid-motion relative'
-								onMouseEnter={() => setHoveredIndex(index)}
-								onMouseLeave={() => setHoveredIndex(null)}
+								variant='ghost'
+								size='icon'
+								aria-label={tool.label}
+								aria-pressed={tool.isActive}
+								className={
+									tool.isActive
+										? 'bg-accent text-foreground hover:bg-accent'
+										: undefined
+								}
 							>
-								<tool.icon
-									size={16}
-									className={`liquid-motion ${
-										hoveredIndex === index ? 'scale-110' : 'scale-100'
-									}`}
-								/>
-								{tool.shortcut && (
-									<span className='absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-xl dark:bg-white dark:text-black bg-neutral-950 text-[8px] font-sans font-bold text-primary-foreground'>
-										{tool.shortcut.split('+')[1]}
-									</span>
-								)}
+								<tool.icon size={16} strokeWidth={1.75} />
 							</Button>
 						</Tooltip>
 						{index === 3 && (
 							<Separator
 								orientation='horizontal'
-								className='-mx-1.5 my-1.5 h-px bg-border/50'
+								className='my-1 h-px w-5 bg-border'
 							/>
 						)}
 					</React.Fragment>
@@ -474,11 +505,15 @@ export const LeftPanel: React.FC = () => {
 					<>
 						<Separator
 							orientation='horizontal'
-							className='-mx-1.5 my-1.5 h-px bg-border/50'
+							className='my-1 h-px w-5 bg-border'
 						/>
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild>
-								<Button size={'icon'} variant={'ghost'} className='rounded-xl'>
+								<Button
+									size={'icon'}
+									variant={'ghost'}
+									aria-label='More controls'
+								>
 									<Ellipsis size={16}></Ellipsis>
 								</Button>
 							</DropdownMenuTrigger>
@@ -487,7 +522,7 @@ export const LeftPanel: React.FC = () => {
 								<DropdownMenuSeparator />
 								{overflowTools.map((tool) => (
 									<DropdownMenuItem key={tool.id} onClick={tool.action}>
-										<tool.icon className='mr-2 size-4 shrink-0' />
+										<tool.icon className='size-4 shrink-0' />
 										{tool.label}
 									</DropdownMenuItem>
 								))}
@@ -562,7 +597,7 @@ export const LeftPanel: React.FC = () => {
 
 					{/* Show/Close Menu */}
 					{isHorizontal && (
-						<Tooltip message='Show/Close Menu (Ctrl+B)'>
+						<Tooltip message='Show/Close Menu'>
 							<Button
 								variant='ghost'
 								size='icon'
@@ -620,6 +655,13 @@ export const LeftPanel: React.FC = () => {
 					)}
 				</div>
 			</div>
+
+			{/* Components Gallery Dialog */}
+			<ComponentsGalleryDialog
+				open={showComponentsDialog}
+				onOpenChange={setShowComponentsDialog}
+				onAddToCanvas={handleAddKComponentToCanvas}
+			/>
 		</div>
 	);
 };

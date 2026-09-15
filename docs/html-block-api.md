@@ -2,7 +2,7 @@
 
 ## Overview
 
-The HTML Block API provides a comprehensive set of tools and methods for creating interactive components within Karbonized. This API is available through the global `htmlBlockAPI` object and includes DOM manipulation utilities, logging, refresh capabilities, and action registration. The HTML Block runs in a Shadow DOM environment for secure encapsulation.
+The HTML Block API provides a comprehensive set of tools and methods for creating interactive components within Karbonized. This API is available through the global `htmlBlockAPI` object and includes DOM manipulation utilities, logging, refresh capabilities, action registration, and advanced file handling. The HTML Block runs in a Shadow DOM environment for secure encapsulation.
 
 ## Global API Access
 
@@ -99,6 +99,224 @@ Registers a custom action handler that can be triggered from the UI.
 ```javascript
 htmlBlockAPI.registerAction('myAction', () => {
 	console.log('Action executed');
+});
+```
+
+## Action Authoring
+
+Karbonized can generate action buttons from JavaScript comments using the `// @action:...` syntax.
+
+### Basic pattern
+
+```javascript
+// @action:Say Hello
+log('Hello from the action');
+```
+
+### Function pattern
+
+If the action block contains a function declaration or a function assigned to a variable, Karbonized will register the action and invoke that function automatically when the action button is pressed.
+
+```javascript
+// @action:Add Images
+async function addImages() {
+	const files = await htmlBlockAPI.uploadFile({
+		accept: ['image/*'],
+		multiple: true,
+	});
+
+	log(`Imported ${Array.isArray(files) ? files.length : 1} images`);
+}
+```
+
+```javascript
+// @action:Refresh Layout
+const refreshLayout = () => {
+	htmlBlockAPI.refresh();
+};
+```
+
+### Runtime requirement
+
+Custom actions only run when `Allow Script Execution` is enabled for the HTML Block.
+
+## File Handling API
+
+### `uploadFile(options)`
+
+Uploads files with validation and converts images to data URLs.
+
+**Parameters:**
+
+- `options` (FileUploadOptions, optional): Configuration options
+  - `accept` (string[]): Accepted file types (e.g., ['image/*', '.pdf'])
+  - `multiple` (boolean): Allow multiple file selection
+  - `maxSize` (number): Maximum file size in bytes
+  - `maxFiles` (number): Maximum number of files
+  - `convertToDataUrl` (boolean): Convert images to data URLs
+
+**Returns:** `Promise<FileInfo | FileInfo[]>`
+
+**Notes:**
+
+- The file picker is mounted temporarily in the DOM before opening, which improves compatibility with Electron and embedded webviews.
+- The promise rejects when the user cancels selection, when the selection exceeds `maxFiles`, or when no selected file passes validation.
+
+**Example:**
+
+```javascript
+// Upload multiple images
+const images = await htmlBlockAPI.uploadFile({
+	accept: ['image/*'],
+	multiple: true,
+	maxSize: 5 * 1024 * 1024, // 5MB
+	convertToDataUrl: true,
+});
+
+// Upload single PDF
+const pdf = await htmlBlockAPI.uploadFile({
+	accept: ['application/pdf'],
+	maxSize: 10 * 1024 * 1024, // 10MB
+});
+```
+
+**Common error handling:**
+
+```javascript
+try {
+	const uploaded = await htmlBlockAPI.uploadFile({
+		accept: ['image/*'],
+		multiple: true,
+		maxFiles: 4,
+	});
+} catch (error) {
+	htmlBlockAPI.warn(`Upload cancelled or rejected: ${error.message}`);
+}
+```
+
+### `getFile(fileId)`
+
+Retrieves file information by ID.
+
+**Parameters:**
+
+- `fileId` (string): Unique file identifier
+
+**Returns:** `FileInfo | null`
+
+**Example:**
+
+```javascript
+const file = htmlBlockAPI.getFile('file_123456');
+if (file) {
+	console.log('File name:', file.name);
+	console.log('File size:', file.size);
+	console.log('Data URL:', file.dataUrl);
+}
+```
+
+### `getAllFiles()`
+
+Returns all uploaded files.
+
+**Returns:** `FileInfo[]`
+
+**Example:**
+
+```javascript
+const allFiles = htmlBlockAPI.getAllFiles();
+console.log('Total files:', allFiles.length);
+```
+
+### `removeFile(fileId)`
+
+Removes a file by ID and cleans up resources.
+
+**Parameters:**
+
+- `fileId` (string): Unique file identifier
+
+**Returns:** `void`
+
+**Example:**
+
+```javascript
+htmlBlockAPI.removeFile('file_123456');
+```
+
+### `clearFiles()`
+
+Removes all files and cleans up resources.
+
+**Returns:** `void`
+
+**Example:**
+
+```javascript
+htmlBlockAPI.clearFiles();
+```
+
+### `validateFile(file, options)`
+
+Validates a file against specified options.
+
+**Parameters:**
+
+- `file` (File): File object to validate
+- `options` (FileUploadOptions, optional): Validation options
+
+**Returns:** `boolean`
+
+**Example:**
+
+```javascript
+const isValid = htmlBlockAPI.validateFile(file, {
+	accept: ['image/*'],
+	maxSize: 5 * 1024 * 1024,
+});
+```
+
+### `convertToDataUrl(file)`
+
+Converts a file to a data URL.
+
+**Parameters:**
+
+- `file` (File): File to convert
+
+**Returns:** `Promise<string>`
+
+**Example:**
+
+```javascript
+const dataUrl = await htmlBlockAPI.convertToDataUrl(file);
+const img = document.createElement('img');
+img.src = dataUrl;
+```
+
+### `optimizeImage(dataUrl, options)`
+
+Optimizes an image by resizing and compressing.
+
+**Parameters:**
+
+- `dataUrl` (string): Image data URL
+- `options` (ImageOptimizationOptions, optional): Optimization settings
+  - `maxWidth` (number): Maximum width in pixels
+  - `maxHeight` (number): Maximum height in pixels
+  - `quality` (number): Quality 0-1 (for JPEG/WebP)
+  - `format` ('jpeg' | 'png' | 'webp'): Output format
+
+**Returns:** `Promise<string>`
+
+**Example:**
+
+```javascript
+const optimized = await htmlBlockAPI.optimizeImage(dataUrl, {
+	maxWidth: 1920,
+	maxHeight: 1080,
+	quality: 0.8,
+	format: 'jpeg',
 });
 ```
 
@@ -294,6 +512,137 @@ Safely gets a CSS style property from an element.
 
 **Returns:** `string | null` - CSS property value
 
+## File Utilities
+
+### `fileUtils`
+
+Reference to the file utilities object with helper functions.
+
+**Type:** `FileUtils`
+
+### `fileUtils.getExtension(filename)`
+
+Gets file extension from filename.
+
+**Parameters:**
+
+- `filename` (string): File name
+
+**Returns:** `string`
+
+**Example:**
+
+```javascript
+const ext = htmlBlockAPI.fileUtils.getExtension('photo.jpg'); // returns 'jpg'
+```
+
+### `fileUtils.formatFileSize(bytes)`
+
+Formats file size in human readable format.
+
+**Parameters:**
+
+- `bytes` (number): File size in bytes
+
+**Returns:** `string`
+
+**Example:**
+
+```javascript
+const size = htmlBlockAPI.fileUtils.formatFileSize(1024); // returns '1 KB'
+```
+
+### `fileUtils.isImage(file)`
+
+Checks if file is an image.
+
+**Parameters:**
+
+- `file` (File | FileInfo): File to check
+
+**Returns:** `boolean`
+
+**Example:**
+
+```javascript
+const isImg = htmlBlockAPI.fileUtils.isImage(file);
+```
+
+### `fileUtils.isVideo(file)`
+
+Checks if file is a video.
+
+**Parameters:**
+
+- `file` (File | FileInfo): File to check
+
+**Returns:** `boolean`
+
+### `fileUtils.isAudio(file)`
+
+Checks if file is an audio file.
+
+**Parameters:**
+
+- `file` (File | FileInfo): File to check
+
+**Returns:** `boolean`
+
+### `fileUtils.getMimeType(extension)`
+
+Gets MIME type from file extension.
+
+**Parameters:**
+
+- `extension` (string): File extension
+
+**Returns:** `string`
+
+**Example:**
+
+```javascript
+const mimeType = htmlBlockAPI.fileUtils.getMimeType('pdf'); // returns 'application/pdf'
+```
+
+## Type Definitions
+
+### FileInfo
+
+```typescript
+interface FileInfo {
+	id: string;
+	name: string;
+	type: string;
+	size: number;
+	url: string;
+	dataUrl?: string;
+	lastModified: number;
+}
+```
+
+### FileUploadOptions
+
+```typescript
+interface FileUploadOptions {
+	accept?: string[];
+	multiple?: boolean;
+	maxSize?: number;
+	maxFiles?: number;
+	convertToDataUrl?: boolean;
+}
+```
+
+### ImageOptimizationOptions
+
+```typescript
+interface ImageOptimizationOptions {
+	maxWidth?: number;
+	maxHeight?: number;
+	quality?: number;
+	format?: 'jpeg' | 'png' | 'webp';
+}
+```
+
 ## Security Considerations
 
 ### Shadow DOM Encapsulation
@@ -309,6 +658,14 @@ HTML Blocks run in a Shadow DOM environment which provides:
 - Always use `htmlBlockAPI.safeDOM` for DOM manipulation
 - Use `htmlBlockAPI.document` for element selection
 - Avoid direct access to `window` when possible
+
+### File Security
+
+- Files are stored in memory and referenced by ID
+- Data URLs are only generated for images under 5MB by default
+- File type validation is performed but should not be supplemented with server-side validation
+- Always sanitize file names when displaying them
+- Use file size limits to prevent memory exhaustion
 
 ### Browser Security Policies
 
