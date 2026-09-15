@@ -9,8 +9,12 @@ import {
 	reorderAmongSiblings,
 	moveToSiblingEdge,
 } from '../lib/utils';
-import { useWorkspaceStore } from './workspace-store';
-import { setHistoryValueResolver, useHistoryStore } from './history-store';
+import { pickWorkspaceSettings, useWorkspaceStore } from './workspace-store';
+import {
+	WORKSPACE_SETTINGS_PREFIX,
+	setHistoryValueResolver,
+	useHistoryStore,
+} from './history-store';
 import type {
 	Item,
 	History,
@@ -681,9 +685,18 @@ setHistoryValueResolver((id) => {
 		};
 	}
 
-	const property = useControlsStore
-		.getState()
-		.ControlProperties.find((item) => item.id === id);
+	if (id.startsWith(WORKSPACE_SETTINGS_PREFIX)) {
+		const workspace = useWorkspaceStore.getState().currentWorkspace;
+		return workspace
+			? { found: true, value: pickWorkspaceSettings(workspace) }
+			: { found: false, value: undefined };
+	}
+
+	const { ControlProperties, initialProperties } = useControlsStore.getState();
+	// Properties of a block that has not mounted yet are still pending.
+	const property =
+		ControlProperties.find((item) => item.id === id) ??
+		initialProperties.find((item) => item.id === id);
 
 	return property
 		? { found: true, value: property.value }

@@ -11,13 +11,12 @@ import { AppContext } from '../AppContext';
 import {
 	useWorkspaceStore,
 	useControlsStore,
-	useHistoryStore,
 	useUIStore,
 	useDrawingStore,
 } from '../stores';
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
-import { isBatchHistory } from '../stores/history-store';
+import { redo, undo } from '@/lib/editor/history';
 import {
 	alignSelection,
 	distributeSelection,
@@ -81,14 +80,6 @@ export const Editor: React.FC = () => {
 	/* App Store */
 	const duplicateControl = useControlsStore((state) => state.duplicateControl);
 	const deleteControl = useControlsStore((state) => state.deleteControl);
-	const setCurrentControlID = useControlsStore(
-		(state) => state.setCurrentControlID,
-	);
-	const setControlPos = useControlsStore((state) => state.setControlPosition);
-	const setControlSize = useControlsStore((state) => state.setControlSize);
-	const setControlTransform = useControlsStore(
-		(state) => state.setControlTransform,
-	);
 	const drag = useUIStore((state) => state.drag);
 	const canDraw = useDrawingStore((state) => state.isDrawing);
 	const isErasing = useDrawingStore((state) => state.isErasing);
@@ -100,16 +91,9 @@ export const Editor: React.FC = () => {
 	const aspectRatio = useUIStore((state) => state.lockAspect);
 	const setAspectRatio = useUIStore((state) => state.setLockAspect);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
-	const setWorkspaceControls = useWorkspaceStore(
-		(state) => state.setWorkspaceControls,
-	);
 
 	/* Copy/Paste System */
 	const controlID = useControlsStore((state) => state.currentControlID);
-
-	const redo = useHistoryStore((state) => state.redo);
-	const undo = useHistoryStore((state) => state.undo);
-	const controlState = useHistoryStore((state) => state.controlState);
 
 	/* Component Store and Actions */
 
@@ -127,53 +111,6 @@ export const Editor: React.FC = () => {
 				.filter((element): element is HTMLElement => element !== null),
 		);
 	}, [selectedControlIDs]);
-
-	const applyHistoryResult = (
-		result:
-			| {
-					type: 'workspace-update';
-					snapshot: { controls: any[]; currentControlID: string };
-					historyId: string;
-			  }
-			| {
-					type: 'control-update';
-					historyId: string;
-			  }
-			| undefined,
-	) => {
-		if (result?.type === 'workspace-update') {
-			setWorkspaceControls(result.snapshot.controls);
-			setCurrentControlID(result.snapshot.currentControlID);
-			return;
-		}
-
-		// Read the entry undo/redo just applied (the render value is stale).
-		const controlState = useHistoryStore.getState().controlState;
-		if (result?.type !== 'control-update' || controlState == null) return;
-
-		if (isBatchHistory(controlState)) {
-			const primary = controlState.value.find(
-				(item: { id: string }) =>
-					item.id === `${useControlsStore.getState().currentControlID}-pos`,
-			);
-			if (primary) setControlPos(primary.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-pos')) {
-			setControlPos(controlState.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-control_size')) {
-			setControlSize(controlState.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-transform')) {
-			setControlTransform(controlState.value);
-		}
-	};
 
 	const centerView = (): void => {
 		if (currentWorkspace === undefined) return;
@@ -237,7 +174,7 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Undo2,
 			shortcut: 'Mod+Z',
-			run: () => applyHistoryResult(undo()),
+			run: () => void undo(),
 		},
 		{
 			id: 'edit.redo',
@@ -245,7 +182,7 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Redo2,
 			shortcut: ['Mod+Shift+Z', 'Mod+Y'],
-			run: () => applyHistoryResult(redo()),
+			run: () => void redo(),
 		},
 		{
 			id: 'edit.duplicate',

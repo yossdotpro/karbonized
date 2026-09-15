@@ -23,6 +23,36 @@ export const isBatchHistory = (
 	entry?.id.startsWith(BATCH_HISTORY_PREFIX) === true &&
 	Array.isArray(entry.value);
 
+/** Layer structure entries: the value is a `LayerSnapshot`. */
+export const WORKSPACE_STRUCTURE_PREFIX = 'workspace-structure-';
+
+/** Canvas settings entries (background, size): the value is `WorkspaceSettings`. */
+export const WORKSPACE_SETTINGS_PREFIX = 'workspace-settings-';
+
+export const getWorkspaceSettingsHistoryId = (workspaceId: string): string =>
+	`${WORKSPACE_SETTINGS_PREFIX}${workspaceId}`;
+
+/**
+ * Flatten history entries (batches included) into the value of one batch.
+ * Entries hold the state *before* each change, so the earliest value of every
+ * target wins: undoing the batch restores what was there before all of them.
+ */
+export const mergeHistoryEntries = (entries: History[]): History[] => {
+	const merged = new Map<string, History>();
+
+	entries
+		.flatMap((entry) => (isBatchHistory(entry) ? entry.value : [entry]))
+		.forEach((item) => {
+			if (!merged.has(item.id)) {
+				merged.set(item.id, { id: item.id, value: item.value });
+			}
+		});
+
+	return Array.from(merged.values());
+};
+
+const createBatchId = () => `${BATCH_HISTORY_PREFIX}${Date.now()}`;
+
 /**
  * Reads the value an entry's target currently has (property value, or the
  * layer snapshot for workspace structure entries). Registered by the controls
@@ -90,6 +120,23 @@ interface HistoryActions {
 	commitBatch: (
 		changes: Array<{ id: string; previous: unknown; next: unknown }>,
 	) => void;
+	/** Record a canvas settings change (background, size) as one step. */
+	commitWorkspaceSettings: (
+		workspaceId: string,
+		previous: unknown,
+		next: unknown,
+	) => void;
+	/**
+	 * Run `fn` and fold every history step it records into a single step.
+	 * Returns the resulting entry (null when nothing was recorded).
+	 */
+	transaction: <T>(fn: () => T) => { result: T; entry: History | null };
+	/**
+	 * Fold the most recent steps that belong to `entries` into one step. Stops
+	 * at the first step that is not in the set (e.g. an edit made by the user
+	 * in between), so unrelated changes are never merged.
+	 */
+	collapseTrailing: (entries: ReadonlySet<History>) => History | null;
 	commitLayerMutation: (params: {
 		nextControls: any[];
 		nextSelection?: string;
@@ -192,7 +239,7 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
 	commitBatch: (changes) => {
 		if (changes.length === 0) return;
 
-		const id = `${BATCH_HISTORY_PREFIX}${Date.now()}`;
+		const id = createBatchId();
 		set((state) => ({
 			pastHistory: [
 				...state.pastHistory,
@@ -210,6 +257,59 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
 				value: changes.map((change) => ({ id: change.id, value: change.next })),
 			},
 		}));
+	},
+
+	commitWorkspaceSettings: (workspaceId, previous, next) => {
+		const id = getWorkspaceSettingsHistoryId(workspaceId);
+		set((state) => ({
+			pastHistory: [...state.pastHistory, { id, value: previous }],
+			futureHistory: [],
+			controlState: { id, value: next },
+		}));
+	},
+
+	transaction: (fn) => {
+		const startLength = get().pastHistory.length;
+		const result = fn();
+		const past = get().pastHistory;
+
+		// Nothing recorded, or the history was rewound meanwhile.
+		if (past.length <= startLength) return { result, entry: null };
+
+		const added = past.slice(startLength);
+		if (added.length === 1) return { result, entry: added[0] };
+
+		const entry: History = {
+			id: createBatchId(),
+			value: mergeHistoryEntries(added),
+		};
+
+		set({
+			pastHistory: [...past.slice(0, startLength), entry],
+			// Blocks apply the batch in `controlState`: make it describe the
+			// final value of everything the transaction touched, so a stale
+			// intermediate state is never re-applied.
+			controlState: captureCurrent(entry, get().controlState),
+		});
+
+		return { result, entry };
+	},
+
+	collapseTrailing: (entries) => {
+		const past = get().pastHistory;
+		let start = past.length;
+		while (start > 0 && entries.has(past[start - 1])) start -= 1;
+
+		const trailing = past.slice(start);
+		if (trailing.length === 0) return null;
+		if (trailing.length === 1) return trailing[0];
+
+		const entry: History = {
+			id: createBatchId(),
+			value: mergeHistoryEntries(trailing),
+		};
+		set({ pastHistory: [...past.slice(0, start), entry] });
+		return entry;
 	},
 
 	commitLayerMutation: (params) => {

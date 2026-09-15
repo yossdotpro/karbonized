@@ -37,8 +37,47 @@ interface WorkspaceActions {
 	setWorkspaceColor: (color: string) => void;
 	setWorkspaceSize: (size: { height: string; width: string }) => void;
 	setWorkspaceType: (type: string) => void;
+	/** Update several canvas settings of the current workspace at once. */
+	setWorkspaceSettings: (settings: Partial<WorkspaceSettings>) => void;
 	cleanWorkspace: () => void;
 }
+
+/** Canvas settings (background and size), without the layers or the name. */
+export type WorkspaceSettings = Pick<
+	Workspace,
+	| 'workspaceColor'
+	| 'workspaceColorMode'
+	| 'workspaceType'
+	| 'workspaceWidth'
+	| 'workspaceHeight'
+	| 'workspaceGradientSettings'
+	| 'workspaceDynamicSettings'
+	| 'workspaceDynamicType'
+	| 'workspaceBlur'
+	| 'workspaceNoise'
+	| 'textureName'
+	| 'textureColors'
+>;
+
+export const pickWorkspaceSettings = (
+	workspace: Workspace,
+): WorkspaceSettings => ({
+	workspaceColor: workspace.workspaceColor,
+	workspaceColorMode: workspace.workspaceColorMode,
+	workspaceType: workspace.workspaceType,
+	workspaceWidth: workspace.workspaceWidth,
+	workspaceHeight: workspace.workspaceHeight,
+	workspaceGradientSettings: { ...workspace.workspaceGradientSettings },
+	workspaceDynamicSettings: {
+		...workspace.workspaceDynamicSettings,
+		colors: [...workspace.workspaceDynamicSettings.colors],
+	},
+	workspaceDynamicType: workspace.workspaceDynamicType,
+	workspaceBlur: workspace.workspaceBlur,
+	workspaceNoise: workspace.workspaceNoise,
+	textureName: workspace.textureName,
+	textureColors: { ...workspace.textureColors },
+});
 
 const createDefaultWorkspace = (id: string, name: string): Workspace => ({
 	id,
@@ -312,6 +351,15 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
 				item.id === state.currentWorkspaceID
 					? { ...item, workspaceType: type }
 					: item,
+			);
+			return buildNextWorkspaceState(workspaces, state.currentWorkspaceID);
+		});
+	},
+
+	setWorkspaceSettings: (settings) => {
+		set((state) => {
+			const workspaces = state.workspaces.map((item) =>
+				item.id === state.currentWorkspaceID ? { ...item, ...settings } : item,
 			);
 			return buildNextWorkspaceState(workspaces, state.currentWorkspaceID);
 		});
