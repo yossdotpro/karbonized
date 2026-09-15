@@ -69,7 +69,7 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 									Select Icon
 								</Label>
 								<div
-									className='hover:bg-neutral ml-2 flex w-20 cursor-pointer rounded-2xl bg-base-100 p-4'
+									className='hover:bg-accent ml-2 flex w-20 cursor-pointer rounded-surface bg-muted/50 p-4'
 									onMouseDown={() => {
 										setShowIconPicker(true);
 									}}
@@ -105,9 +105,9 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 			</ControlTemplate>
 
 			<Dialog open={showIconPicker} onOpenChange={setShowIconPicker}>
-				<DialogContent className='bg-background'>
+				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className='poppins-font-family text-center text-2xl md:text-left md:text-xl'>
+						<DialogTitle>
 							Select Icon
 						</DialogTitle>
 					</DialogHeader>
@@ -126,11 +126,11 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 						</div>
 
 						{/* Licence */}
-						<p className='my-2 text-xs text-neutral-500'>
+						<p className='my-2 text-xs text-muted-foreground'>
 							Icons From{' '}
 							<span>
 								<a
-									className='text-neutral-400'
+									className='text-muted-foreground'
 									href='https://fontawesome.com/'
 									target={'_blank'}
 									rel='noreferrer'
@@ -141,7 +141,7 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 							<span> Licence:</span>
 							<span>
 								<a
-									className='text-neutral-400'
+									className='text-muted-foreground'
 									href='https://creativecommons.org/licenses/by/4.0/'
 									target={'_blank'}
 									rel='noreferrer'
@@ -161,7 +161,7 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 								.map((el, i) => (
 									<Suspense fallback={<></>}>
 										<div
-											className='inline-flex flex-auto cursor-pointer rounded-xl bg-base-100 p-2 text-3xl hover:bg-base-200 dark:text-neutral-400'
+											className='inline-flex flex-auto cursor-pointer rounded-control bg-muted/50 p-2 text-3xl hover:bg-accent'
 											onMouseDown={() => {
 												setIcon(el.label);
 												setShowIconPicker(false);

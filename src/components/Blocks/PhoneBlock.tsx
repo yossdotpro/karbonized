@@ -269,7 +269,7 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 								onClick={() => {
 									setShowModal(true);
 								}}
-								className='btn h-20 cursor-pointer rounded-2xl border-none bg-base-300 p-4 hover:bg-neutral'
+								className='inline-flex items-center justify-center transition-colors h-20 cursor-pointer rounded-surface bg-muted/60 p-4 hover:bg-accent'
 							>
 								<div className='flex gap-2'>
 									<img
@@ -580,9 +580,9 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 			</ControlTemplate>
 
 			<Dialog open={showModal} onOpenChange={setShowModal}>
-				<DialogContent className='overflow-hidden bg-background'>
+				<DialogContent className='overflow-hidden'>
 					<DialogHeader>
-						<DialogTitle className='poppins-font-family text-center text-2xl md:text-left md:text-xl'>
+						<DialogTitle>
 							Devices
 						</DialogTitle>
 					</DialogHeader>
@@ -596,7 +596,7 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 										onClick={() => {
 											setTemplate(item.name);
 										}}
-										className='h-28 rounded-2xl bg-base-300 p-3 hover:bg-neutral'
+										className='h-28 rounded-surface bg-muted/60 p-3 hover:bg-accent'
 									>
 										<img
 											className='mx-auto flex h-full '

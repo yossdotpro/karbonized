@@ -17,8 +17,8 @@ export const TabSelector: React.FC<Props> = ({
 		<button
 			className={
 				isActive
-					? ' flex w-40 select-none rounded-xl bg-base-100/70 p-2 text-xs font-bold text-black dark:text-white md:max-h-full'
-					: ' flex w-40 select-none rounded-xl p-2 text-xs text-neutral-500  md:max-h-full'
+					? 'flex w-40 select-none rounded-control bg-muted/60 p-2 text-xs font-bold text-foreground md:max-h-full'
+					: 'flex w-40 select-none rounded-control p-2 text-xs text-muted-foreground md:max-h-full'
 			}
 			onClick={onClick}
 			onDoubleClick={onDoubleClick && onDoubleClick}

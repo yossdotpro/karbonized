@@ -81,7 +81,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShowModal(true);
 									}}
-									className='hover:bg-neutral ml-2 h-16 w-20 cursor-pointer rounded-2xl bg-base-100 p-4'
+									className='hover:bg-accent ml-2 h-16 w-20 cursor-pointer rounded-surface bg-muted/50 p-4'
 								>
 									<ShapeHandler
 										color={appTheme === 'light' ? '#000000' : '#eeeeee'}
@@ -107,9 +107,9 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 			</ControlTemplate>
 
 			<Dialog open={showModal} onOpenChange={setShowModal}>
-				<DialogContent className='bg-background'>
+				<DialogContent>
 					<DialogHeader>
-						<DialogTitle className='poppins-font-family text-center text-2xl md:text-left md:text-xl'>
+						<DialogTitle>
 							Shapes
 						</DialogTitle>
 					</DialogHeader>
@@ -117,14 +117,14 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 					<div className='flex flex-auto select-none flex-col overflow-hidden'>
 						{/* Shapes List */}
 						<div className='mt-2 flex max-h-64 flex-auto flex-col gap-4 overflow-y-auto'>
-							<label className='text-neutral-500'>Arrows</label>
+							<label className='text-muted-foreground'>Arrows</label>
 
 							<div className='flex flex-auto flex-wrap gap-2'>
 								<div
 									onClick={() => {
 										setShape('arrow');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<ArrowSvg className='flex h-full w-full flex-auto dark:fill-white'></ArrowSvg>
 								</div>
@@ -133,7 +133,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('arrow2');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<Arrow2Svg className='mx-auto flex h-full w-full flex-auto fill-black dark:fill-white'></Arrow2Svg>
 								</div>
@@ -142,7 +142,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('arrow3');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<Arrow3Svg className='mx-auto flex h-full w-full flex-auto dark:fill-white'></Arrow3Svg>
 								</div>
@@ -151,7 +151,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('arrow4');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<Arrow4Svg className='mx-auto flex h-full w-full flex-auto dark:fill-white'></Arrow4Svg>
 								</div>
@@ -160,7 +160,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('arrow5');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<Arrow5Svg className='mx-auto flex h-full w-full flex-auto dark:fill-white'></Arrow5Svg>
 								</div>
@@ -169,20 +169,20 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('arrow6');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<Arrow6Svg className='mx-auto flex h-full w-full flex-auto dark:fill-white'></Arrow6Svg>
 								</div>
 							</div>
 
-							<label className='text-neutral-500'>Forms</label>
+							<label className='text-muted-foreground'>Forms</label>
 
 							<div className='flex flex-auto flex-wrap gap-2'>
 								<div
 									onClick={() => {
 										setShape('oval');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<OvalSvg className='flex h-full w-full flex-auto dark:fill-white'></OvalSvg>
 								</div>
@@ -191,7 +191,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('star');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<StarSvg className='flex h-full w-full flex-auto dark:fill-white'></StarSvg>
 								</div>
@@ -200,7 +200,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('poligon');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<PoligonSvg className='flex h-full w-full flex-auto dark:fill-white'></PoligonSvg>
 								</div>
@@ -209,7 +209,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('hexagon');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<IconHexagonFilled className='mx-auto flex h-full w-full flex-auto dark:fill-white'></IconHexagonFilled>
 								</div>
@@ -218,7 +218,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('triangle');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<Trianglevg className='mx-auto flex h-full w-full flex-auto dark:fill-white'></Trianglevg>
 								</div>
@@ -227,7 +227,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('rectangle');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<RectangleSvg className='mx-auto flex h-full w-full flex-auto dark:fill-white'></RectangleSvg>
 								</div>
@@ -236,7 +236,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('heart');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<IconHeartFilled className='mx-auto flex h-full w-full flex-auto'></IconHeartFilled>
 								</div>
@@ -245,7 +245,7 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 									onClick={() => {
 										setShape('line');
 									}}
-									className='flex h-12 w-9 flex-auto cursor-pointer rounded-xl bg-base-100 p-2 hover:bg-base-200 dark:text-white'
+									className='flex h-12 w-9 flex-auto cursor-pointer rounded-control bg-muted/50 p-2 hover:bg-accent'
 								>
 									<LineSvg className='flex h-full w-full flex-auto stroke-black dark:stroke-white'></LineSvg>
 								</div>

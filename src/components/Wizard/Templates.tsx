@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,7 +83,7 @@ export const Templates: React.FC<TemplatesProps> = ({
 											alt={item.name}
 										/>
 
-										<p className='poppins-font-family mt-2 text-foreground'>
+										<p className='mt-2 text-foreground'>
 											{item.name}
 										</p>
 										<p className='text-xs'>{item.user}</p>
@@ -110,7 +111,7 @@ export const Templates: React.FC<TemplatesProps> = ({
 					)}
 				</>
 			) : (
-				<span className='loading loading-spinner loading-lg mx-auto my-auto text-center' />
+				<Spinner className='mx-auto my-auto size-5 text-muted-foreground' />
 			)}
 
 			<CustomPortal id='search_bar'>
