@@ -1,6 +1,7 @@
 import { useViewStore } from '@/lib/viewer';
 /* eslint-disable array-callback-return */
 import React, {
+	useRef,
 	type RefObject,
 	Suspense,
 	useLayoutEffect,
@@ -21,6 +22,8 @@ import { GalaxyBackground } from './Misc/GalaxyBackground';
 import Moveable, {
 	type OnDrag,
 	type OnResize,
+	type OnResizeStart,
+	type OnResizeEnd,
 	type OnScale,
 	type OnRotate,
 	type OnScaleGroup,
@@ -35,6 +38,9 @@ import WorkspaceTexture from './WorkspaceTexture';
 import { Canvas } from './Canvas';
 import { Wallpapers } from '../utils/wallpapers';
 import noiseTexture from '../assets/noisy.png';
+import { readProperty } from '@/lib/editor/actions';
+import type { TextSizing } from '@/lib/blocks/catalog';
+import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
 
 interface Props {
 	reference: RefObject<HTMLDivElement>;
@@ -42,6 +48,18 @@ interface Props {
 export const Workspace: React.FC<Props> = ({ reference }) => {
 	/* App Store */
 	const controlID = useControlsStore((state) => state.currentControlID);
+	const selectedControlIDs = useControlsStore(
+		(state) => state.selectedControlIDs,
+	);
+	const commitBatch = useHistoryStore((state) => state.commitBatch);
+	const groupDragStart = useRef<Record<string, { x: number; y: number }>>({});
+	/** A text block being resized: its box and sizing mode before the drag. */
+	const textResize = useRef<{
+		size: { w: number; h: number };
+		sizing: TextSizing;
+		nextSizing: TextSizing;
+		style: { width: string; height: string };
+	} | null>(null);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
 	const currentControls = currentWorkspace?.controls ?? [];
 	const currentControl = useMemo(() => {
@@ -67,6 +85,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	const lockAspect = useUIStore((state) => state.lockAspect);
 	const snapping = useViewStore((state) => state.snapping);
 	const isExporting = useUIStore((state) => state.isExporting);
+	const exportTransparent = useUIStore((state) => state.exportTransparent);
 
 	const workspaces = useWorkspaceStore((state) => state.workspaces);
 	const currentWorkspaceID = useWorkspaceStore(
@@ -140,20 +159,64 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		return getGroupDescendantIds(currentControls, currentControl.id);
 	}, [currentControl, currentControls]);
 
+	const canTransformControl =
+		currentControl !== undefined &&
+		!currentControl.locked &&
+		!currentControl.isDeleted &&
+		Boolean(currentControl.isVisible);
+	const showMoveable = selectedControlIDs.length > 1 || canTransformControl;
+
 	const [moveableTarget, setMoveableTarget] = useState<
 		HTMLElement | HTMLElement[] | null
 	>(null);
 
 	useLayoutEffect(() => {
-		if (
-			currentControl === undefined ||
-			currentControl.locked ||
-			currentControl.isDeleted ||
-			!currentControl.isVisible
-		) {
-			setMoveableTarget(null);
-			return;
+		/* Several selected blocks move and resize together */
+		if (selectedControlIDs.length > 1) {
+			const ids = selectedControlIDs.flatMap((id) => {
+				const control = currentControls.find((item) => item.id === id);
+				if (
+					!control ||
+					control.locked ||
+					control.isDeleted ||
+					control.isVisible === false
+				) {
+					return [];
+				}
+				return control.type === 'group'
+					? getGroupDescendantIds(currentControls, control.id)
+					: [control.id];
+			});
+
+			let frame = 0;
+			let cancelled = false;
+			let attempts = 0;
+
+			const resolveTargets = () => {
+				if (cancelled) return;
+
+				const targets = ids
+					.map((id) => document.getElementById(id))
+					.filter((item): item is HTMLElement => item !== null);
+
+				if (targets.length === ids.length || attempts >= 20) {
+					setMoveableTarget(targets.length > 0 ? targets : null);
+					return;
+				}
+
+				attempts += 1;
+				frame = window.requestAnimationFrame(resolveTargets);
+			};
+
+			frame = window.requestAnimationFrame(resolveTargets);
+
+			return () => {
+				cancelled = true;
+				window.cancelAnimationFrame(frame);
+			};
 		}
+
+		if (!canTransformControl) return;
 
 		if (currentControl.type === 'group') {
 			let frame = 0;
@@ -213,10 +276,14 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		groupTargetIds,
 		currentControls,
 		currentWorkspaceID,
+		selectedControlIDs,
+		canTransformControl,
 	]);
 
 	const syncGroupTargetsToStore = (
 		targets: Array<HTMLElement | SVGAElement>,
+		/** Blocks were resized: content-sized text blocks keep the new box. */
+		resized = false,
 	): void => {
 		const nextProperties = [...controlProperties];
 
@@ -242,11 +309,13 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 				x: parseFloat(target.style.left.replace('px', '')),
 				y: parseFloat(target.style.top.replace('px', '')),
 			});
-			upsertProperty(`${targetId}-control_size`, {
-				w: parseFloat(target.style.width.replace('px', '')),
-				h: parseFloat(target.style.height.replace('px', '')),
-			});
+			upsertProperty(`${targetId}-control_size`, readTargetSize(target));
 			upsertProperty(`${targetId}-transform`, target.style.transform);
+
+			const sizing = textSizingOf(targetId);
+			if (resized && sizing && sizing !== 'fixed') {
+				upsertProperty(`${targetId}-sizing`, 'fixed');
+			}
 		});
 
 		setControlProperties(nextProperties);
@@ -372,10 +441,24 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		y: parseFloat(target.style.top.replace('px', '')),
 	});
 
-	const readTargetSize = (target: HTMLElement | SVGElement) => ({
-		w: parseFloat(target.style.width.replace('px', '')),
-		h: parseFloat(target.style.height.replace('px', '')),
-	});
+	const readTargetSize = (target: HTMLElement | SVGElement) => {
+		const element = target as HTMLElement;
+		const w = parseFloat(element.style.width);
+		const h = parseFloat(element.style.height);
+		// Content-sized blocks (auto width or height) have no pixel size set.
+		return {
+			w: Number.isFinite(w) ? w : element.offsetWidth,
+			h: Number.isFinite(h) ? h : element.offsetHeight,
+		};
+	};
+
+	const textSizingOf = (id: string): TextSizing | undefined => {
+		if (currentControls.find((item) => item.id === id)?.type !== 'text') {
+			return undefined;
+		}
+		const stored = readProperty(`${id}-sizing`).value;
+		return isTextSizing(stored) ? stored : 'fixed';
+	};
 
 	const readTargetTransform = (target: HTMLElement | SVGElement) =>
 		target.style.transform;
@@ -425,17 +508,19 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	return (
 		<div ref={reference} id='workspace'>
 			<div
-				className='relative overflow-hidden shadow-2xl transition-all'
+				className={`relative overflow-hidden transition-all ${isExporting ? '' : 'shadow-2xl'}`}
 				style={{
 					height: currentWorkspace?.workspaceHeight + 'px',
 					width: currentWorkspace?.workspaceWidth + 'px',
 				}}
 			>
-				<div className='absolute inset-0 overflow-hidden'>
-					{renderWorkspaceBackground()}
-				</div>
+				{!exportTransparent && (
+					<div className='absolute inset-0 overflow-hidden'>
+						{renderWorkspaceBackground()}
+					</div>
+				)}
 
-				{blurAmount > 0 && (
+				{!exportTransparent && blurAmount > 0 && (
 					<div className='absolute inset-0 overflow-hidden pointer-events-none'>
 						<div
 							className='absolute inset-0'
@@ -448,7 +533,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					</div>
 				)}
 
-				{noiseAmount > 0 && (
+				{!exportTransparent && noiseAmount > 0 && (
 					<div
 						className='absolute inset-0 pointer-events-none'
 						style={{
@@ -495,7 +580,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 			{editing && !isExporting && (
 				<Moveable
 					useResizeObserver
-					target={moveableTarget}
+					target={showMoveable ? moveableTarget : null}
 					origin={true}
 					/* Resize event edges */
 					edge={false}
@@ -547,6 +632,14 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 							},
 						]);
 					}}
+					onDragGroupStart={({ targets }: any) => {
+						groupDragStart.current = Object.fromEntries(
+							(targets as HTMLElement[]).map((target) => [
+								target.id,
+								readTargetPosition(target),
+							]),
+						);
+					}}
 					onDragGroup={({ events }: any) => {
 						events.forEach(({ target, left, top }: any) => {
 							target.style.left = `${left}px`;
@@ -554,6 +647,21 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						});
 					}}
 					onDragGroupEnd={({ targets }: any) => {
+						// Record the move of every block as one undoable step.
+						commitBatch(
+							(targets as HTMLElement[])
+								.map((target) => ({
+									id: `${target.id}-pos`,
+									previous: groupDragStart.current[target.id],
+									next: readTargetPosition(target),
+								}))
+								.filter(
+									(change) =>
+										change.previous &&
+										(change.previous.x !== change.next.x ||
+											change.previous.y !== change.next.y),
+								),
+						);
 						syncGroupTargetsToStore(targets);
 						setFutureHistory([]);
 					}}
@@ -579,7 +687,36 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					/* Only one of resizable, scalable, warpable can be used. */
 					resizable={!warp}
 					throttleResize={0}
-					onResizeStart={({ target }) => {
+					onResizeStart={({ target, direction }: OnResizeStart) => {
+						const sizing = textSizingOf(controlID);
+						if (sizing) {
+							// Text blocks switch sizing mode with the handle; the size
+							// and the mode are recorded together when the drag ends.
+							const element = target as HTMLElement;
+							const size = {
+								w: element.offsetWidth,
+								h: element.offsetHeight,
+							};
+							const nextSizing = sizingAfterResize(
+								sizing,
+								direction,
+								lockAspect,
+							);
+							textResize.current = {
+								size,
+								sizing,
+								nextSizing,
+								style: {
+									width: element.style.width,
+									height: element.style.height,
+								},
+							};
+							// Start the drag from the box the content gave the block.
+							element.style.width = `${size.w}px`;
+							if (nextSizing === 'fixed') element.style.height = `${size.h}px`;
+							return;
+						}
+
 						setPastHistory([
 							...pastHistory,
 							{
@@ -594,8 +731,13 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					onResize={({ target, width, height, delta }: OnResize) => {
 						// console.log('onResize', target);
 						const nextSize = clampResizeDimensions(target, width, height);
+						// Text with a fixed width wraps: its height follows the text.
+						const heightFollowsContent =
+							textResize.current?.nextSizing === 'fixed-width';
 						delta[0] !== 0 && (target.style.width = `${nextSize.width}px`);
-						delta[1] !== 0 && (target.style.height = `${nextSize.height}px`);
+						delta[1] !== 0 &&
+							!heightFollowsContent &&
+							(target.style.height = `${nextSize.height}px`);
 					}}
 					onResizeGroup={({ events }: any) => {
 						events.forEach(({ target, width, height, delta }: any) => {
@@ -605,10 +747,46 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						});
 					}}
 					onResizeGroupEnd={({ targets }: any) => {
-						syncGroupTargetsToStore(targets);
+						syncGroupTargetsToStore(targets, true);
 						setFutureHistory([]);
 					}}
-					onResizeEnd={({ target }) => {
+					onResizeEnd={({ target, isDrag }: OnResizeEnd) => {
+						const text = textResize.current;
+						if (text) {
+							textResize.current = null;
+							const element = target as HTMLElement;
+
+							if (!isDrag) {
+								element.style.width = text.style.width;
+								element.style.height = text.style.height;
+								return;
+							}
+
+							if (text.nextSizing !== 'fixed') element.style.height = 'auto';
+							const size = {
+								w: element.offsetWidth,
+								h: element.offsetHeight,
+							};
+							commitBatch([
+								{
+									id: `${controlID}-control_size`,
+									previous: text.size,
+									next: size,
+								},
+								...(text.nextSizing !== text.sizing
+									? [
+											{
+												id: `${controlID}-sizing`,
+												previous: text.sizing,
+												next: text.nextSizing,
+											},
+										]
+									: []),
+							]);
+							setControlSize(size);
+							return;
+						}
+
 						const nextSize = readTargetSize(target);
 
 						setControlSize(nextSize);

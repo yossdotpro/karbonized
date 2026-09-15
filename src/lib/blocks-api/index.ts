@@ -33,6 +33,8 @@ export {
 	parseJavaScript,
 	generateActionRegistrations,
 	generateCompiledSource,
+	getActionScopes,
+	BLOCK_SCRIPT_URL,
 	escapeJavaScriptString,
 	updateJSVariable,
 } from './javascript-parser';

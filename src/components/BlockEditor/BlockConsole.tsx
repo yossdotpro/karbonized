@@ -49,6 +49,28 @@ export const appendConsoleEntry = (
 ): ConsoleEntry[] => [...entries.slice(-(MAX_ENTRIES - 1)), entry];
 
 /**
+ * Whether an uncaught error or rejection came from a block script. Compiled
+ * scripts are named with `scriptUrl`, which shows up as the error's file name
+ * or in its stack.
+ */
+export const isBlockScriptError = (
+	scriptUrl: string,
+	reason: unknown,
+	filename?: string,
+): boolean => {
+	if (filename?.includes(scriptUrl)) return true;
+
+	const stack =
+		reason instanceof Error
+			? reason.stack
+			: typeof reason === 'object' && reason !== null && 'stack' in reason
+				? String((reason as { stack: unknown }).stack)
+				: undefined;
+
+	return stack?.includes(scriptUrl) ?? false;
+};
+
+/**
  * A `console` look-alike for user scripts: forwards to the real console and
  * reports every call so it can be shown in the block editor.
  */

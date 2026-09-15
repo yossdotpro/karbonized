@@ -14,6 +14,7 @@ import './utils.css';
 import { isElectron } from './utils/isElectron';
 import { Spinner } from '@/components/ui/spinner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import { KarbonizedLogoFlat } from './components/Icons/Icons';
 import {
 	CommandPalette,
@@ -21,6 +22,7 @@ import {
 	ShortcutManager,
 } from './components/CommandPalette';
 import { useSessionAutosave } from './lib/persistence/autosave';
+import { getBeedlyBridge } from './lib/beedly/bridge';
 
 const Editor = React.lazy(async () => await import('./pages/Editor'));
 const NewProject = React.lazy(async () => await import('./pages/NewProject'));
@@ -30,6 +32,9 @@ const TitleBar = React.lazy(
 );
 const ContextualMenuBar = React.lazy(
 	async () => await import('./components/Base/ContextualMenuBar'),
+);
+const McpBridge = React.lazy(
+	async () => await import('./components/Beedly/McpBridge'),
 );
 
 const AppShell: React.FC<{
@@ -129,9 +134,7 @@ const SessionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [initialPath] = useState(() => location.pathname);
 	const [landed, setLanded] = useState(false);
 
-	useEffect(() => {
-		if (ready && location.pathname === '/editor') setLanded(true);
-	}, [ready, location.pathname]);
+	if (ready && !landed && location.pathname === '/editor') setLanded(true);
 
 	if (!ready) {
 		return (
@@ -177,11 +180,18 @@ const App: React.FC = () => {
 					>
 						<SessionGate>
 							<AppShell isHorizontal={isHorizontal} />
+							{/* MCP clients can control the app (desktop only) */}
+							{getBeedlyBridge() && (
+								<Suspense>
+									<McpBridge />
+								</Suspense>
+							)}
 						</SessionGate>
 					</div>
 
 					<ShortcutManager />
 					<CommandPalette />
+					<Toaster />
 				</AppContext.Provider>
 			</TooltipProvider>
 		</Router>

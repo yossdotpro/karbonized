@@ -10,7 +10,8 @@ import {
 } from '../ui/select';
 import { Slider } from '@/components/ui/slider';
 import { ColorPicker } from '../CustomControls/ColorPicker';
-import React, { useEffect, useState, type ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
+import { useElementById } from '@/hooks/useElementById';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { Droplets, Square, Box, Palette, Trash2, Move } from 'lucide-react';
 import {
@@ -32,6 +33,8 @@ interface ControlMenuProps {
 	Masks: string[];
 	controlPos?: { x: number; y: number };
 	controlSize?: { w: number; h: number };
+	/** The width or height was typed in the position panel. */
+	onSizeInput?: (axis: 'w' | 'h') => void;
 	pastHistory: any[];
 	setPastHistory: (value: any[]) => void;
 	setFutureHistory: (value: any[]) => void;
@@ -101,6 +104,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 	Masks,
 	controlPos,
 	controlSize,
+	onSizeInput,
 	pastHistory,
 	setPastHistory,
 	setFutureHistory,
@@ -154,12 +158,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 	sepia,
 	setSepia,
 }) => {
-	const [menuNode, setMenuNode] = useState<HTMLElement | null>(null);
-
-	useEffect(() => {
-		const node = document.getElementById('menu');
-		setMenuNode(node);
-	}, []);
+	const menuNode = useElementById('menu');
 
 	if (controlID !== id || !menuNode) {
 		return null;
@@ -327,6 +326,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 											});
 
 											setFutureHistory([]);
+											onSizeInput?.('w');
 										}}
 										value={controlSize?.w}
 									></Input>
@@ -362,6 +362,7 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 											});
 
 											setFutureHistory([]);
+											onSizeInput?.('h');
 										}}
 										value={controlSize?.h}
 									></Input>

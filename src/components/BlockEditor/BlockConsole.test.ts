@@ -4,6 +4,7 @@ import {
 	appendConsoleEntry,
 	createConsoleEntry,
 	createScriptConsole,
+	isBlockScriptError,
 } from './BlockConsole';
 
 describe('createConsoleEntry', () => {
@@ -70,5 +71,31 @@ describe('createScriptConsole', () => {
 	it('passes through methods it does not capture', () => {
 		const scriptConsole = createScriptConsole(() => {});
 		expect(scriptConsole.table).toBe(console.table);
+	});
+});
+
+describe('isBlockScriptError', () => {
+	const url = 'karbonized-block.js';
+
+	it('matches errors thrown from the block script', () => {
+		const error = new Error('boom');
+		error.stack = `Error: boom\n    at later (${url}:12:5)`;
+
+		expect(isBlockScriptError(url, error)).toBe(true);
+		expect(isBlockScriptError(url, undefined, `http://localhost/${url}`)).toBe(
+			true,
+		);
+	});
+
+	it('ignores errors from the app', () => {
+		const error = new Error('boom');
+		error.stack =
+			'Error: boom\n    at render (http://localhost/src/App.tsx:1:1)';
+
+		expect(isBlockScriptError(url, error, 'http://localhost/src/App.tsx')).toBe(
+			false,
+		);
+		expect(isBlockScriptError(url, 'plain string')).toBe(false);
+		expect(isBlockScriptError(url, null)).toBe(false);
 	});
 });

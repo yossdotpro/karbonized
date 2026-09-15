@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
 	useControlsStore,
 	useHistoryStore,
 	useWorkspaceStore,
 } from '../stores';
 import default_logo from '../assets/logo.svg';
+import { isBatchHistory } from '../stores/history-store';
 
 export function useControlState<T>(
 	initialState: T,
@@ -67,6 +68,7 @@ export function useControlState<T>(
 				(prop === '/src/assets/logo.svg' ||
 					prop === '/src/assets/karbonized.svg')
 			) {
+				// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the controls store
 				setState(default_logo as T);
 			} else {
 				setState(prop);
@@ -76,13 +78,25 @@ export function useControlState<T>(
 		}
 	}, [id, initialProperties, removeInitialProperty, state]);
 
-	/* Look at Current Controls Properties for Changes */
+	/* Apply undo/redo and batch changes that target this property. Each entry
+	   is applied once: re-applying it when the local value changes later would
+	   revert newer edits (e.g. a size the block measured after a resize). */
+	const appliedControlState = useRef<typeof controlState | undefined>(
+		undefined,
+	);
 	useEffect(() => {
-		if (
-			controlState?.id === id &&
-			serialize(controlState.value) !== serialize(state)
-		) {
-			setState(controlState.value);
+		if (appliedControlState.current === controlState) return;
+		appliedControlState.current = controlState;
+
+		const entry = isBatchHistory(controlState)
+			? controlState.value.find((item: { id: string }) => item.id === id)
+			: controlState?.id === id
+				? controlState
+				: undefined;
+
+		if (entry && serialize(entry.value) !== serialize(state)) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the history store
+			setState(entry.value);
 		}
 	}, [controlState, id, state]);
 
@@ -92,11 +106,16 @@ export function useControlState<T>(
 			storedProperty !== undefined &&
 			serialize(storedProperty.value) !== serialize(state)
 		) {
+			// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the controls store
 			setState(storedProperty.value);
 		}
 	}, [ControlProperties, controlRef, currentControlID, id]);
 
-	/* Save Control Property in Store */
+	/* Save Control Property in Store. Runs when the local value changes, not
+	   on every render: callers often pass a new `initialState` object each
+	   time, and re-saving a stale local value would overwrite newer store
+	   values (the store and the state would chase each other). */
+	const initialKey = serialize(initialState);
 	useEffect(() => {
 		const currentWorkspaceID = useWorkspaceStore.getState().currentWorkspaceID;
 		const storedProperty = ControlProperties.find((item) => item.id === id);
@@ -109,7 +128,7 @@ export function useControlState<T>(
 		if (currentValue !== newValue) {
 			addControlProperty({ id, value: state }, currentWorkspaceID);
 		}
-	}, [state, id, initialState]);
+	}, [state, id, initialKey]);
 
 	const set = (newState: any) => {
 		if (serialize(newState) === serialize(state)) {

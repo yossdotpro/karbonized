@@ -2,8 +2,15 @@
 import { ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { toJpeg, toPng, toSvg } from 'html-to-image';
-import React, { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { toast } from 'sonner';
+import { type ExportFormat, exportElement } from '@/lib/export/exporter';
+import React, {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	type ReactNode,
+} from 'react';
 import { useControlState } from '../../hooks/useControlState';
 import {
 	useWorkspaceStore,
@@ -31,6 +38,13 @@ interface ControlProps {
 	maxWidth?: string;
 	minHeight?: string;
 	minWidth?: string;
+	/**
+	 * Let the content size the block: `both` fits width and height, `height`
+	 * keeps the stored width and grows the height. The stored size follows.
+	 */
+	autoSize?: 'none' | 'both' | 'height';
+	/** The width or height was typed in the position panel. */
+	onSizeInput?: (axis: 'w' | 'h') => void;
 
 	onClick?: () => void;
 	onCreateDynamicBackground?: () => Promise<void> | void;
@@ -52,6 +66,8 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	minWidth = '300px',
 	defaultHeight = '50px',
 	defaultWidth = '80px',
+	autoSize = 'none',
+	onSizeInput,
 	onCreateDynamicBackground,
 }) => {
 	// App Store
@@ -155,6 +171,49 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		`${id}-maskRepeat`,
 	);
 
+	/* Blocks sized by their content: keep the stored size in step with it, so
+	   the position panel, alignment and tools see the real box. */
+	const syncContentSize = useRef(() => {});
+	useLayoutEffect(() => {
+		syncContentSize.current = () => {
+			const element = document.getElementById(id);
+			if (!element) return;
+
+			const next = { w: element.offsetWidth, h: element.offsetHeight };
+			if (next.w === Number(size.w) && next.h === Number(size.h)) return;
+
+			// Write the store, not the local state: the block reads it back, and
+			// writing both at once makes them chase each other.
+			const sizeId = `${id}-control_size`;
+			const { ControlProperties, addControlProperty } =
+				useControlsStore.getState();
+			const stored = ControlProperties.find((item) => item.id === sizeId);
+			if (stored?.value?.w !== next.w || stored?.value?.h !== next.h) {
+				addControlProperty(
+					{ id: sizeId, value: next },
+					useWorkspaceStore.getState().currentWorkspaceID,
+				);
+			}
+		};
+	});
+
+	// After every render (content, font size…). Reading the layout works even
+	// when the window is not painting, unlike observers.
+	useLayoutEffect(() => {
+		if (autoSize !== 'none' && visibility) syncContentSize.current();
+	});
+
+	// Changes that don't re-render the block, such as web fonts loading.
+	useEffect(() => {
+		if (autoSize === 'none' || !visibility) return;
+		const element = document.getElementById(id);
+		if (!element) return;
+
+		const observer = new ResizeObserver(() => syncContentSize.current());
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [autoSize, id, visibility]);
+
 	/* Sync the selected control with the shared editor state on selection */
 	useEffect(() => {
 		if (id !== controlID) return;
@@ -244,92 +303,69 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		}
 	}, [controlTransform]);
 
-	// Save Image as PNG
-	const exportAsPng = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
+	/* Export this block as an image with the current export settings */
+	const exportBlock = useCallback(
+		async (format: ExportFormat) => {
+			try {
+				await exportElement(ref.current, `${workspaceName}-${id}`, { format });
+			} catch (error) {
+				console.error(error);
+				toast.error('Export failed');
+			}
+		},
+		[id, ref, workspaceName],
+	);
+	const exportAsPng = useCallback(() => exportBlock('png'), [exportBlock]);
+	const exportAsSvg = useCallback(() => exportBlock('svg'), [exportBlock]);
+	const exportAsJpeg = useCallback(() => exportBlock('jpeg'), [exportBlock]);
 
-		toPng(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.png';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
+	const toggleSelection = useControlsStore((state) => state.toggleSelection);
+	const selectedControlIDs = useControlsStore(
+		(state) => state.selectedControlIDs,
+	);
+
+	const syncSelectionState = useCallback(
+		(event?: React.MouseEvent | React.TouchEvent) => {
+			// Shift+click adds or removes the block from the selection.
+			if (event?.shiftKey) {
+				toggleSelection(id);
+				return;
+			}
+
+			// Clicking a block that is part of a multi-selection keeps the selection
+			// so the whole group can be dragged.
+			if (selectedControlIDs.length > 1 && selectedControlIDs.includes(id))
+				return;
+
+			if (controlID === id) return;
+
+			setID(id);
+			setControlPos({
+				x: position.x,
+				y: position.y,
 			});
-	}, [ref, workspaceName]);
-
-	// Save Image as SVG
-	const exportAsSvg = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
-
-		toSvg(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.svg';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
+			setControlSize({
+				w: size.w,
+				h: size.h,
 			});
-	}, [ref, workspaceName]);
-
-	// Save Image as JPEG
-	const exportAsJpeg = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
-
-		toJpeg(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.jpeg';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
-			});
-	}, [ref, workspaceName]);
-
-	const syncSelectionState = useCallback(() => {
-		if (controlID === id) return;
-
-		setID(id);
-		setControlPos({
-			x: position.x,
-			y: position.y,
-		});
-		setControlSize({
-			w: size.w,
-			h: size.h,
-		});
-		setControlTransform(transform);
-	}, [
-		controlID,
-		id,
-		position.x,
-		position.y,
-		setControlPos,
-		setControlSize,
-		setControlTransform,
-		setID,
-		size.h,
-		size.w,
-		transform,
-	]);
+			setControlTransform(transform);
+		},
+		[
+			controlID,
+			id,
+			position.x,
+			position.y,
+			selectedControlIDs,
+			setControlPos,
+			setControlSize,
+			setControlTransform,
+			setID,
+			size.h,
+			size.w,
+			toggleSelection,
+			transform,
+		],
+	);
 
 	return (
 		<>
@@ -368,11 +404,12 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 							<motion.div
 								id={id}
 								key={id}
+								data-block-id={id}
 								className={`absolute flex flex-auto select-none block-${id}`}
 								style={{
 									zIndex,
-									height: size.h + 'px',
-									width: size.w + 'px',
+									height: autoSize === 'none' ? size.h + 'px' : 'auto',
+									width: autoSize === 'both' ? 'max-content' : size.w + 'px',
 									maxHeight,
 									maxWidth,
 									minHeight,
@@ -456,6 +493,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 					Masks={Masks}
 					controlPos={controlPos}
 					controlSize={controlSize}
+					onSizeInput={onSizeInput}
 					pastHistory={pastHistory}
 					setPastHistory={setPastHistory}
 					setFutureHistory={setFutureHistory}

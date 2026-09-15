@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
 	generateActionRegistrations,
 	generateCompiledSource,
+	getActionScopes,
 	parseJavaScript,
 	updateJSVariable,
 } from './javascript-parser';
@@ -156,5 +157,34 @@ describe('updateJSVariable', () => {
 		expect(
 			updateJSVariable(js, 'missing', 2, parseJavaScript(js).variables),
 		).toBe(js);
+	});
+});
+
+describe('getActionScopes', () => {
+	it('assigns every line after a marker to that action', () => {
+		const code = [
+			'const shared = 1;', // 1
+			'', // 2
+			'// @action: First', // 3
+			'first();', // 4
+			'', // 5
+			'// @action: Second', // 6
+			'second();', // 7
+			'more();', // 8
+			'', // 9
+			'', // 10
+		].join('\n');
+
+		expect(getActionScopes(code)).toEqual([
+			{ label: 'First', markerLine: 3, startLine: 4, endLine: 4 },
+			{ label: 'Second', markerLine: 6, startLine: 7, endLine: 8 },
+		]);
+	});
+
+	it('reports empty actions and files without actions', () => {
+		expect(getActionScopes('// @action: Empty\n\n')).toEqual([
+			{ label: 'Empty', markerLine: 1, startLine: 0, endLine: 0 },
+		]);
+		expect(getActionScopes('run();')).toEqual([]);
 	});
 });

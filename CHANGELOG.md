@@ -4,22 +4,45 @@
 
 ### 🚀 Features
 
+- **Beedly, the design assistant** (`Ctrl+L`): a side panel that edits the canvas from a description, with streaming answers, visible tool calls, stop, retry and chat history
+- Beedly works with Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible server; providers, models and keys are set in **Beedly settings**
+- API keys stay on the device: encrypted with the system keychain on desktop (and only sent to the base URL they were saved for), stored in the browser on the web
+- Everything Beedly does in one response undoes in one step, with **Undo changes** under the response
+- **Text blocks fit their text**: new text blocks grow and shrink with their content, font size and style. Resizing with a side handle keeps the width and wraps the text (the height still follows it); a top, bottom or corner handle fixes both. Pick **Auto**, **Auto height** or **Fixed** in the Text section, which now takes several lines. Existing text blocks keep their size
+- **MCP server** in the desktop app (off by default): Claude Desktop, Claude Code, Cursor and other MCP clients can read the workspace, create projects, add, edit, align and delete blocks, edit HTML block code, change the background and size, look at the canvas and export images; settings include ready-made client configurations
+- **Export options**: scale (0.5×–4×) with the resulting size, transparent background for PNG and SVG, JPEG quality; the export dialog remembers your choices and warns when the image is too large for the browser
+- **Copy image to the clipboard** (`Alt+Shift+C`, File menu and export dialog)
+- Block "Export layer" uses the same scale and transparency settings
+- Notifications for export, copy and project errors instead of browser alerts
 - **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
 - **Block context menu** redesigned: opacity with value, duplicate, arrange (bring to front, forward, backward, send to back), hide, lock, export layer and delete
 - **Snapping toggle** (`Shift+S`, also in the status bar); selection handles and snap guides restyled
 - **Delete / Backspace** remove the selected block from anywhere on the canvas
 - **Arrow keys** move the selected block by 1px (10px with Shift); each step can be undone; locked blocks stay in place
+- **Multiple selection**: drag on the canvas to select blocks, `Shift`+click to add or remove one, `Ctrl+A` selects every block and `Esc` clears the selection; selected blocks move together
+- **Align and distribute** from the properties panel or with shortcuts (`Alt+A/H/D` left/center/right, `Alt+W/V/S` top/middle/bottom, `Alt+Shift+H/V` distribute); a single block aligns to the canvas
+- Duplicate, delete and arrow keys apply to the whole selection; aligning, distributing and moving several blocks undo in one step
+- **Undo history is saved with the session**: the last 100 steps can still be undone after reloading or reopening the app
+- **Block editor console** also shows errors thrown later by block scripts (timers, event listeners, promises and async actions) and no longer logs every action registration
+- **Action scope hint** in `main.js`: each `// @action:` marker shows which lines run with the action, with a gutter bar over its code
 
 ### 🐛 Fixes
 
+- Undo and redo entries could be applied again later and revert newer edits of the same property, and a block could overwrite a value it had just received with its previous one
+- The Electron binary was never downloaded because Yarn 4 skips dependency install scripts; `yarn install` now installs it
 - Pressing Delete while typing in a field deleted the selected block
 - The view re-centered every time a block was added or removed; it now fits only when switching workspaces or changing the canvas size
 - CSS variables without a `@type` annotation were always detected as text, so colors, sizes and booleans got a text field instead of a color picker, slider or switch
 - HTML block scripts broke when a JS string variable contained quotes or new lines, or when an action label contained an apostrophe
+- Redo after undoing several steps restored the wrong values
+
+### ⚡ Performance
+
+- Monaco is served as its own chunk, so the block editor page drops from 3.7 MB to 61 kB and app updates no longer invalidate the cached editor
 
 ### 🧪 Tests
 
-- Vitest test suite (`yarn test`) covering shortcuts, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
+- Vitest test suite (`yarn test`) covering shortcuts, undo/redo history, align/distribute math, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
 
 ## v 2.0.0
 

@@ -22,6 +22,8 @@ Karbonized is a visual editor for creating images of code snippets, mockups and 
 * **HTML blocks with a real code editor** — edit HTML, CSS and JavaScript in a Monaco-powered editor with an explorer, file tabs, a live preview, a console and auto-generated controls for your variables. Works offline.
 * **Custom components (`.kcomponent`)** — package HTML blocks as YAML files, import them into your library and reuse them in any project.
 * **Consistent shortcuts** — shortcuts no longer fire while you type, and tools use single keys like in design apps.
+* **Beedly, the design assistant** — describe what you want and Beedly edits the canvas for you, with Anthropic, OpenAI, Gemini, OpenRouter or local models (Ollama, LM Studio). Undo everything it did in one step.
+* **MCP server** — in the desktop app, let Claude Desktop, Claude Code, Cursor and other MCP clients read and edit your designs.
 
 See the full [changelog](./CHANGELOG.md).
 
@@ -29,9 +31,11 @@ See the full [changelog](./CHANGELOG.md).
 
 * **🧱 Block-based canvas:** code snippets, text, images, icons, shapes, phone and window mockups, tweets, badges, QR codes and HTML blocks. Move, resize, rotate, crop and warp them, group them into layers and undo any change.
 * **🎨 Backgrounds:** solid colors, gradients, textures, images and dynamic backgrounds, with blur and noise.
+* **✨ Beedly:** an assistant panel that designs with you using the model of your choice. See the [Beedly guide](./docs/beedly.md).
+* **🔌 MCP server:** the desktop app can expose its editing tools to MCP clients like Claude Desktop, Claude Code and Cursor.
 * **🧩 HTML blocks and components:** build your own blocks with HTML/CSS/JS, expose variables as controls and actions as buttons, and share them as `.kcomponent` files.
 * **⌨️ Keyboard-first:** a command palette and shortcuts for tools, editing, zoom and exporting.
-* **💾 Export:** save your designs as **PNG**, **JPEG** or **SVG**, or share them directly.
+* **💾 Export:** save your designs as **PNG**, **JPEG** or **SVG** at up to 4× scale, with a transparent background, copy them to the clipboard or share them directly.
 * **🗂 Projects:** several workspaces at once, automatic session saving, and `.kproject` files you can save, open and turn into templates.
 * **🖥 Multi-platform:** use Karbonized as a Progressive Web App (with **offline** support) or as a desktop app for **Windows**, **Linux** and **macOS**.
 * **🆓 Free and open source.**
@@ -45,15 +49,22 @@ Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to see every command. The mo
 | Command palette | <kbd>Ctrl</kbd> <kbd>K</kbd> |
 | Select / Pan / Crop / Warp tools | <kbd>V</kbd> / <kbd>H</kbd> / <kbd>C</kbd> / <kbd>W</kbd> |
 | Undo / Redo | <kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd> |
+| Select all / Deselect | <kbd>Ctrl</kbd> <kbd>A</kbd> / <kbd>Esc</kbd> |
+| Add to or remove from the selection | <kbd>Shift</kbd> + click, or drag on the canvas |
 | Duplicate selection | <kbd>Ctrl</kbd> <kbd>D</kbd> |
 | Delete selection | <kbd>Delete</kbd> |
 | Move selection 1px / 10px | <kbd>←</kbd> <kbd>↑</kbd> <kbd>→</kbd> <kbd>↓</kbd> / with <kbd>Shift</kbd> |
+| Align left / center / right | <kbd>Alt</kbd> <kbd>A</kbd> / <kbd>Alt</kbd> <kbd>H</kbd> / <kbd>Alt</kbd> <kbd>D</kbd> |
+| Align top / middle / bottom | <kbd>Alt</kbd> <kbd>W</kbd> / <kbd>Alt</kbd> <kbd>V</kbd> / <kbd>Alt</kbd> <kbd>S</kbd> |
+| Distribute horizontally / vertically | <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>H</kbd> / <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>V</kbd> |
 | Toggle snapping | <kbd>Shift</kbd> <kbd>S</kbd> |
 | Zoom in / out / 100% / fit | <kbd>Ctrl</kbd> <kbd>+</kbd> / <kbd>Ctrl</kbd> <kbd>−</kbd> / <kbd>Shift</kbd> <kbd>0</kbd> / <kbd>Shift</kbd> <kbd>1</kbd> |
 | Lock aspect ratio | <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd> |
 | Toggle properties panel | <kbd>Ctrl</kbd> <kbd>B</kbd> |
+| Show / hide Beedly | <kbd>Ctrl</kbd> <kbd>L</kbd> |
 | New project / Open project | <kbd>Alt</kbd> <kbd>N</kbd> / <kbd>Ctrl</kbd> <kbd>O</kbd> |
 | Save project / Export | <kbd>Ctrl</kbd> <kbd>S</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>E</kbd> |
+| Copy image | <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>C</kbd> |
 
 In the HTML block editor:
 
@@ -69,6 +80,7 @@ On macOS use <kbd>⌘</kbd> instead of <kbd>Ctrl</kbd>.
 
 ## 📚 Documentation
 
+* [Beedly and the MCP server](./docs/beedly.md)
 * [HTML blocks](./docs/html-blocks.md) and the [HTML block API](./docs/html-block-api.md)
 * [Creating and importing components](./docs/kcomponent-guide.md) and the [`.kcomponent` format](./docs/kcomponent-format.md)
 * [Extensions (plugin system)](./docs/plugin_system.md)
@@ -101,6 +113,8 @@ yarn build
 ```
 
 ### 🖥️ Desktop app
+
+`yarn install` also downloads the Electron binary (skipped on CI). If it failed, run `node scripts/install-electron.cjs`.
 
 Run **Karbonized** with Electron in development mode:
 

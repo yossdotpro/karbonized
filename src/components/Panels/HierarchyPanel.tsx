@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, RefreshCcw, Search } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import type { Item } from '../../types';
 import { useWorkspaceStore, useControlsStore } from '../../stores';
 import { MenuItem } from './MenuItem';
@@ -137,7 +137,9 @@ export const HierarchyPanel: React.FC = () => {
 		position: LayerDropPosition;
 	} | null>(null);
 
-	useEffect(() => {
+	const [syncedControlID, setSyncedControlID] = useState('');
+	if (currentControlID !== syncedControlID) {
+		setSyncedControlID(currentControlID);
 		if (currentControlID !== '') {
 			setFocusedLayerID(currentControlID);
 			setSelectedLayerIDs((current) =>
@@ -145,23 +147,23 @@ export const HierarchyPanel: React.FC = () => {
 			);
 			setSelectionAnchorID(currentControlID);
 		}
-	}, [currentControlID]);
+	}
 
-	useEffect(() => {
-		const validIds = new Set(visibleControls.map((item) => item.id));
-		setSelectedLayerIDs((current) => {
-			const nextSelected = current.filter((id) => validIds.has(id));
-			return areStringArraysEqual(current, nextSelected)
-				? current
-				: nextSelected;
-		});
-		if (selectionAnchorID !== '' && !validIds.has(selectionAnchorID)) {
-			setSelectionAnchorID('');
-		}
-		if (focusedLayerID !== '' && !validIds.has(focusedLayerID)) {
-			setFocusedLayerID('');
-		}
-	}, [focusedLayerID, selectionAnchorID, visibleControls]);
+	// Forget layers that no longer exist.
+	const validIds = useMemo(
+		() => new Set(visibleControls.map((item) => item.id)),
+		[visibleControls],
+	);
+	const prunedSelection = selectedLayerIDs.filter((id) => validIds.has(id));
+	if (!areStringArraysEqual(selectedLayerIDs, prunedSelection)) {
+		setSelectedLayerIDs(prunedSelection);
+	}
+	if (selectionAnchorID !== '' && !validIds.has(selectionAnchorID)) {
+		setSelectionAnchorID('');
+	}
+	if (focusedLayerID !== '' && !validIds.has(focusedLayerID)) {
+		setFocusedLayerID('');
+	}
 
 	const tree = useMemo(
 		() => buildLayerTree(visibleControls),

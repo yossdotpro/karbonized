@@ -11,11 +11,20 @@ import { AppContext } from '../AppContext';
 import {
 	useWorkspaceStore,
 	useControlsStore,
-	useHistoryStore,
 	useUIStore,
 	useDrawingStore,
 } from '../stores';
+import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
+import { redo, undo } from '@/lib/editor/history';
+import { useBeedlyUI } from '@/lib/beedly/ui-store';
+import {
+	alignSelection,
+	distributeSelection,
+	getMovableSelection,
+	nudgeSelection,
+	selectAllControls,
+} from '@/lib/canvas/selection';
 import {
 	fitViewer,
 	setViewerZoom,
@@ -23,6 +32,15 @@ import {
 	zoomViewerBy,
 } from '@/lib/viewer';
 import {
+	AlignCenterHorizontal,
+	AlignCenterVertical,
+	AlignEndHorizontal,
+	AlignEndVertical,
+	AlignHorizontalSpaceAround,
+	AlignStartHorizontal,
+	AlignStartVertical,
+	AlignVerticalSpaceAround,
+	BoxSelect,
 	Brush,
 	Copy,
 	Magnet,
@@ -54,6 +72,12 @@ const RightPanel = React.lazy(
 const InfiniteViewer = React.lazy(
 	async () => await import('react-infinite-viewer'),
 );
+const BeedlyPanel = React.lazy(
+	async () => await import('../components/Beedly/BeedlyPanel'),
+);
+const BeedlyCommands = React.lazy(
+	async () => await import('../components/Beedly/BeedlyCommands'),
+);
 
 export const Editor: React.FC = () => {
 	const { viewerRef } = useContext(AppContext);
@@ -63,17 +87,10 @@ export const Editor: React.FC = () => {
 	/* App Store */
 	const duplicateControl = useControlsStore((state) => state.duplicateControl);
 	const deleteControl = useControlsStore((state) => state.deleteControl);
-	const setCurrentControlID = useControlsStore(
-		(state) => state.setCurrentControlID,
-	);
-	const setControlPos = useControlsStore((state) => state.setControlPosition);
-	const setControlSize = useControlsStore((state) => state.setControlSize);
-	const setControlTransform = useControlsStore(
-		(state) => state.setControlTransform,
-	);
 	const drag = useUIStore((state) => state.drag);
 	const canDraw = useDrawingStore((state) => state.isDrawing);
 	const isErasing = useDrawingStore((state) => state.isErasing);
+	const crop = useUIStore((state) => state.crop);
 	const lineWidth = useDrawingStore((state) => state.lineWidth);
 	const strokeColor = useDrawingStore((state) => state.strokeColor);
 	const setStrokeColor = useDrawingStore((state) => state.setStrokeColor);
@@ -81,56 +98,27 @@ export const Editor: React.FC = () => {
 	const aspectRatio = useUIStore((state) => state.lockAspect);
 	const setAspectRatio = useUIStore((state) => state.setLockAspect);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
-	const setWorkspaceControls = useWorkspaceStore(
-		(state) => state.setWorkspaceControls,
-	);
+	const beedlyOpen = useBeedlyUI((state) => state.panelOpen);
 
 	/* Copy/Paste System */
 	const controlID = useControlsStore((state) => state.currentControlID);
 
-	const redo = useHistoryStore((state) => state.redo);
-	const undo = useHistoryStore((state) => state.undo);
-	const controlState = useHistoryStore((state) => state.controlState);
-
 	/* Component Store and Actions */
 
 	const ref = useRef<HTMLDivElement>(null);
+	const selectoRef = useRef<Selecto>(null);
+	const selectedControlIDs = useControlsStore(
+		(state) => state.selectedControlIDs,
+	);
 
-	const applyHistoryResult = (
-		result:
-			| {
-					type: 'workspace-update';
-					snapshot: { controls: any[]; currentControlID: string };
-					historyId: string;
-			  }
-			| {
-					type: 'control-update';
-					historyId: string;
-			  }
-			| undefined,
-	) => {
-		if (result?.type === 'workspace-update') {
-			setWorkspaceControls(result.snapshot.controls);
-			setCurrentControlID(result.snapshot.currentControlID);
-			return;
-		}
-
-		if (result?.type !== 'control-update' || controlState == null) return;
-
-		if (controlState.id.endsWith('-pos')) {
-			setControlPos(controlState.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-control_size')) {
-			setControlSize(controlState.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-transform')) {
-			setControlTransform(controlState.value);
-		}
-	};
+	/* Keep the marquee's own selection in sync (Shift+drag continues it) */
+	useEffect(() => {
+		selectoRef.current?.setSelectedTargets(
+			selectedControlIDs
+				.map((id) => document.getElementById(id))
+				.filter((element): element is HTMLElement => element !== null),
+		);
+	}, [selectedControlIDs]);
 
 	const centerView = (): void => {
 		if (currentWorkspace === undefined) return;
@@ -145,31 +133,18 @@ export const Editor: React.FC = () => {
 		);
 	};
 
-	/* Move the selected block with the arrow keys (Shift for 10px) */
-	const nudgeSelection = (dx: number, dy: number): void => {
-		const { currentControlID, controlPosition, setControlPosition } =
-			useControlsStore.getState();
-		const control = useWorkspaceStore
-			.getState()
-			.currentWorkspace?.controls.find((item) => item.id === currentControlID);
-
-		if (!control || control.locked || !controlPosition) return;
-
-		const history = useHistoryStore.getState();
-		const id = `${currentControlID}-pos`;
-		const next = {
-			x: Number(controlPosition.x) + dx,
-			y: Number(controlPosition.y) + dy,
-		};
-
-		history.setPast([...history.pastHistory, { id, value: controlPosition }]);
-		history.setControlState({ id, value: next });
-		history.setFuture([]);
-		setControlPosition(next);
-	};
-
 	const hasSelection = () =>
-		useControlsStore.getState().currentControlID !== '';
+		useControlsStore.getState().selectedControlIDs.length > 0;
+	const selectionSize = () => getMovableSelection().length;
+
+	/* Run a structural action on every selected control, in order */
+	const forEachSelected = (
+		action: (id: string, workspace: typeof currentWorkspace) => void,
+	) => {
+		useControlsStore.getState().selectedControlIDs.forEach((id) => {
+			action(id, useWorkspaceStore.getState().currentWorkspace);
+		});
+	};
 
 	const nudgeCommands = (
 		[
@@ -207,7 +182,7 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Undo2,
 			shortcut: 'Mod+Z',
-			run: () => applyHistoryResult(undo()),
+			run: () => void undo(),
 		},
 		{
 			id: 'edit.redo',
@@ -215,7 +190,7 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Redo2,
 			shortcut: ['Mod+Shift+Z', 'Mod+Y'],
-			run: () => applyHistoryResult(redo()),
+			run: () => void redo(),
 		},
 		{
 			id: 'edit.duplicate',
@@ -223,12 +198,10 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Copy,
 			shortcut: 'Mod+D',
-			when: () => useControlsStore.getState().currentControlID !== '',
+			when: hasSelection,
 			run: () =>
-				duplicateControl(
-					controlID,
-					currentWorkspace,
-					currentWorkspace?.id || '',
+				forEachSelected((id, workspace) =>
+					duplicateControl(id, workspace, workspace?.id || ''),
 				),
 		},
 		{
@@ -237,8 +210,65 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Trash2,
 			shortcut: ['Delete', 'Backspace'],
-			when: () => useControlsStore.getState().currentControlID !== '',
-			run: () => deleteControl(controlID, currentWorkspace),
+			when: hasSelection,
+			run: () =>
+				forEachSelected((id, workspace) => deleteControl(id, workspace)),
+		},
+		{
+			id: 'edit.select-all',
+			title: 'Select all',
+			group: 'Edit',
+			icon: BoxSelect,
+			shortcut: 'Mod+A',
+			run: selectAllControls,
+		},
+		{
+			id: 'edit.deselect',
+			title: 'Deselect',
+			group: 'Edit',
+			shortcut: 'Escape',
+			hidden: true,
+			when: hasSelection,
+			run: () => useControlsStore.getState().setSelection([]),
+		},
+		...(
+			[
+				['left', 'Align left', 'Alt+A', AlignStartVertical],
+				['center', 'Align horizontal centers', 'Alt+H', AlignCenterVertical],
+				['right', 'Align right', 'Alt+D', AlignEndVertical],
+				['top', 'Align top', 'Alt+W', AlignStartHorizontal],
+				['middle', 'Align vertical centers', 'Alt+V', AlignCenterHorizontal],
+				['bottom', 'Align bottom', 'Alt+S', AlignEndHorizontal],
+			] as const
+		).map(([alignment, title, shortcut, icon]) => ({
+			id: `arrange.align-${alignment}`,
+			title,
+			group: 'Edit' as const,
+			icon,
+			shortcut,
+			keywords: ['align', 'arrange', 'canvas'],
+			when: () => selectionSize() > 0,
+			run: () => alignSelection(alignment),
+		})),
+		{
+			id: 'arrange.distribute-horizontal',
+			title: 'Distribute horizontal spacing',
+			group: 'Edit',
+			icon: AlignHorizontalSpaceAround,
+			shortcut: 'Alt+Shift+H',
+			keywords: ['distribute', 'spacing', 'arrange'],
+			when: () => selectionSize() >= 3,
+			run: () => distributeSelection('horizontal'),
+		},
+		{
+			id: 'arrange.distribute-vertical',
+			title: 'Distribute vertical spacing',
+			group: 'Edit',
+			icon: AlignVerticalSpaceAround,
+			shortcut: 'Alt+Shift+V',
+			keywords: ['distribute', 'spacing', 'arrange'],
+			when: () => selectionSize() >= 3,
+			run: () => distributeSelection('vertical'),
 		},
 		{
 			id: 'view.toggle-snapping',
@@ -401,6 +431,50 @@ export const Editor: React.FC = () => {
 								</Suspense>
 							</div>
 						</InfiniteViewer>
+
+						{/* Marquee selection: drag on an empty part of the canvas */}
+						{!drag && !crop && !canDraw && !isErasing && (
+							<Selecto
+								ref={selectoRef}
+								dragContainer='.viewer'
+								selectableTargets={['#workspace [data-block-id]']}
+								hitRate={0}
+								selectByClick
+								selectFromInside={false}
+								toggleContinueSelect='shift'
+								ratio={0}
+								dragCondition={(event) => {
+									const target = event.inputEvent?.target as Element | null;
+									// Blocks, selection handles and panels handle their own drags.
+									return !target?.closest(
+										'[data-block-id], .moveable-control-box, [data-radix-popper-content-wrapper]',
+									);
+								}}
+								onSelectEnd={({ selected, isClick, inputEvent }) => {
+									const ids = selected
+										.map((element) => element.getAttribute('data-block-id'))
+										.filter((id): id is string => Boolean(id))
+										.filter((id) => {
+											const control = currentWorkspace?.controls.find(
+												(item) => item.id === id,
+											);
+											return (
+												control &&
+												!control.locked &&
+												control.isVisible !== false
+											);
+										});
+
+									// A plain click on empty canvas clears the selection.
+									if (isClick && !inputEvent?.shiftKey && ids.length === 0) {
+										useControlsStore.getState().setSelection([]);
+										return;
+									}
+
+									useControlsStore.getState().setSelection(ids);
+								}}
+							/>
+						)}
 					</div>
 				</div>
 
@@ -420,9 +494,21 @@ export const Editor: React.FC = () => {
 						<Suspense>
 							<RightPanel></RightPanel>
 						</Suspense>
+						{beedlyOpen && (
+							<>
+								<ResizableHandle className='w-0 bg-transparent' />
+								<Suspense>
+									<BeedlyPanel />
+								</Suspense>
+							</>
+						)}
 					</ResizablePanelGroup>
 				</div>
 			</div>
+
+			<Suspense>
+				<BeedlyCommands />
+			</Suspense>
 
 			<StatusBar></StatusBar>
 		</div>

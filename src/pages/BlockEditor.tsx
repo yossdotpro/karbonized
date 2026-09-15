@@ -47,6 +47,8 @@ import {
 	parseJavaScript,
 	generateActionRegistrations,
 	generateCompiledSource,
+	BLOCK_SCRIPT_URL,
+	getActionScopes,
 	updateCSSVariable,
 	updateJSVariable,
 	createSafeDOM,
@@ -77,6 +79,7 @@ import {
 	appendConsoleEntry,
 	createConsoleEntry,
 	createScriptConsole,
+	isBlockScriptError,
 } from '@/components/BlockEditor/BlockConsole';
 import { shortcutLabel } from '@/lib/commands/shortcuts';
 
@@ -186,6 +189,10 @@ const BlockEditor: React.FC = () => {
 	const location = useLocation();
 	const shadowHostRef = useRef<HTMLDivElement>(null);
 	const shadowRootRef = useRef<ShadowRoot | null>(null);
+	const actionScopeDecorations = useRef<ReturnType<
+		Parameters<OnMount>[0]['createDecorationsCollection']
+	> | null>(null);
+	const [editorReady, setEditorReady] = useState(false);
 	const actionHandlersRef = useRef<Map<string, () => void>>(new Map());
 	const { theme } = useContext(AppContext);
 	const blockId =
@@ -201,7 +208,6 @@ const BlockEditor: React.FC = () => {
 
 	const [activeTab, setActiveTab] = useState<CodeTab>('html');
 	const [showPreview, setShowPreview] = useState(true);
-	const [isDirty, setIsDirty] = useState(false);
 	const [showExplorer, setShowExplorer] = useState(true);
 	const [activePreviewTab, setActivePreviewTab] =
 		useState<PreviewTab>('preview');
@@ -215,6 +221,11 @@ const BlockEditor: React.FC = () => {
 
 	const reportToConsole = (entry: ConsoleEntry) =>
 		setConsoleEntries((entries) => appendConsoleEntry(entries, entry));
+
+	const reportError = (prefix: string, error: unknown) => {
+		reportToConsole(createConsoleEntry('error', [prefix, error]));
+		setShowConsole(true);
+	};
 	const consoleErrors = consoleEntries.filter(
 		(entry) => entry.level === 'error',
 	).length;
@@ -311,7 +322,6 @@ const BlockEditor: React.FC = () => {
 			...previousState,
 			cssContent: nextCSS,
 		}));
-		setIsDirty(true);
 	};
 
 	const handleUpdateJSVariable = (varName: string, newValue: any) => {
@@ -325,26 +335,39 @@ const BlockEditor: React.FC = () => {
 			...previousState,
 			jsContent: nextJS,
 		}));
-		setIsDirty(true);
 	};
 
-	useEffect(() => {
-		if (blockId) {
-			const findProp = (suffix: string) =>
-				ControlProperties.find((p) => p.id === `${blockId}-${suffix}`)?.value;
+	/* Load the block's stored code whenever the block or its properties change */
+	const [loadedFrom, setLoadedFrom] = useState<{
+		blockId?: string;
+		properties?: typeof ControlProperties;
+	}>({});
 
-			const newState = {
-				htmlContent: findProp('html') || defaultHTMLContent,
-				cssContent: findProp('css') || defaultCSSContent,
-				jsContent: findProp('js') || defaultJSContent,
-				allowScriptExecution: findProp('allow-scripts') || false,
-			};
+	if (
+		blockId &&
+		(loadedFrom.blockId !== blockId ||
+			loadedFrom.properties !== ControlProperties)
+	) {
+		const findProp = (suffix: string) =>
+			ControlProperties.find((p) => p.id === `${blockId}-${suffix}`)?.value;
 
-			setEditorState(newState);
-			setSavedState(newState);
-			setTimeout(() => setIsDirty(false), 100);
-		}
-	}, [blockId, ControlProperties]);
+		const newState = {
+			htmlContent: findProp('html') || defaultHTMLContent,
+			cssContent: findProp('css') || defaultCSSContent,
+			jsContent: findProp('js') || defaultJSContent,
+			allowScriptExecution: findProp('allow-scripts') || false,
+		};
+
+		setLoadedFrom({ blockId, properties: ControlProperties });
+		setEditorState(newState);
+		setSavedState(newState);
+	}
+
+	const isDirty =
+		editorState.htmlContent !== savedState.htmlContent ||
+		editorState.cssContent !== savedState.cssContent ||
+		editorState.jsContent !== savedState.jsContent ||
+		editorState.allowScriptExecution !== savedState.allowScriptExecution;
 
 	const createScopedDocument = (
 		shadowRoot: ShadowRoot,
@@ -465,18 +488,8 @@ const BlockEditor: React.FC = () => {
 					fileUtils,
 				};
 
-				(
-					window as Window & {
-						htmlBlockAPI?: typeof htmlBlockAPI;
-						safeQuerySelector?: typeof safeQuerySelector;
-					}
-				).htmlBlockAPI = htmlBlockAPI;
-				(
-					window as Window & {
-						htmlBlockAPI?: typeof htmlBlockAPI;
-						safeQuerySelector?: typeof safeQuerySelector;
-					}
-				).safeQuerySelector = safeQuerySelector;
+				// Expose the API to block scripts.
+				Object.assign(window, { htmlBlockAPI, safeQuerySelector });
 
 				const parsedJavaScript = parseJavaScript(editorState.jsContent);
 				const actionRegistrations = generateActionRegistrations(
@@ -502,6 +515,32 @@ const BlockEditor: React.FC = () => {
 			}
 		}
 	};
+
+	/* Errors thrown later by block scripts (timers, listeners, promises) */
+	const scriptsEnabled = editorState.allowScriptExecution;
+	useEffect(() => {
+		if (!scriptsEnabled) return;
+
+		const onError = (event: ErrorEvent) => {
+			if (!isBlockScriptError(BLOCK_SCRIPT_URL, event.error, event.filename)) {
+				return;
+			}
+			reportError('Uncaught', event.error ?? event.message);
+		};
+
+		const onRejection = (event: PromiseRejectionEvent) => {
+			if (!isBlockScriptError(BLOCK_SCRIPT_URL, event.reason)) return;
+			reportError('Uncaught (in promise)', event.reason);
+		};
+
+		window.addEventListener('error', onError);
+		window.addEventListener('unhandledrejection', onRejection);
+
+		return () => {
+			window.removeEventListener('error', onError);
+			window.removeEventListener('unhandledrejection', onRejection);
+		};
+	}, [scriptsEnabled]);
 
 	useEffect(() => {
 		const timeoutId = setTimeout(updatePreview, 400);
@@ -531,7 +570,6 @@ const BlockEditor: React.FC = () => {
 			});
 
 			setSavedState(editorState);
-			setIsDirty(false);
 
 			setTimeout(() => {
 				import('@/stores').then((m) => {
@@ -588,17 +626,16 @@ const BlockEditor: React.FC = () => {
 	const executeCustomAction = (action: CustomAction) => {
 		if (!editorState.allowScriptExecution) return;
 
-		const run = (handler?: () => void) => {
+		const run = (handler?: () => unknown) => {
+			const onError = (error: unknown) =>
+				reportError(`Action "${action.label}" failed:`, error);
+
 			try {
-				handler?.();
+				const result = handler?.();
+				// Async actions fail after returning.
+				if (result instanceof Promise) result.catch(onError);
 			} catch (error) {
-				reportToConsole(
-					createConsoleEntry('error', [
-						`Action "${action.label}" failed:`,
-						error,
-					]),
-				);
-				setShowConsole(true);
+				onError(error);
 			}
 		};
 
@@ -617,7 +654,6 @@ const BlockEditor: React.FC = () => {
 			...previousState,
 			allowScriptExecution: checked ?? !previousState.allowScriptExecution,
 		}));
-		setIsDirty(true);
 	};
 
 	const openBinding = (tab: PreviewTab) => {
@@ -784,6 +820,9 @@ const BlockEditor: React.FC = () => {
 		theme === 'dark' ? EDITOR_THEME_DARK : EDITOR_THEME_LIGHT;
 
 	const handleEditorMount: OnMount = (editor, monaco) => {
+		actionScopeDecorations.current = editor.createDecorationsCollection();
+		setEditorReady(true);
+
 		editor.onDidChangeCursorPosition((event) => {
 			setCursor({
 				line: event.position.lineNumber,
@@ -796,6 +835,71 @@ const BlockEditor: React.FC = () => {
 		document.fonts?.ready.then(() => monaco.editor.remeasureFonts());
 	};
 
+	/* Show which lines belong to each `// @action:` in main.js */
+	useEffect(() => {
+		const decorations = actionScopeDecorations.current;
+		if (!decorations) return;
+
+		if (activeTab !== 'js') {
+			decorations.clear();
+			return;
+		}
+
+		const codeLines = editorState.jsContent.split(/\r?\n/);
+
+		decorations.set(
+			getActionScopes(editorState.jsContent).flatMap((scope) => {
+				// The hint is injected after the end of the marker line.
+				const markerEnd = (codeLines[scope.markerLine - 1]?.length ?? 0) + 1;
+				const lines =
+					scope.startLine === 0
+						? 'no code yet'
+						: scope.startLine === scope.endLine
+							? `line ${scope.startLine}`
+							: `lines ${scope.startLine}–${scope.endLine}`;
+
+				return [
+					{
+						range: {
+							startLineNumber: scope.markerLine,
+							startColumn: markerEnd,
+							endLineNumber: scope.markerLine,
+							endColumn: markerEnd,
+						},
+						options: {
+							// Empty ranges are hidden unless asked otherwise.
+							showIfCollapsed: true,
+							after: {
+								content: `  runs ${lines}`,
+								inlineClassName: 'block-action-hint',
+							},
+							hoverMessage: {
+								value:
+									'Everything below this marker, up to the next `// @action:`, runs when the action is triggered. Put shared code above the first action.',
+							},
+						},
+					},
+					...(scope.startLine === 0
+						? []
+						: [
+								{
+									range: {
+										startLineNumber: scope.markerLine,
+										startColumn: 1,
+										endLineNumber: scope.endLine,
+										endColumn: 1,
+									},
+									options: {
+										isWholeLine: true,
+										linesDecorationsClassName: 'block-action-scope',
+									},
+								},
+							]),
+				];
+			}),
+		);
+	}, [activeTab, editorState.jsContent, editorReady]);
+
 	const handleFileChange = (nextValue: string) => {
 		setEditorState((previousState) => ({
 			...previousState,
@@ -803,7 +907,6 @@ const BlockEditor: React.FC = () => {
 			...(activeTab === 'css' && { cssContent: nextValue }),
 			...(activeTab === 'js' && { jsContent: nextValue }),
 		}));
-		setIsDirty(true);
 	};
 
 	const previewTabs: Array<{ id: PreviewTab; label: string; count?: number }> =

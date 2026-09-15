@@ -162,7 +162,6 @@ export const ColorPicker: React.FC<Props> = ({
 							<div className='mb-2 flex flex-auto select-none flex-row gap-2 text-foreground'>
 								<button
 									onMouseDown={() => {
-										mode = 'Single';
 										onModeChange && onModeChange('Single');
 										setShowColor(true);
 									}}
@@ -175,7 +174,6 @@ export const ColorPicker: React.FC<Props> = ({
 
 								<button
 									onClick={() => {
-										mode = 'Gradient';
 										onModeChange && onModeChange('Gradient');
 										setShowColor(true);
 									}}
@@ -498,7 +496,6 @@ export const ColorPicker: React.FC<Props> = ({
 									<div className='mb-2 flex flex-auto select-none flex-row gap-2 text-foreground'>
 										<button
 											onMouseDown={() => {
-												mode = 'Single';
 												onModeChange && onModeChange('Single');
 												setShowColor(true);
 											}}
@@ -511,7 +508,6 @@ export const ColorPicker: React.FC<Props> = ({
 
 										<button
 											onClick={() => {
-												mode = 'Gradient';
 												onModeChange && onModeChange('Gradient');
 												setShowColor(true);
 											}}

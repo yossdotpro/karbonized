@@ -282,18 +282,8 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 						fileUtils,
 					};
 
-					(
-						window as Window & {
-							htmlBlockAPI?: typeof htmlBlockAPI;
-							safeQuerySelector?: typeof safeQuerySelector;
-						}
-					).htmlBlockAPI = htmlBlockAPI;
-					(
-						window as Window & {
-							htmlBlockAPI?: typeof htmlBlockAPI;
-							safeQuerySelector?: typeof safeQuerySelector;
-						}
-					).safeQuerySelector = safeQuerySelector;
+					// Expose the API to block scripts.
+					Object.assign(window, { htmlBlockAPI, safeQuerySelector });
 
 					const actionRegistrations = generateActionRegistrations(
 						parsedJavaScript.actions,

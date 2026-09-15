@@ -9,25 +9,26 @@ import { isElectron } from '../../utils/isElectron';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { motion } from 'framer-motion';
 
+const NEWS_URL = 'https://karbon-apps.github.io/news/news.json';
+
 export const NewsPanel: React.FC = () => {
-	const [loading, setLoading] = useState(false);
+	const [loading, setLoading] = useState(true);
 	const [data, setData] = useState<any>(null);
 
-	const handleFetch = async () => {
-		setLoading(true);
+	const loadNews = () =>
+		fetch(NEWS_URL)
+			.then((resp) => resp.json())
+			.then((news) => setData(news || null))
+			.catch((err) => console.log(err))
+			.finally(() => setLoading(false));
 
-		try {
-			const resp = await fetch('https://karbon-apps.github.io/news/news.json');
-			setData((await resp.json()) || null);
-		} catch (err) {
-			console.log(err);
-		} finally {
-			setLoading(false);
-		}
+	const handleFetch = () => {
+		setLoading(true);
+		void loadNews();
 	};
 
 	useEffect(() => {
-		handleFetch();
+		void loadNews();
 	}, []);
 	return (
 		<div className='flex h-full w-full flex-col gap-1 p-2'>

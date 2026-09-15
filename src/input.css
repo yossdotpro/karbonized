@@ -214,3 +214,16 @@
 		@apply inline-flex h-4 min-w-4 items-center justify-center rounded-[4px] border border-border bg-muted px-1 font-mono text-[10px] leading-none text-muted-foreground;
 	}
 }
+
+/* Block editor: lines that belong to a `// @action:` marker */
+.monaco-editor .block-action-scope {
+	margin-left: 5px;
+	width: 2px !important;
+	background-color: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+}
+
+.monaco-editor .block-action-hint {
+	color: var(--muted-foreground) !important;
+	font-style: italic;
+	opacity: 0.75;
+}

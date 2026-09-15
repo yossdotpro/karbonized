@@ -15,6 +15,7 @@ import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { HierarchyPanel } from './HierarchyPanel';
+import { ArrangeBar } from './ArrangeBar';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { useCommands } from '@/lib/commands/registry';
 
@@ -85,19 +86,21 @@ export const RightPanel: React.FC = () => {
 		return () => cancelAnimationFrame(frame);
 	}, [showMenu]);
 
-	useEffect(() => {
+	const [syncedMode, setSyncedMode] = useState(workspaceMode);
+	if (workspaceMode !== syncedMode) {
+		setSyncedMode(workspaceMode);
 		if (workspaceMode === 'edit') {
 			setShowMenu(true);
 		} else if (workspaceMode !== 'custom') {
 			setShowMenu(false);
 		}
-	}, [workspaceMode]);
+	}
 
-	useEffect(() => {
-		if (workspaceTab === 'control') {
-			setTab('control');
-		}
-	}, [workspaceTab]);
+	const [syncedTab, setSyncedTab] = useState(workspaceTab);
+	if (workspaceTab !== syncedTab) {
+		setSyncedTab(workspaceTab);
+		if (workspaceTab === 'control') setTab('control');
+	}
 
 	return (
 		<ResizablePanel
@@ -189,6 +192,7 @@ export const RightPanel: React.FC = () => {
 						<Label className='flex h-8 shrink-0 select-none items-center px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
 							Control
 						</Label>
+						<ArrangeBar />
 						<ScrollArea className='flex-1 h-full'>
 							{/* Menu Portal Container - always in DOM when control tab is active */}
 							<div className='p-1' id='menu'></div>
