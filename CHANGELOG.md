@@ -28,6 +28,10 @@
 - HTML block scripts broke when a JS string variable contained quotes or new lines, or when an action label contained an apostrophe
 - Redo after undoing several steps restored the wrong values
 
+### ⚡ Performance
+
+- Monaco is served as its own chunk, so the block editor page drops from 3.7 MB to 61 kB and app updates no longer invalidate the cached editor
+
 ### 🧪 Tests
 
 - Vitest test suite (`yarn test`) covering shortcuts, undo/redo history, align/distribute math, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
