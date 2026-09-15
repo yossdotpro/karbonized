@@ -3,13 +3,26 @@ import {
 	ContextMenuContent,
 	ContextMenuItem,
 	ContextMenuSeparator,
+	ContextMenuShortcut,
+	ContextMenuSub,
 	ContextMenuSubContent,
 	ContextMenuSubTrigger,
 } from '@/components/ui/context-menu';
-import { ContextMenuSub } from '@radix-ui/react-context-menu';
-import { IconEye } from '@tabler/icons-react';
 import { Slider } from '@/components/ui/slider';
+import {
+	ArrowDown,
+	ArrowDownToLine,
+	ArrowUp,
+	ArrowUpToLine,
+	Copy,
+	EyeOff,
+	ImageDown,
+	Lock,
+	Sparkles,
+	Trash2,
+} from 'lucide-react';
 import React, { type ReactNode } from 'react';
+import { shortcutLabel } from '@/lib/commands/shortcuts';
 
 interface ControlContextMenuProps {
 	opacity: number;
@@ -21,6 +34,12 @@ interface ControlContextMenuProps {
 	contextMenu?: ReactNode;
 	setID: (value: string) => void;
 	removeControl: () => void;
+	onDuplicate?: () => void;
+	onMoveStep?: (direction: 'forward' | 'backward') => void;
+	onMoveEdge?: (position: 'front' | 'back') => void;
+	onHide?: () => void;
+	onToggleLock?: () => void;
+	locked?: boolean;
 	children: ReactNode;
 }
 
@@ -34,82 +53,145 @@ export const ControlContextMenu: React.FC<ControlContextMenuProps> = ({
 	contextMenu,
 	setID,
 	removeControl,
+	onDuplicate,
+	onMoveStep,
+	onMoveEdge,
+	onHide,
+	onToggleLock,
+	locked = false,
 	children,
 }) => {
+	const hasLayerActions = onMoveStep !== undefined || onMoveEdge !== undefined;
+
 	return (
 		<ContextMenu>
 			{children}
-			<ContextMenuContent className='bg-popover'>
-				<div className='flex gap-2 px-1 py-2'>
-					<IconEye className='my-auto ml-2' size={22}></IconEye>
+			<ContextMenuContent className='w-56'>
+				{/* Opacity */}
+				<div className='flex items-center gap-3 px-2 pb-2 pt-1.5'>
+					<span className='text-xs text-muted-foreground'>Opacity</span>
 					<Slider
-						color='primary'
-						className='my-auto'
+						className='flex-1'
 						min={0}
 						max={100}
 						onValueChange={(value) => {
 							setOpacity(value[0]);
 						}}
 						value={[opacity]}
-					></Slider>
+					/>
+					<span className='w-8 text-right font-mono text-[11px] tabular-nums text-muted-foreground'>
+						{Math.round(opacity)}%
+					</span>
 				</div>
 
+				<ContextMenuSeparator />
+
+				{onDuplicate && (
+					<ContextMenuItem onSelect={onDuplicate}>
+						<Copy />
+						Duplicate
+						<ContextMenuShortcut>{shortcutLabel('Mod+D')}</ContextMenuShortcut>
+					</ContextMenuItem>
+				)}
+
+				{hasLayerActions && (
+					<ContextMenuSub>
+						<ContextMenuSubTrigger>
+							<ArrowUpToLine />
+							Arrange
+						</ContextMenuSubTrigger>
+						<ContextMenuSubContent className='w-48'>
+							{onMoveEdge && (
+								<ContextMenuItem onSelect={() => onMoveEdge('front')}>
+									<ArrowUpToLine />
+									Bring to front
+								</ContextMenuItem>
+							)}
+							{onMoveStep && (
+								<>
+									<ContextMenuItem onSelect={() => onMoveStep('forward')}>
+										<ArrowUp />
+										Bring forward
+									</ContextMenuItem>
+									<ContextMenuItem onSelect={() => onMoveStep('backward')}>
+										<ArrowDown />
+										Send backward
+									</ContextMenuItem>
+								</>
+							)}
+							{onMoveEdge && (
+								<ContextMenuItem onSelect={() => onMoveEdge('back')}>
+									<ArrowDownToLine />
+									Send to back
+								</ContextMenuItem>
+							)}
+						</ContextMenuSubContent>
+					</ContextMenuSub>
+				)}
+
+				{(onHide || onToggleLock) && (
+					<>
+						{onHide && (
+							<ContextMenuItem onSelect={onHide}>
+								<EyeOff />
+								Hide
+							</ContextMenuItem>
+						)}
+						{onToggleLock && (
+							<ContextMenuItem onSelect={onToggleLock}>
+								<Lock />
+								{locked ? 'Unlock' : 'Lock'}
+							</ContextMenuItem>
+						)}
+					</>
+				)}
+
+				<ContextMenuSeparator />
+
 				<ContextMenuSub>
-					<ContextMenuSubTrigger>Export as</ContextMenuSubTrigger>
-					<ContextMenuSubContent className='w-48'>
-						<ContextMenuItem
-							onClick={async () => {
-								await exportAsPng();
-							}}
-						>
-							Export as PNG
+					<ContextMenuSubTrigger>
+						<ImageDown />
+						Export layer
+					</ContextMenuSubTrigger>
+					<ContextMenuSubContent className='w-40'>
+						<ContextMenuItem onSelect={() => void exportAsPng()}>
+							PNG
 						</ContextMenuItem>
-						<ContextMenuItem
-							onClick={async () => {
-								await exportAsJpeg();
-							}}
-						>
-							Export as JPEG
+						<ContextMenuItem onSelect={() => void exportAsJpeg()}>
+							JPEG
 						</ContextMenuItem>
-						<ContextMenuItem
-							onClick={async () => {
-								await exportAsSvg();
-							}}
-						>
-							Export as SVG
+						<ContextMenuItem onSelect={() => void exportAsSvg()}>
+							SVG
 						</ContextMenuItem>
 					</ContextMenuSubContent>
 				</ContextMenuSub>
 
 				{onCreateDynamicBackground !== undefined && (
-					<>
-						<ContextMenuSeparator></ContextMenuSeparator>
-						<ContextMenuItem
-							onClick={async () => {
-								await onCreateDynamicBackground();
-							}}
-						>
-							Create Dynamic Background
-						</ContextMenuItem>
-					</>
+					<ContextMenuItem onSelect={() => void onCreateDynamicBackground()}>
+						<Sparkles />
+						Create dynamic background
+					</ContextMenuItem>
 				)}
 
 				{contextMenu !== undefined && (
 					<>
-						<ContextMenuSeparator></ContextMenuSeparator>
+						<ContextMenuSeparator />
 						{contextMenu}
 					</>
 				)}
 
-				<ContextMenuSeparator></ContextMenuSeparator>
+				<ContextMenuSeparator />
 
 				<ContextMenuItem
-					onClick={() => {
+					variant='destructive'
+					onSelect={() => {
 						setID('');
 						removeControl();
 					}}
 				>
-					Delete Layer
+					<Trash2 />
+					Delete
+					<ContextMenuShortcut>{shortcutLabel('Delete')}</ContextMenuShortcut>
 				</ContextMenuItem>
 			</ContextMenuContent>
 		</ContextMenu>

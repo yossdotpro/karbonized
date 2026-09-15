@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### 🚀 Features
+
+- **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
+- **Block context menu** redesigned: opacity with value, duplicate, arrange (bring to front, forward, backward, send to back), hide, lock, export layer and delete
+- **Snapping toggle** (`Shift+S`, also in the status bar); selection handles and snap guides restyled
+- **Delete / Backspace** remove the selected block from anywhere on the canvas
+
+### 🐛 Fixes
+
+- Pressing Delete while typing in a field deleted the selected block
+- The view re-centered every time a block was added or removed; it now fits only when switching workspaces or changing the canvas size
+
 ## v 2.0.0
 
 ### 🚀 Features

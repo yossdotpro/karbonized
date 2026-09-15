@@ -3,20 +3,11 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Spinner } from '@/components/ui/spinner';
-import React, {
-	Suspense,
-	useContext,
-	useEffect,
-	useRef,
-	useState,
-} from 'react';
+import React, { Suspense, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../AppContext';
-import { Tooltip } from '../components/CustomControls/Tooltip';
-import { useScreenDirection } from '../hooks/useScreenDirection';
 import {
 	useWorkspaceStore,
 	useControlsStore,
@@ -24,11 +15,18 @@ import {
 	useUIStore,
 	useDrawingStore,
 } from '../stores';
-import { getRandomNumber } from '../utils/getRandom';
 import { useCommands } from '@/lib/commands/registry';
+import {
+	fitViewer,
+	setViewerZoom,
+	useViewStore,
+	zoomViewerBy,
+} from '@/lib/viewer';
 import {
 	Brush,
 	Copy,
+	Magnet,
+	Trash2,
 	Focus,
 	Lock,
 	Redo2,
@@ -64,6 +62,7 @@ export const Editor: React.FC = () => {
 
 	/* App Store */
 	const duplicateControl = useControlsStore((state) => state.duplicateControl);
+	const deleteControl = useControlsStore((state) => state.deleteControl);
 	const setCurrentControlID = useControlsStore(
 		(state) => state.setCurrentControlID,
 	);
@@ -88,18 +87,14 @@ export const Editor: React.FC = () => {
 
 	/* Copy/Paste System */
 	const controlID = useControlsStore((state) => state.currentControlID);
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
 
 	const redo = useHistoryStore((state) => state.redo);
 	const undo = useHistoryStore((state) => state.undo);
 	const controlState = useHistoryStore((state) => state.controlState);
 
 	/* Component Store and Actions */
-	const isHorizontal = useScreenDirection();
 
 	const ref = useRef<HTMLDivElement>(null);
-
-	const [zoom, setZoom] = useState(isHorizontal ? 0.9 : 0.4);
 
 	const applyHistoryResult = (
 		result:
@@ -138,38 +133,16 @@ export const Editor: React.FC = () => {
 	};
 
 	const centerView = (): void => {
-		if (currentWorkspace !== undefined) {
-			const width = parseFloat(currentWorkspace?.workspaceWidth);
+		if (currentWorkspace === undefined) return;
 
-			if (isHorizontal) {
-				if (width < 1280) {
-					viewerRef.current?.setZoom(0.9);
-				} else if (width >= 1280 && width < 1920) {
-					viewerRef.current?.setZoom(0.6);
-				} else if (width >= 1920 && width < 2560) {
-					viewerRef.current?.setZoom(0.4);
-				} else if (width >= 2560 && width < 3840) {
-					viewerRef.current?.setZoom(0.3);
-				} else if (width >= 3840) {
-					viewerRef.current?.setZoom(0.2);
-				}
-			} else {
-				if (width < 1280) {
-					viewerRef.current?.setZoom(0.6);
-				} else if (width >= 1280 && width < 1920) {
-					viewerRef.current?.setZoom(0.25);
-				} else if (width >= 1920) {
-					viewerRef.current?.setZoom(0.1);
-				}
-			}
-
-			viewerRef.current?.scrollCenter();
-		}
-	};
-
-	const zoomBy = (delta: number): void => {
-		const zoom = viewerRef.current?.getZoom?.() ?? 1;
-		viewerRef.current?.setZoom(Math.max(0.05, zoom + delta));
+		fitViewer(
+			viewerRef,
+			{
+				width: parseFloat(currentWorkspace.workspaceWidth),
+				height: parseFloat(currentWorkspace.workspaceHeight),
+			},
+			document.querySelector<HTMLElement>('.viewer'),
+		);
 	};
 
 	useCommands([
@@ -204,6 +177,29 @@ export const Editor: React.FC = () => {
 				),
 		},
 		{
+			id: 'edit.delete',
+			title: 'Delete selection',
+			group: 'Edit',
+			icon: Trash2,
+			shortcut: ['Delete', 'Backspace'],
+			when: () => useControlsStore.getState().currentControlID !== '',
+			run: () => deleteControl(controlID, currentWorkspace),
+		},
+		{
+			id: 'view.toggle-snapping',
+			title: useViewStore.getState().snapping
+				? 'Disable snapping'
+				: 'Enable snapping',
+			group: 'View',
+			icon: Magnet,
+			shortcut: 'Shift+S',
+			keywords: ['guides', 'align', 'snap'],
+			run: () => {
+				const { snapping, setSnapping } = useViewStore.getState();
+				setSnapping(!snapping);
+			},
+		},
+		{
 			id: 'view.lock-aspect',
 			title: aspectRatio ? 'Unlock aspect ratio' : 'Lock aspect ratio',
 			group: 'Edit',
@@ -227,7 +223,7 @@ export const Editor: React.FC = () => {
 			group: 'View',
 			icon: ZoomIn,
 			shortcut: 'Mod+Plus',
-			run: () => zoomBy(0.2),
+			run: () => zoomViewerBy(viewerRef, 1),
 		},
 		{
 			id: 'view.zoom-out',
@@ -235,15 +231,19 @@ export const Editor: React.FC = () => {
 			group: 'View',
 			icon: ZoomOut,
 			shortcut: 'Mod+Minus',
-			run: () => zoomBy(-0.2),
+			run: () => zoomViewerBy(viewerRef, -1),
 		},
 		{
 			id: 'view.zoom-reset',
-			title: 'Reset zoom',
+			title: 'Zoom to 100%',
 			group: 'View',
 			icon: RotateCcw,
 			shortcut: 'Shift+0',
-			run: () => viewerRef.current?.setZoom(0.7),
+			keywords: ['reset', 'actual size'],
+			run: () => {
+				setViewerZoom(viewerRef, 1);
+				requestAnimationFrame(() => viewerRef.current?.scrollCenter());
+			},
 		},
 	]);
 
@@ -254,10 +254,14 @@ export const Editor: React.FC = () => {
 		}
 	}, [workspaces, navigate]);
 
-	/* Center view when the workspace, mode or aspect lock changes */
+	/* Fit the view when switching workspaces or changing the canvas size */
 	useEffect(() => {
 		centerView();
-	}, [currentWorkspace, workspaceMode, aspectRatio]);
+	}, [
+		currentWorkspace?.id,
+		currentWorkspace?.workspaceWidth,
+		currentWorkspace?.workspaceHeight,
+	]);
 
 	return (
 		<div className='flex h-full w-full flex-col overflow-hidden'>
@@ -297,20 +301,6 @@ export const Editor: React.FC = () => {
 									placement='right-end'
 									label='Color'
 								></ColorPicker>
-
-								{/* Zoom In */}
-								<Tooltip className='hidden flex-auto ' message='Zoom In'>
-									<Button
-										className='flex flex-auto p-1'
-										variant='ghost'
-										size='icon'
-										onClick={() => {
-											setZoom(zoom + 0.2);
-										}}
-									>
-										<ZoomIn size={15} className='text-foreground'></ZoomIn>
-									</Button>
-								</Tooltip>
 							</div>
 						</div>
 					)}
@@ -334,6 +324,9 @@ export const Editor: React.FC = () => {
 							useTransform
 							wheelScale={0.002}
 							maxPinchWheel={50}
+							onPinch={({ zoom }: { zoom: number }) =>
+								useViewStore.getState().setZoomValue(zoom)
+							}
 						>
 							<div
 								style={{

@@ -1,3 +1,4 @@
+import { useViewStore } from '@/lib/viewer';
 /* eslint-disable array-callback-return */
 import React, {
 	type RefObject,
@@ -64,6 +65,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	const crop = useUIStore((state) => state.crop);
 	const warp = useUIStore((state) => state.warp);
 	const lockAspect = useUIStore((state) => state.lockAspect);
+	const snapping = useViewStore((state) => state.snapping);
 	const isExporting = useUIStore((state) => state.isExporting);
 
 	const workspaces = useWorkspaceStore((state) => state.workspaces);
@@ -498,7 +500,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					/* Resize event edges */
 					edge={false}
 					/* Snappable */
-					snappable={true}
+					snappable={snapping}
 					snapContainer={reference}
 					snapDirections={{
 						top: true,

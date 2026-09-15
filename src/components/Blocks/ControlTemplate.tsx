@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { toJpeg, toPng, toSvg } from 'html-to-image';
 import React, { useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { useControlState } from '../../hooks/useControlState';
-import { useKeyPress } from '../../hooks/useKeyPress';
 import {
 	useWorkspaceStore,
 	useControlsStore,
@@ -74,6 +73,19 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	const setFutureHistory = useHistoryStore((state) => state.setFuture);
 	const setControlState = useHistoryStore((state) => state.setControlState);
 	const deleteControl = useControlsStore((state) => state.deleteControl);
+	const duplicateControl = useControlsStore((state) => state.duplicateControl);
+	const moveControlByStep = useControlsStore(
+		(state) => state.moveControlByStep,
+	);
+	const moveControlToEdge = useControlsStore(
+		(state) => state.moveControlToEdge,
+	);
+	const toggleControlVisibility = useControlsStore(
+		(state) => state.toggleControlVisibility,
+	);
+	const toggleControlLock = useControlsStore(
+		(state) => state.toggleControlLock,
+	);
 
 	const setID = useControlsStore((state) => state.setCurrentControlID);
 	const workspaceMode = useUIStore((state) => state.workspaceMode);
@@ -141,14 +153,6 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		false,
 		`${id}-maskRepeat`,
 	);
-
-	/* Delete Element when Delete Key is pressed */
-	const isPressed = useKeyPress('Delete');
-	useEffect(() => {
-		if (isPressed && controlID === id) {
-			deleteControl(id, currentWorkspace);
-		}
-	}, [controlID, currentWorkspace, deleteControl, id, isPressed]);
 
 	/* Sync the selected control with the shared editor state on selection */
 	useEffect(() => {
@@ -338,6 +342,21 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 						removeControl={() => {
 							deleteControl(id, currentWorkspace);
 						}}
+						onDuplicate={() =>
+							duplicateControl(id, currentWorkspace, currentWorkspace?.id || '')
+						}
+						onMoveStep={(direction) =>
+							moveControlByStep({ id, direction }, currentWorkspace)
+						}
+						onMoveEdge={(position) =>
+							moveControlToEdge({ id, position }, currentWorkspace)
+						}
+						onHide={() => toggleControlVisibility(id, currentWorkspace)}
+						onToggleLock={() => toggleControlLock(id, currentWorkspace)}
+						locked={
+							currentWorkspace?.controls.find((item) => item.id === id)
+								?.locked ?? false
+						}
 					>
 						<ContextMenuTrigger>
 							<motion.div

@@ -59,3 +59,37 @@
 .grid-background {
 	background-image: url('./assets/grid-pattern2.svg');
 }
+
+/*
+ * Canvas selection and snapping (react-moveable).
+ * Figma-like: blue selection with square white handles, red snap guides.
+ * Selectors are doubled to win over the styles Moveable injects at runtime.
+ */
+.moveable-control-box.moveable-control-box {
+	--moveable-color: #3b82f6;
+	--bounds-color: #e5484d;
+}
+
+.moveable-control-box .moveable-control.moveable-control:not(.moveable-origin) {
+	width: 9px;
+	height: 9px;
+	margin-top: -4.5px;
+	margin-left: -4.5px;
+	border: 1.5px solid var(--moveable-color);
+	border-radius: 2px;
+	background: #fff;
+}
+
+.moveable-control-box .moveable-rotation .moveable-rotation-control.moveable-rotation-control {
+	border-radius: 50%;
+}
+
+.moveable-control-box .moveable-guideline.moveable-guideline:not(.moveable-bounds) {
+	background: #e5484d;
+}
+
+.moveable-control-box .moveable-size-value.moveable-size-value {
+	color: #e5484d;
+	font-family: 'Geist Mono Variable', ui-monospace, monospace;
+	font-weight: 500;
+}
