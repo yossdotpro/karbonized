@@ -191,25 +191,60 @@ const WINDOW_STYLES = [
 ] as const;
 
 const SHAPES = [
+	'rectangle',
+	'ellipse',
+	'triangle',
+	'polygon',
+	'star',
+	'heart',
+	'line',
 	'arrow',
+	// Ids kept for projects saved by older versions.
+	'oval',
+	'poligon',
+	'hexagon',
 	'arrow2',
 	'arrow3',
 	'arrow4',
 	'arrow5',
 	'arrow6',
-	'line',
-	'poligon',
-	'rectangle',
-	'triangle',
-	'oval',
-	'star',
-	'heart',
-	'hexagon',
 ] as const;
 
 const size = (width: number, height: number): BlockSize => ({ width, height });
 
 export type TextSizing = 'auto' | 'fixed-width' | 'fixed';
+
+export type TextAlign = 'left' | 'center' | 'right' | 'justify';
+
+export type ImageFit = 'fill' | 'cover' | 'contain';
+
+export const IMAGE_FIT_OPTIONS: ReadonlyArray<{
+	value: ImageFit;
+	label: string;
+	hint: string;
+}> = [
+	{ value: 'fill', label: 'Stretch', hint: 'The image fills the block' },
+	{
+		value: 'cover',
+		label: 'Cover',
+		hint: 'The image covers the block and is cropped',
+	},
+	{
+		value: 'contain',
+		label: 'Fit',
+		hint: 'The whole image fits inside the block',
+	},
+];
+
+export const TEXT_ALIGN_OPTIONS: ReadonlyArray<{
+	value: TextAlign;
+	label: string;
+}> = [
+	{ value: 'left', label: 'Left' },
+	{ value: 'center', label: 'Center' },
+	{ value: 'right', label: 'Right' },
+	{ value: 'justify', label: 'Justify' },
+];
 
 export const TEXT_SIZING_OPTIONS: ReadonlyArray<{
 	value: TextSizing;
@@ -340,7 +375,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		description: 'A line of text.',
 		defaultSize: size(85, 45),
 		minSize: size(50, 20),
-		maxSize: size(2000, 2000),
+		maxSize: size(4000, 4000),
 		properties: [
 			{ key: 'text', kind: 'text', default: 'lorem', description: 'Text.' },
 			{
@@ -376,6 +411,52 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				default: false,
 				description: 'Underline.',
 			},
+			{
+				key: 'fontFamily',
+				kind: 'string',
+				default: '',
+				description:
+					'Font family name, e.g. Inter or Segoe UI. Empty uses the app font. Google families are loaded automatically when fontSource is google.',
+			},
+			{
+				key: 'fontSource',
+				kind: 'enum',
+				default: 'default',
+				options: ['default', 'system', 'google'],
+				description:
+					'Where the family comes from: the app font, a font installed on the machine, or Google Fonts.',
+			},
+			{
+				key: 'fontWeight',
+				kind: 'number',
+				default: 400,
+				min: 100,
+				max: 900,
+				description: 'Font weight. isBold overrides it with 700.',
+			},
+			{
+				key: 'textAlign',
+				kind: 'enum',
+				default: 'left',
+				options: ['left', 'center', 'right', 'justify'],
+				description: 'Horizontal alignment of the lines.',
+			},
+			{
+				key: 'lineHeight',
+				kind: 'number',
+				default: 0,
+				min: 0,
+				max: 4,
+				description: 'Line height as a multiple of the font size (0: default).',
+			},
+			{
+				key: 'letterSpacing',
+				kind: 'number',
+				default: 0,
+				min: -20,
+				max: 100,
+				description: 'Letter spacing in pixels.',
+			},
 		],
 	},
 	{
@@ -383,14 +464,48 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		label: 'Image',
 		description: 'An image from a URL or data URL.',
 		defaultSize: size(100, 100),
-		minSize: size(50, 50),
-		maxSize: size(5000, 5000),
+		minSize: size(20, 20),
+		maxSize: size(8000, 8000),
 		properties: [
 			{
 				key: 'src',
 				kind: 'image',
 				default: '',
 				description: 'Image URL (https or data URL).',
+			},
+			{
+				key: 'fit',
+				kind: 'enum',
+				default: 'fill',
+				options: ['fill', 'cover', 'contain'],
+				description:
+					'How the image fills the block: fill stretches it, cover crops it, contain fits it whole.',
+			},
+			{
+				key: 'focalX',
+				kind: 'number',
+				default: 50,
+				min: 0,
+				max: 100,
+				description:
+					'Horizontal part of the image kept in view, in percent (cover and contain).',
+			},
+			{
+				key: 'focalY',
+				kind: 'number',
+				default: 50,
+				min: 0,
+				max: 100,
+				description:
+					'Vertical part of the image kept in view, in percent (cover and contain).',
+			},
+			{
+				key: 'zoom',
+				kind: 'number',
+				default: 100,
+				min: 100,
+				max: 400,
+				description: 'Zoom into the image, in percent.',
 			},
 		],
 	},
@@ -522,15 +637,16 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 	{
 		type: 'shape',
 		label: 'Shape',
-		description: 'A vector shape.',
+		description:
+			'A vector shape: rectangle, ellipse, triangle, polygon, star, heart, line or arrow.',
 		defaultSize: size(120, 120),
-		minSize: size(50, 50),
-		maxSize: size(2000, 2000),
+		minSize: size(10, 10),
+		maxSize: size(4000, 4000),
 		properties: [
 			{
 				key: 'shape',
 				kind: 'enum',
-				default: 'oval',
+				default: 'ellipse',
 				options: SHAPES,
 				description: 'Shape.',
 			},
@@ -538,7 +654,61 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				key: 'color',
 				kind: 'color',
 				default: '#f3f4f6',
-				description: 'Fill color.',
+				description: 'Fill color (shapes other than line and arrow).',
+			},
+			{
+				key: 'strokeColor',
+				kind: 'color',
+				default: '#f3f4f6',
+				description: 'Stroke color. Lines and arrows are drawn with it.',
+			},
+			{
+				key: 'strokeWidth',
+				kind: 'number',
+				default: 0,
+				min: 0,
+				max: 60,
+				description:
+					'Stroke width in pixels (0 hides it; lines and arrows use 6).',
+			},
+			{
+				key: 'strokeStyle',
+				kind: 'enum',
+				default: 'solid',
+				options: ['solid', 'dashed', 'dotted'],
+				description: 'Stroke style.',
+			},
+			{
+				key: 'cornerRadius',
+				kind: 'number',
+				default: 0,
+				min: 0,
+				max: 200,
+				description: 'Corner radius of rectangles, in pixels.',
+			},
+			{
+				key: 'sides',
+				kind: 'number',
+				default: 6,
+				min: 3,
+				max: 12,
+				description: 'Number of sides of a polygon.',
+			},
+			{
+				key: 'points',
+				kind: 'number',
+				default: 5,
+				min: 3,
+				max: 12,
+				description: 'Number of points of a star.',
+			},
+			{
+				key: 'innerRadius',
+				kind: 'number',
+				default: 45,
+				min: 5,
+				max: 95,
+				description: 'How deep the points of a star cut in, in percent.',
 			},
 		],
 	},
@@ -569,9 +739,9 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		type: 'qr',
 		label: 'QR code',
 		description: 'A QR code.',
-		defaultSize: size(100, 50),
-		minSize: size(100, 50),
-		maxSize: size(100, 100),
+		defaultSize: size(150, 150),
+		minSize: size(40, 40),
+		maxSize: size(2000, 2000),
 		properties: [
 			{
 				key: 'text',
@@ -598,8 +768,8 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		label: 'Badge',
 		description: 'A small pill with an avatar and a handle.',
 		defaultSize: size(270, 80),
-		minSize: size(270, 80),
-		maxSize: size(270, 80),
+		minSize: size(120, 40),
+		maxSize: size(2000, 600),
 		properties: [
 			{
 				key: 'text',
@@ -627,8 +797,8 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		description:
 			'A custom component written in HTML, CSS and JavaScript, rendered in a shadow root. Edit its code with update_html_block.',
 		defaultSize: size(400, 300),
-		minSize: size(300, 200),
-		maxSize: size(1200, 800),
+		minSize: size(100, 80),
+		maxSize: size(4000, 4000),
 		properties: [
 			{
 				key: 'auto-refresh',

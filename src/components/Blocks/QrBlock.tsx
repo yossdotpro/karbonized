@@ -32,12 +32,12 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 				id={id}
 				shadowEditable={false}
 				borderEditable={false}
-				defaultHeight='50px'
-				defaultWidth='50px'
-				minHeight={'50px'}
-				minWidth={'100px'}
-				maxWidth={'100px'}
-				maxHeight={'100px'}
+				defaultHeight='150px'
+				defaultWidth='150px'
+				minHeight={'40px'}
+				minWidth={'40px'}
+				maxWidth={'2000px'}
+				maxHeight={'2000px'}
 				menu={
 					<>
 						<CustomCollapse
@@ -84,10 +84,12 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 					</>
 				}
 			>
+				{/* The code is drawn at a fixed size and scaled to the block */}
 				<QRCodeSVG
 					bgColor={backgroundColor}
 					fgColor={foregroundColor}
-					size={100}
+					size={512}
+					style={{ width: '100%', height: '100%' }}
 					className='flex flex-auto'
 					value={text}
 				></QRCodeSVG>

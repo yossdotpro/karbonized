@@ -452,10 +452,10 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 				borderEditable={false}
 				defaultHeight='300px'
 				defaultWidth='400px'
-				minHeight='200px'
-				minWidth='300px'
-				maxWidth='1200px'
-				maxHeight='800px'
+				minHeight='80px'
+				minWidth='100px'
+				maxWidth='4000px'
+				maxHeight='4000px'
 				menu={
 					<>
 						{/* Content Editor */}

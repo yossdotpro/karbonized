@@ -22,12 +22,12 @@ export const BadgeBlock: React.FC<Props> = ({ id }) => {
 			<ControlTemplate
 				id={id}
 				borderEditable={false}
-				defaultHeight='45px'
-				defaultWidth='85px'
-				minHeight={'80px'}
-				minWidth={'270px'}
-				maxWidth={'270px'}
-				maxHeight={'80px'}
+				defaultHeight='80px'
+				defaultWidth='270px'
+				minHeight={'40px'}
+				minWidth={'120px'}
+				maxWidth={'2000px'}
+				maxHeight={'600px'}
 				menu={
 					<>
 						<CustomCollapse
@@ -83,16 +83,35 @@ export const BadgeBlock: React.FC<Props> = ({ id }) => {
 					</>
 				}
 			>
+				{/* The block is the query container; the avatar, the text and the
+				    padding follow its height (cqh), so the badge keeps its
+				    proportions at any size. `cqh` inside an element refers to its
+				    containing container, never to itself, hence the wrapper. */}
 				<div
-					style={{ background: color, border: color }}
-					className='flex h-full w-full flex-auto overflow-hidden rounded-full border-none p-3'
+					style={{ containerType: 'size' }}
+					className='flex h-full w-full flex-auto'
 				>
-					<div className='my-auto flex flex-auto gap-1'>
-						<img
-							className='my-auto h-12 w-12 rounded-full bg-white'
-							src={src}
-						></img>
-						<p className='my-auto flex w-2/3 text-xl font-bold'>{text}</p>
+					<div
+						style={{
+							background: color,
+							border: color,
+							padding: '12cqh',
+						}}
+						className='flex h-full w-full flex-auto overflow-hidden rounded-full border-none'
+					>
+						<div className='my-auto flex flex-auto items-center gap-[6cqh]'>
+							<img
+								style={{ height: '60cqh', width: '60cqh' }}
+								className='my-auto aspect-square shrink-0 rounded-full bg-white object-cover'
+								src={src}
+							></img>
+							<p
+								style={{ fontSize: '25cqh', lineHeight: 1.1 }}
+								className='my-auto flex flex-auto overflow-hidden font-bold'
+							>
+								{text}
+							</p>
+						</div>
 					</div>
 				</div>
 			</ControlTemplate>
