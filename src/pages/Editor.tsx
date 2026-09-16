@@ -532,8 +532,8 @@ export const Editor: React.FC = () => {
 					</div>
 				</div>
 
-				{/* Panels */}
-				<div className='pointer-events-none absolute flex h-full w-full'>
+				{/* Panels, which float above the canvas and its rulers */}
+				<div className='pointer-events-none absolute z-30 flex h-full w-full'>
 					{/* Left Panel */}
 					<div className='pointer-events-auto flex max-w-xs'>
 						<Suspense>
