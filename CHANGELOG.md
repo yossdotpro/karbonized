@@ -10,6 +10,15 @@
 - Everything Beedly does in one response undoes in one step, with **Undo changes** under the response
 - **Beedly** button in the status bar (shows when a response is in progress) and a **Beedly** menu in the menu bar: show or hide the panel, new chat, stop, switch model, settings and, in the desktop app, turn the MCP server on or off
 - An **MCP** indicator in the status bar of the desktop app shows the server state and opens its settings
+- **New blocks land where you are looking**: in the middle of the visible canvas, whatever the zoom or the panning, and stepping aside instead of piling up on the same spot
+- **One active tool**: Select, Pan, Crop and Warp are now a single setting. Holding `Space` pans the canvas and releasing it goes back to the tool you were using, `Esc` leaves the current tool, and pressing a tool's button or shortcut again returns to Select
+- **Rotation in degrees**: the Position panel takes the angle of the block as a number; a warped block shows a **Reset warp** button, and blocks report their angle even after being warped
+- **Crops are proportional**: a crop is stored in percentages, so it follows the block when it is resized, the crop area can be dragged as a whole, and **Reset crop** in the block menu removes it
+- **Fonts for text blocks**: pick any font installed on the machine or one of 65 Google Fonts, previewed in their own font in a searchable picker; Google families are fetched when needed and the exported image keeps them
+- **Typography controls** for text: alignment (left, center, right, justified), weight (300–800), line height and letter spacing
+- **Edit text on the canvas**: double click a text block to type in place; `Esc` (or clicking away) saves
+- **Shapes redrawn**: rectangle with adjustable corners, ellipse, triangle, polygon with 3–12 sides, star with 3–12 points and adjustable depth, heart, line and arrow. Every shape takes a fill, a stroke (width, color, solid, dashed or dotted) and is drawn at the block's real size, so corners and strokes keep their thickness. Shapes from older projects keep working
+- **Images frame their picture**: stretch, cover or fit, offset X and Y, zoom, corner radius, a URL field and "use original size"; an image file can be dropped on the block and an image in the clipboard pasted onto it
 - **Text blocks fit their text**: new text blocks grow and shrink with their content, font size and style. Resizing with a side handle keeps the width and wraps the text (the height still follows it); a top, bottom or corner handle fixes both. Pick **Auto**, **Auto height** or **Fixed** in the Text section, which now takes several lines. Existing text blocks keep their size
 - **MCP server** in the desktop app (off by default): Claude Desktop, Claude Code, Cursor and other MCP clients can read the workspace, create projects, add, edit, align and delete blocks, edit HTML block code, change the background and size, look at the canvas and export images; settings include ready-made client configurations
 - **Export options**: scale (0.5×–4×) with the resulting size, transparent background for PNG and SVG, JPEG quality; the export dialog remembers your choices and warns when the image is too large for the browser
@@ -28,8 +37,19 @@
 - **Block editor console** also shows errors thrown later by block scripts (timers, event listeners, promises and async actions) and no longer logs every action registration
 - **Action scope hint** in `main.js`: each `// @action:` marker shows which lines run with the action, with a gutter bar over its code
 
+### 🧹 Removed
+
+- **Tweet block**: it depended on an external service to load tweets and is no longer available. Projects that used it open without it
+
 ### 🐛 Fixes
 
+- The crop and warp tools did nothing when they were picked while the pan tool was active
+- The crop tool showed no crop handles when the selection handles had not been resolved yet, which also happened while the window was in the background
+- Resizing or rotating several blocks at once could not be undone
+- Clicking a block without moving it added an empty undo step
+- QR codes could not be resized (they were fixed at 100×100) and badges were stuck at 270×80; both now scale, and the badge keeps its proportions
+- HTML blocks were limited to 1200×800
+- The image block and the block itself kept two different corner radius values
 - Undo and redo entries could be applied again later and revert newer edits of the same property, and a block could overwrite a value it had just received with its previous one
 - The Electron binary was never downloaded because Yarn 4 skips dependency install scripts; `yarn install` now installs it
 - Pressing Delete while typing in a field deleted the selected block

@@ -36,7 +36,9 @@ The app includes **Beedly**, an in-app AI assistant, and a local **MCP server** 
 - `src/lib/commands/`: command registry and keyboard shortcuts (see below)
 - `src/lib/persistence/autosave.ts`: session autosave/restore (IndexedDB)
 - `src/lib/editor/`: editor actions with arguments (`actions.ts`) and undo/redo helpers (`history.ts`)
-- `src/lib/blocks/catalog.ts`: block types, their stored properties, defaults and size limits
+- `src/lib/blocks/registry.tsx`: which block types exist in the editor (label, icon, component). The toolbar, the canvas and the hierarchy icons read it
+- `src/lib/blocks/catalog.ts`: what each block type stores: properties, defaults and size limits
+- `src/lib/canvas/placement.ts`: where a new block lands (the middle of the visible canvas, stepping aside from the blocks already there)
 - `src/lib/beedly/`: Beedly assistant (tools, provider adapters, agent loop, settings, conversations) and the renderer side of the MCP server
 - `src/components/Beedly/`: Beedly panel, settings dialog and MCP settings
 - `src/utils/`: exporting, platform utilities, helper lists, and static data
@@ -56,7 +58,7 @@ The app includes **Beedly**, an in-app AI assistant, and a local **MCP server** 
    - left/right panels
    - status bar
 4. `src/components/Workspace.tsx` renders the active canvas and connects `Moveable`.
-5. Actual blocks are materialized through `ControlHandler` and the components in `src/components/Blocks/`.
+5. Actual blocks are materialized through `ControlHandler`, which renders the component the block registry gives for the type (`src/components/Blocks/`).
 
 ## State Source of Truth
 
@@ -123,18 +125,18 @@ At runtime, the app consumes objects shaped like:
 
 ```ts
 interface Extension {
-  logo: string;
-  info: {
-    name: string;
-    author: string;
-    description: string;
-    version: string;
-  };
-  components: Array<{
-    properties: { name: string };
-    code: string;
-    image: string;
-  }>;
+	logo: string;
+	info: {
+		name: string;
+		author: string;
+		description: string;
+		version: string;
+	};
+	components: Array<{
+		properties: { name: string };
+		code: string;
+		image: string;
+	}>;
 }
 ```
 
@@ -166,7 +168,7 @@ Before refactoring platform integration, verify which runtime path is actually u
 
 - Prefer small, localized changes; editor state is fairly coupled.
 - Review `AppStore.ts` before changing selection, duplication, undo/redo, or workspaces.
-- For new block types, inspect `src/components/Blocks/` and `ControlHandler` first.
+- A new block type needs three things: its component in `src/components/Blocks/`, an entry in `src/lib/blocks/registry.tsx` (label, icon, component) and one in `src/lib/blocks/catalog.ts` (its properties and sizes). The toolbar, the canvas and Beedly follow from those.
 - For UI work, use the design tokens in `src/input.css` (`bg-background`, `bg-sidebar`, `border-border`, `text-muted-foreground`, …) and the `rounded-control` / `rounded-surface` radii. Do not change the generic radius scale or `font-block`: canvas blocks use them and exported images would change.
 - Monaco themes mirror the tokens in `src/lib/theme/editor-theme.ts`; keep both in sync.
 - Shortcuts and command palette entries are registered with `useCommands()` from `src/lib/commands/registry.ts`. Do not add `window.addEventListener('keydown')` handlers; a single handler dispatches every shortcut and skips inputs, Monaco and open overlays unless `allowInInput` is set.
