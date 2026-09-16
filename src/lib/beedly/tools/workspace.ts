@@ -2,6 +2,7 @@ import { z } from 'zod';
 import {
 	createWorkspace,
 	getWorkspaceSummary,
+	setGuides,
 	requireWorkspace,
 	setCanvasSettings,
 	waitForElement,
@@ -47,6 +48,25 @@ export const getWorkspaceTool = defineTool({
 			})),
 		};
 	},
+});
+
+export const setGuidesTool = defineTool({
+	name: 'set_guides',
+	title: 'Set guides',
+	description:
+		'Replace the guides blocks snap to, in canvas pixels. `vertical` are x positions and `horizontal` are y positions; an empty list clears that axis and a list left out keeps it. Guides show only while the rulers are on (run the view.toggle-rulers command).',
+	input: z.object({
+		vertical: z
+			.array(z.number())
+			.optional()
+			.describe('Vertical guides, as x positions in canvas pixels.'),
+		horizontal: z
+			.array(z.number())
+			.optional()
+			.describe('Horizontal guides, as y positions in canvas pixels.'),
+	}),
+	mutates: false,
+	execute: (args) => setGuides(args),
 });
 
 export const createWorkspaceTool = defineTool({
@@ -207,4 +227,5 @@ export const workspaceTools = [
 	createWorkspaceTool,
 	setCanvasBackgroundTool,
 	setCanvasSizeTool,
+	setGuidesTool,
 ];

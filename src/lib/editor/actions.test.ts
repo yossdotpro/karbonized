@@ -9,7 +9,11 @@ import {
 	getHtmlBlockCode,
 	getWorkspaceSummary,
 	isWarped,
+	cropToClip,
+	parseCrop,
 	parseRotation,
+	readProperty,
+	setGuides,
 	setCanvasSettings,
 	setHtmlBlockCode,
 	updateBlock,
@@ -237,6 +241,62 @@ describe('editor actions', () => {
 		expect(estimateTextSize('abc', Number.NaN, false)).toEqual({
 			width: 54,
 			height: 36,
+		});
+	});
+
+	it('crops a block by percentages, and takes the crop away', () => {
+		const block = addBlock({ type: 'image' });
+
+		updateBlock(block.id, { crop: { top: 10, left: 25 } });
+		const clip = () => readProperty(`${block.id}-clip`).value;
+		expect(clip()).toBe('inset(10% 0% 0% 25%)');
+		expect(
+			getWorkspaceSummary().blocks.find((item) => item.id === block.id)?.crop,
+		).toEqual({ top: 10, right: 0, bottom: 0, left: 25 });
+
+		// Only the sides given change.
+		updateBlock(block.id, { crop: { right: 5 } });
+		expect(clip()).toBe('inset(10% 5% 0% 25%)');
+
+		updateBlock(block.id, {
+			crop: { top: 0, right: 0, bottom: 0, left: 0 },
+		});
+		expect(clip()).toBe('');
+	});
+
+	it('reads a crop written as a CSS shorthand', () => {
+		expect(parseCrop('inset(10%)')).toEqual({
+			top: 10,
+			right: 10,
+			bottom: 10,
+			left: 10,
+		});
+		expect(parseCrop('inset(10% 20%)')).toEqual({
+			top: 10,
+			right: 20,
+			bottom: 10,
+			left: 20,
+		});
+		expect(parseCrop('')).toEqual({ top: 0, right: 0, bottom: 0, left: 0 });
+		expect(cropToClip({ top: 200, left: -5 })).toBe('inset(100% 0% 0% 0%)');
+	});
+
+	it('keeps only the guides that fall on the canvas', () => {
+		const result = setGuides({
+			vertical: [100, -20, 5000],
+			horizontal: [50],
+		});
+
+		expect(result).toEqual({ vertical: [100], horizontal: [50] });
+		expect(getWorkspaceSummary().guides).toEqual({
+			vertical: [100],
+			horizontal: [50],
+		});
+
+		// A list left out is kept; an empty one clears that axis.
+		expect(setGuides({ vertical: [] })).toEqual({
+			vertical: [],
+			horizontal: [50],
 		});
 	});
 

@@ -12,6 +12,7 @@ import {
 } from '@/lib/canvas/selection';
 import { cascadePosition, viewCenterPlacement } from '@/lib/canvas/placement';
 import { generateNewId } from '@/lib/utils';
+import { useViewStore } from '@/lib/viewer';
 import { getRandomNumber } from '@/utils/getRandom';
 import { isTextSizing, sizingForSize } from '@/lib/blocks/text-sizing';
 import {
@@ -88,6 +89,8 @@ export interface BlockSummary extends BlockBox {
 	locked: boolean;
 	/** In-plane rotation in degrees. */
 	rotation: number;
+	/** How much is cut away on each side, in percent. */
+	crop: BlockCrop;
 	/** Properties that differ from their defaults. */
 	properties: Record<string, unknown>;
 }
@@ -99,6 +102,8 @@ export interface WorkspaceSummary {
 	height: number;
 	background: WorkspaceSettings;
 	selection: string[];
+	/** Guides dragged out of the rulers, in canvas pixels. */
+	guides: { vertical: number[]; horizontal: number[] };
 	blocks: BlockSummary[];
 }
 
@@ -146,6 +151,7 @@ const defaultPropertyValue = (block: Item, key: string): unknown => {
 		return size ? { w: size.width, h: size.height } : { w: 80, h: 50 };
 	}
 	if (key === 'transform') return '';
+	if (key === 'clip') return '';
 	if (block.type === 'html' && key in HTML_CODE_DEFAULTS) {
 		return HTML_CODE_DEFAULTS[key];
 	}
@@ -156,6 +162,48 @@ const defaultPropertyValue = (block: Item, key: string): unknown => {
 const propertyValue = (block: Item, key: string): unknown => {
 	const stored = readProperty(propertyId(block.id, key));
 	return stored.found ? stored.value : defaultPropertyValue(block, key);
+};
+
+/** How much of a block is cut away on each side, in percent. */
+export interface BlockCrop {
+	top: number;
+	right: number;
+	bottom: number;
+	left: number;
+}
+
+const NO_CROP: BlockCrop = { top: 0, right: 0, bottom: 0, left: 0 };
+
+/** The crop stored on a block, read from its `inset()` clip path. */
+export const parseCrop = (clip: unknown): BlockCrop => {
+	if (typeof clip !== 'string') return NO_CROP;
+
+	const match = /inset\(([^)]+)\)/.exec(clip);
+	if (!match) return NO_CROP;
+
+	const values = match[1]
+		.trim()
+		.split(/\s+/)
+		.map((value) => parseFloat(value))
+		.filter((value) => Number.isFinite(value));
+
+	if (values.length === 0) return NO_CROP;
+
+	// CSS shorthand: one, two, three or four sides.
+	const [top, right = top, bottom = top, left = right] = values;
+	return { top, right, bottom, left };
+};
+
+/** The clip path for a crop, in percentages, so it survives resizing. */
+export const cropToClip = (crop: Partial<BlockCrop>): string => {
+	const sides = { ...NO_CROP, ...crop };
+	const clamp = (value: number) =>
+		Math.round(Math.min(100, Math.max(0, value)) * 100) / 100;
+	const values = [sides.top, sides.right, sides.bottom, sides.left].map(clamp);
+
+	return values.every((value) => value === 0)
+		? ''
+		: `inset(${values.map((value) => `${value}%`).join(' ')})`;
 };
 
 /** Whether a transform was written by the warp tool, which is a matrix. */
@@ -232,6 +280,7 @@ export const summarizeBlock = (block: Item): BlockSummary => {
 		locked: block.locked === true,
 		...getBlockBox(block),
 		rotation: parseRotation(propertyValue(block, 'transform')),
+		crop: parseCrop(propertyValue(block, 'clip')),
 		properties,
 	};
 };
@@ -246,8 +295,49 @@ export const getWorkspaceSummary = (): WorkspaceSummary => {
 		height: parseFloat(workspace.workspaceHeight),
 		background: pickWorkspaceSettings(workspace),
 		selection: useControlsStore.getState().selectedControlIDs,
+		guides: useViewStore.getState().guides,
 		blocks: liveControls(workspace).map(summarizeBlock),
 	};
+};
+
+/**
+ * Replace the guides of the canvas. A list left out is kept as it is, and an
+ * empty list clears that axis.
+ */
+export const setGuides = (input: {
+	vertical?: number[];
+	horizontal?: number[];
+}): { vertical: number[]; horizontal: number[] } => {
+	const workspace = requireWorkspace();
+	const width = parseFloat(workspace.workspaceWidth);
+	const height = parseFloat(workspace.workspaceHeight);
+	const view = useViewStore.getState();
+
+	const inside = (values: number[], size: number) =>
+		values
+			.filter((value) => Number.isFinite(value) && value >= 0 && value <= size)
+			.map((value) => Math.round(value));
+
+	const next = {
+		vertical:
+			input.vertical === undefined
+				? view.guides.vertical
+				: inside(input.vertical, width),
+		horizontal:
+			input.horizontal === undefined
+				? view.guides.horizontal
+				: inside(input.horizontal, height),
+	};
+
+	view.clearGuides();
+	next.vertical.forEach((position) => {
+		useViewStore.getState().addGuide('vertical', position);
+	});
+	next.horizontal.forEach((position) => {
+		useViewStore.getState().addGuide('horizontal', position);
+	});
+
+	return next;
 };
 
 export const getHtmlBlockCode = (
@@ -495,6 +585,8 @@ export const addBlock = (input: AddBlockInput): Item => {
 
 export interface UpdateBlockInput extends BlockGeometry {
 	name?: string;
+	/** Cut away part of the block, in percent of its size. */
+	crop?: Partial<BlockCrop>;
 	visible?: boolean;
 	locked?: boolean;
 	properties?: Record<string, unknown>;
@@ -515,6 +607,13 @@ export const updateBlock = (id: string, input: UpdateBlockInput): void => {
 	}
 
 	const properties = { ...input.properties };
+	if (input.crop !== undefined) {
+		properties.clip = cropToClip({
+			...parseCrop(propertyValue(block, 'clip')),
+			...input.crop,
+		});
+	}
+
 	// Giving a text block a size fixes that dimension (as resizing it does).
 	if (
 		block.type === 'text' &&

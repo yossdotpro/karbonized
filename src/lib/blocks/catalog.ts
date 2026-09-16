@@ -809,7 +809,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 	},
 	{
 		type: 'qr',
-		label: 'QR code',
+		label: 'QR Code',
 		description: 'A QR code.',
 		defaultSize: size(150, 150),
 		minSize: size(40, 40),

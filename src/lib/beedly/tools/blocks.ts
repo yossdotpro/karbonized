@@ -161,6 +161,18 @@ const properties = z
 
 const blockIds = z.array(z.string()).min(1).describe('Block ids.');
 
+const crop = z
+	.object({
+		top: z.number().min(0).max(100).optional(),
+		right: z.number().min(0).max(100).optional(),
+		bottom: z.number().min(0).max(100).optional(),
+		left: z.number().min(0).max(100).optional(),
+	})
+	.optional()
+	.describe(
+		'Cut away part of the block, in percent of its size on each side. All zeros removes the crop. Only the sides given change.',
+	);
+
 export const listBlockTypesTool = defineTool({
 	name: 'list_block_types',
 	title: 'List block types',
@@ -218,6 +230,7 @@ export const updateBlockTool = defineTool({
 		...geometry,
 		visible: z.boolean().optional(),
 		locked: z.boolean().optional(),
+		crop,
 		properties,
 	}),
 	mutates: true,

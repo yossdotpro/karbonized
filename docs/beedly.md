@@ -29,15 +29,15 @@ When the model accepts images, Beedly can look at a snapshot of the canvas to ch
 
 Open **Beedly settings** (gear in the panel, or the command palette) and add a provider:
 
-| Provider | Base URL | Key | Notes |
-| --- | --- | --- | --- |
-| Anthropic | `https://api.anthropic.com` | Required | |
-| OpenAI | `https://api.openai.com/v1` | Required | |
-| Google Gemini | `https://generativelanguage.googleapis.com` | Required | |
-| OpenRouter | `https://openrouter.ai/api/v1` | Required | Any model on OpenRouter |
-| Ollama | `http://localhost:11434/v1` | No | Local models |
-| LM Studio | `http://localhost:1234/v1` | No | Local models |
-| OpenAI-compatible | your server | Optional | Any server that speaks the Chat Completions API |
+| Provider          | Base URL                                    | Key      | Notes                                           |
+| ----------------- | ------------------------------------------- | -------- | ----------------------------------------------- |
+| Anthropic         | `https://api.anthropic.com`                 | Required |                                                 |
+| OpenAI            | `https://api.openai.com/v1`                 | Required |                                                 |
+| Google Gemini     | `https://generativelanguage.googleapis.com` | Required |                                                 |
+| OpenRouter        | `https://openrouter.ai/api/v1`              | Required | Any model on OpenRouter                         |
+| Ollama            | `http://localhost:11434/v1`                 | No       | Local models                                    |
+| LM Studio         | `http://localhost:1234/v1`                  | No       | Local models                                    |
+| OpenAI-compatible | your server                                 | Optional | Any server that speaks the Chat Completions API |
 
 **Browse** lists the models of the provider, and **Test connection** checks the base URL and key. Pick a model that supports tool calling; small local models may struggle with multi-step edits.
 
@@ -66,23 +66,24 @@ Everything Beedly does in one response is **one undo step**: press <kbd>Ctrl</kb
 
 Beedly and the MCP server share the same tools:
 
-| Tool | What it does |
-| --- | --- |
-| `get_workspace` | Canvas size, background, selection and every block with its position, size and properties |
-| `create_workspace` | New project with a canvas size, opened in the editor |
-| `set_canvas_background` | Color, gradient, texture, wallpaper or dynamic background, blur and noise |
-| `set_canvas_size` | Resize the canvas |
-| `list_block_types` | Block types, their properties and size limits, code themes |
-| `add_block` | Add a block (code, text, image, window, phone, shape, icon, QR, badge, HTML) |
-| `update_block` | Name, position, size, rotation, visibility, lock and properties |
-| `delete_blocks` | Delete blocks |
-| `select_blocks` | Select blocks in the editor |
-| `align_blocks` / `distribute_blocks` | Align or space blocks; one block aligns to the canvas |
-| `reorder_block` | Bring to front, forward, backward, send to back |
-| `get_html_block` / `update_html_block` | Read or replace the HTML, CSS and JavaScript of an HTML block |
-| `get_canvas_snapshot` | PNG of the canvas (models with image input) |
-| `export_image` | Export PNG, JPEG or SVG through the normal save flow |
-| `list_commands` / `run_command` | Editor commands such as undo, duplicate, zoom or snapping |
+| Tool                                   | What it does                                                                                                                         |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `get_workspace`                        | Canvas size, background, selection and every block with its position, size and properties                                            |
+| `create_workspace`                     | New project with a canvas size, opened in the editor                                                                                 |
+| `set_canvas_background`                | Color, gradient, texture, wallpaper or dynamic background, blur and noise                                                            |
+| `set_canvas_size`                      | Resize the canvas                                                                                                                    |
+| `set_guides`                           | Place the guides blocks snap to, in canvas pixels                                                                                    |
+| `list_block_types`                     | Block types, their properties and size limits, code themes                                                                           |
+| `add_block`                            | Add a block (code, text, image, window, phone, shape, icon, QR, freehand stroke, HTML)                                               |
+| `update_block`                         | Name, position, size, rotation, crop, visibility, lock and properties                                                                |
+| `delete_blocks`                        | Delete blocks                                                                                                                        |
+| `select_blocks`                        | Select blocks in the editor                                                                                                          |
+| `align_blocks` / `distribute_blocks`   | Align or space blocks; one block aligns to the canvas                                                                                |
+| `reorder_block`                        | Bring to front, forward, backward, send to back                                                                                      |
+| `get_html_block` / `update_html_block` | Read or replace the HTML, CSS and JavaScript of an HTML block                                                                        |
+| `get_canvas_snapshot`                  | PNG of the canvas (models with image input)                                                                                          |
+| `export_image`                         | Export PNG, JPEG or SVG through the normal save flow                                                                                 |
+| `list_commands` / `run_command`        | Editor commands: undo, duplicate, zoom, snapping, rulers, and the tools the user draws with (shape, brush, nodes, eraser, crop, pan) |
 
 ## MCP server (desktop app)
 
@@ -96,17 +97,19 @@ Claude Desktop starts MCP servers as local processes, so Karbonized ships a smal
 
 ```json
 {
-  "mcpServers": {
-    "karbonized": {
-      "command": "C:\\Users\\you\\AppData\\Local\\Programs\\Karbonized\\Karbonized.exe",
-      "args": ["C:\\Users\\you\\AppData\\Local\\Programs\\Karbonized\\resources\\app.asar.unpacked\\dist-electron\\mcp-stdio.cjs"],
-      "env": {
-        "ELECTRON_RUN_AS_NODE": "1",
-        "KARBONIZED_MCP_URL": "http://127.0.0.1:7824/mcp",
-        "KARBONIZED_MCP_TOKEN": "<your token>"
-      }
-    }
-  }
+	"mcpServers": {
+		"karbonized": {
+			"command": "C:\\Users\\you\\AppData\\Local\\Programs\\Karbonized\\Karbonized.exe",
+			"args": [
+				"C:\\Users\\you\\AppData\\Local\\Programs\\Karbonized\\resources\\app.asar.unpacked\\dist-electron\\mcp-stdio.cjs"
+			],
+			"env": {
+				"ELECTRON_RUN_AS_NODE": "1",
+				"KARBONIZED_MCP_URL": "http://127.0.0.1:7824/mcp",
+				"KARBONIZED_MCP_TOKEN": "<your token>"
+			}
+		}
+	}
 }
 ```
 
@@ -122,12 +125,12 @@ Add to `~/.cursor/mcp.json` (or `.cursor/mcp.json` in a project):
 
 ```json
 {
-  "mcpServers": {
-    "karbonized": {
-      "url": "http://127.0.0.1:7824/mcp",
-      "headers": { "Authorization": "Bearer <your token>" }
-    }
-  }
+	"mcpServers": {
+		"karbonized": {
+			"url": "http://127.0.0.1:7824/mcp",
+			"headers": { "Authorization": "Bearer <your token>" }
+		}
+	}
 }
 ```
 
