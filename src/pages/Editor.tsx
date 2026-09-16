@@ -16,6 +16,7 @@ import {
 } from '../stores';
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
+import { ShapeBar } from '@/components/Panels/ShapeBar';
 import { isEditableTarget } from '@/lib/commands/shortcuts';
 import { redo, undo } from '@/lib/editor/history';
 import { useBeedlyUI } from '@/lib/beedly/ui-store';
@@ -399,6 +400,15 @@ export const Editor: React.FC = () => {
 			>
 				{/* Content */}
 				<div className='relative flex flex-auto flex-col overflow-hidden md:flex-row'>
+					{/* Which shape the draw tool puts on the canvas */}
+					{activeTool === 'draw' && (
+						<div className='pointer-events-none absolute flex h-full w-full'>
+							<div className='pointer-events-auto flex h-full w-full'>
+								<ShapeBar></ShapeBar>
+							</div>
+						</div>
+					)}
+
 					{/* Draw Bar */}
 					{(canDraw || isErasing) && (
 						<div className=' absolute flex h-full w-full'>
@@ -474,48 +484,52 @@ export const Editor: React.FC = () => {
 						</InfiniteViewer>
 
 						{/* Marquee selection: drag on an empty part of the canvas */}
-						{!drag && !crop && !canDraw && !isErasing && (
-							<Selecto
-								ref={selectoRef}
-								dragContainer='.viewer'
-								selectableTargets={['#workspace [data-block-id]']}
-								hitRate={0}
-								selectByClick
-								selectFromInside={false}
-								toggleContinueSelect='shift'
-								ratio={0}
-								dragCondition={(event) => {
-									const target = event.inputEvent?.target as Element | null;
-									// Blocks, selection handles and panels handle their own drags.
-									return !target?.closest(
-										'[data-block-id], .moveable-control-box, [data-radix-popper-content-wrapper]',
-									);
-								}}
-								onSelectEnd={({ selected, isClick, inputEvent }) => {
-									const ids = selected
-										.map((element) => element.getAttribute('data-block-id'))
-										.filter((id): id is string => Boolean(id))
-										.filter((id) => {
-											const control = currentWorkspace?.controls.find(
-												(item) => item.id === id,
-											);
-											return (
-												control &&
-												!control.locked &&
-												control.isVisible !== false
-											);
-										});
+						{!drag &&
+							!crop &&
+							activeTool !== 'draw' &&
+							!canDraw &&
+							!isErasing && (
+								<Selecto
+									ref={selectoRef}
+									dragContainer='.viewer'
+									selectableTargets={['#workspace [data-block-id]']}
+									hitRate={0}
+									selectByClick
+									selectFromInside={false}
+									toggleContinueSelect='shift'
+									ratio={0}
+									dragCondition={(event) => {
+										const target = event.inputEvent?.target as Element | null;
+										// Blocks, selection handles and panels handle their own drags.
+										return !target?.closest(
+											'[data-block-id], .moveable-control-box, [data-radix-popper-content-wrapper]',
+										);
+									}}
+									onSelectEnd={({ selected, isClick, inputEvent }) => {
+										const ids = selected
+											.map((element) => element.getAttribute('data-block-id'))
+											.filter((id): id is string => Boolean(id))
+											.filter((id) => {
+												const control = currentWorkspace?.controls.find(
+													(item) => item.id === id,
+												);
+												return (
+													control &&
+													!control.locked &&
+													control.isVisible !== false
+												);
+											});
 
-									// A plain click on empty canvas clears the selection.
-									if (isClick && !inputEvent?.shiftKey && ids.length === 0) {
-										useControlsStore.getState().setSelection([]);
-										return;
-									}
+										// A plain click on empty canvas clears the selection.
+										if (isClick && !inputEvent?.shiftKey && ids.length === 0) {
+											useControlsStore.getState().setSelection([]);
+											return;
+										}
 
-									useControlsStore.getState().setSelection(ids);
-								}}
-							/>
-						)}
+										useControlsStore.getState().setSelection(ids);
+									}}
+								/>
+							)}
 					</div>
 				</div>
 

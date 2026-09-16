@@ -45,6 +45,8 @@ export const LeftPanel: React.FC = () => {
 	const setWorkspaceTab = useUIStore((state) => state.setSelectedTab);
 	const activeTool = useUIStore((state) => state.activeTool);
 	const setActiveTool = useUIStore((state) => state.setActiveTool);
+	const startDrawing = useUIStore((state) => state.startDrawing);
+	const drawShape = useUIStore((state) => state.drawShape);
 
 	/* Component Gallery Dialog State */
 	const [showComponentsDialog, setShowComponentsDialog] = useState(false);
@@ -124,8 +126,19 @@ export const LeftPanel: React.FC = () => {
 				id: block.type,
 				icon: block.icon,
 				label: block.label,
-				shortcut: undefined as string | undefined,
+				shortcut:
+					block.type === 'shape' ? 'R' : (undefined as string | undefined),
 				action: () => {
+					// Shapes are drawn on the canvas instead of dropped on it.
+					if (block.type === 'shape') {
+						if (activeTool === 'draw') {
+							setActiveTool('select');
+						} else {
+							startDrawing(drawShape);
+						}
+						return;
+					}
+
 					try {
 						addBlock({ type: block.type });
 					} catch (error) {
@@ -136,7 +149,7 @@ export const LeftPanel: React.FC = () => {
 						);
 					}
 				},
-				isActive: false,
+				isActive: block.type === 'shape' && activeTool === 'draw',
 			})),
 			{
 				id: 'components',
@@ -149,7 +162,7 @@ export const LeftPanel: React.FC = () => {
 				isActive: false,
 			},
 		];
-	}, [activeTool, setActiveTool]);
+	}, [activeTool, setActiveTool, startDrawing, drawShape]);
 
 	// Calculate visible tools based on screen height
 	useEffect(() => {

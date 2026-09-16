@@ -38,13 +38,18 @@ import WorkspaceTexture from './WorkspaceTexture';
 import { Canvas } from './Canvas';
 import { Wallpapers } from '../utils/wallpapers';
 import noiseTexture from '../assets/noisy.png';
-import { readProperty } from '@/lib/editor/actions';
+import { addBlock, readProperty } from '@/lib/editor/actions';
+import { boxFromDrag, isDrawn, toCanvasPoint } from '@/lib/canvas/drawing';
+import { toast } from 'sonner';
 import type { TextSizing } from '@/lib/blocks/catalog';
 import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
 
 interface Props {
 	reference: RefObject<HTMLDivElement>;
 }
+
+type DrawPoint = { x: number; y: number };
+type DrawBox = { x: number; y: number; width: number; height: number };
 
 interface TargetSnapshot {
 	pos: { x: number; y: number };
@@ -89,10 +94,14 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	);
 
 	const activeTool = useUIStore((state) => state.activeTool);
-	// Panning hides the handles; cropping and warping replace what a drag does.
-	const editing = activeTool !== 'pan';
+	const drawShape = useUIStore((state) => state.drawShape);
+	const setActiveTool = useUIStore((state) => state.setActiveTool);
+	// Panning and drawing hide the handles; cropping and warping replace what
+	// a drag does.
+	const editing = activeTool !== 'pan' && activeTool !== 'draw';
 	const crop = activeTool === 'crop';
 	const warp = activeTool === 'warp';
+	const draw = activeTool === 'draw';
 	const lockAspect = useUIStore((state) => state.lockAspect);
 	const snapping = useViewStore((state) => state.snapping);
 	const isExporting = useUIStore((state) => state.isExporting);
@@ -554,6 +563,92 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		};
 	};
 
+	/* Drawing a shape: the drag is followed here and the block is created when
+	   it ends, so the canvas shows the shape exactly where it was drawn. */
+	const canvasSize = {
+		width: parseFloat(currentWorkspace?.workspaceWidth ?? '0'),
+		height: parseFloat(currentWorkspace?.workspaceHeight ?? '0'),
+	};
+	const drawStart = useRef<DrawPoint | null>(null);
+	const [drawBox, setDrawBox] = useState<DrawBox | null>(null);
+
+	const canvasRect = () => {
+		const element = document.getElementById('workspace');
+		if (!element) return null;
+		const rect = element.getBoundingClientRect();
+		return {
+			left: rect.left,
+			top: rect.top,
+			width: rect.width,
+			height: rect.height,
+		};
+	};
+
+	const pointerBox = (event: React.PointerEvent, start: DrawPoint) => {
+		const rect = canvasRect();
+		if (!rect) return null;
+
+		return boxFromDrag(
+			start,
+			toCanvasPoint(event, rect, canvasSize),
+			canvasSize,
+			{ square: event.shiftKey, fromCenter: event.altKey },
+		);
+	};
+
+	const onDrawStart = (event: React.PointerEvent<HTMLDivElement>) => {
+		const rect = canvasRect();
+		if (!rect || event.button !== 0) return;
+
+		try {
+			// Keeps the drag alive outside the canvas; not every pointer can be
+			// captured (synthetic events, some pens), and that is not fatal.
+			event.currentTarget.setPointerCapture(event.pointerId);
+		} catch {
+			/* the drag still works without capture */
+		}
+		drawStart.current = toCanvasPoint(event, rect, canvasSize);
+		setDrawBox(null);
+	};
+
+	const onDrawMove = (event: React.PointerEvent<HTMLDivElement>) => {
+		const start = drawStart.current;
+		if (!start) return;
+
+		const box = pointerBox(event, start);
+		if (box) setDrawBox(box);
+	};
+
+	const onDrawEnd = (event: React.PointerEvent<HTMLDivElement>) => {
+		const start = drawStart.current;
+		drawStart.current = null;
+		if (!start) return;
+
+		const box = pointerBox(event, start) ?? drawBox;
+		setDrawBox(null);
+
+		try {
+			// A click, without a real drag, drops the shape at its default size.
+			const drawn = box && isDrawn(box);
+			const block = addBlock({
+				type: 'shape',
+				properties: { shape: drawShape },
+				...(drawn
+					? { x: box.x, y: box.y, width: box.width, height: box.height }
+					: {}),
+			});
+			useControlsStore.getState().setSelection([block.id]);
+			useControlsStore.getState().setCurrentControlID(block.id);
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : 'The shape was not drawn',
+			);
+		}
+
+		// One shape per drag, as in every editor: back to the select tool.
+		setActiveTool('select');
+	};
+
 	return (
 		<div ref={reference} id='workspace'>
 			<div
@@ -623,6 +718,32 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					))}
 
 					<Canvas></Canvas>
+
+					{/* Draw tool: the layer that follows the drag, above the blocks */}
+					{draw && !isExporting && (
+						<div
+							className='absolute inset-0 z-50 cursor-crosshair'
+							onPointerDown={onDrawStart}
+							onPointerMove={onDrawMove}
+							onPointerUp={onDrawEnd}
+							onPointerCancel={() => {
+								drawStart.current = null;
+								setDrawBox(null);
+							}}
+						>
+							{drawBox && (
+								<div
+									className='pointer-events-none absolute border border-dashed border-blue-500 bg-blue-500/10'
+									style={{
+										left: drawBox.x,
+										top: drawBox.y,
+										width: drawBox.width,
+										height: drawBox.height,
+									}}
+								></div>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 

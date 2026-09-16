@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { ShapeKind } from '../lib/blocks/shapes';
 import type { WorkspaceMode, SelectedTab } from '../types';
 
 /**
@@ -6,10 +7,12 @@ import type { WorkspaceMode, SelectedTab } from '../types';
  * the canvas and the shortcuts all read this instead of keeping their own
  * flags in step.
  */
-export type EditorTool = 'select' | 'pan' | 'crop' | 'warp';
+export type EditorTool = 'select' | 'pan' | 'crop' | 'warp' | 'draw';
 
 interface UIState {
 	activeTool: EditorTool;
+	/** Shape the draw tool puts on the canvas. */
+	drawShape: ShapeKind;
 	/** The tool to go back to when a held key (Space) is released. */
 	previousTool: EditorTool | null;
 	isExporting: boolean;
@@ -22,6 +25,8 @@ interface UIState {
 
 interface UIActions {
 	setActiveTool: (tool: EditorTool) => void;
+	/** Draw `shape` on the canvas by dragging. */
+	startDrawing: (shape: ShapeKind) => void;
 	/** Switch to `tool` while a key is held, remembering the current one. */
 	holdTool: (tool: EditorTool) => void;
 	/** Go back to the tool that was active before `holdTool`. */
@@ -37,6 +42,7 @@ type UIStore = UIState & UIActions;
 
 export const useUIStore = create<UIStore>((set, get) => ({
 	activeTool: 'select',
+	drawShape: 'rectangle',
 	previousTool: null,
 	isExporting: false,
 	exportTransparent: false,
@@ -45,6 +51,8 @@ export const useUIStore = create<UIStore>((set, get) => ({
 	selectedTab: 'hierarchy',
 
 	setActiveTool: (activeTool) => set({ activeTool, previousTool: null }),
+	startDrawing: (drawShape) =>
+		set({ activeTool: 'draw', drawShape, previousTool: null }),
 	holdTool: (tool) => {
 		const { activeTool, previousTool } = get();
 		if (activeTool === tool) return;
@@ -61,11 +69,3 @@ export const useUIStore = create<UIStore>((set, get) => ({
 	setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
 	setSelectedTab: (selectedTab) => set({ selectedTab }),
 }));
-
-/** The selection handles show for every tool but panning. */
-export const selectToolState = (state: UIStore) => ({
-	editing: state.activeTool !== 'pan',
-	drag: state.activeTool === 'pan',
-	crop: state.activeTool === 'crop',
-	warp: state.activeTool === 'warp',
-});
