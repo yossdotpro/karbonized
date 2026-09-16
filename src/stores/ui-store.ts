@@ -16,6 +16,8 @@ interface UIState {
 	/** Brush settings, kept between strokes. */
 	brushColor: string;
 	brushSize: number;
+	/** How much the stroke thins with pressure or speed, 0–100. */
+	brushThinning: number;
 	/** How far a point may stray before it is dropped, in canvas pixels. */
 	brushSmoothing: number;
 	/** The tool to go back to when a held key (Space) is released. */
@@ -34,6 +36,7 @@ interface UIActions {
 	startDrawing: (shape: ShapeKind) => void;
 	setBrushColor: (color: string) => void;
 	setBrushSize: (size: number) => void;
+	setBrushThinning: (thinning: number) => void;
 	setBrushSmoothing: (smoothing: number) => void;
 	/** Switch to `tool` while a key is held, remembering the current one. */
 	holdTool: (tool: EditorTool) => void;
@@ -53,6 +56,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
 	drawShape: 'rectangle',
 	brushColor: '#f3f4f6',
 	brushSize: 6,
+	brushThinning: 50,
 	brushSmoothing: 1.2,
 	previousTool: null,
 	isExporting: false,
@@ -66,6 +70,7 @@ export const useUIStore = create<UIStore>((set, get) => ({
 		set({ activeTool: 'draw', drawShape, previousTool: null }),
 	setBrushColor: (brushColor) => set({ brushColor }),
 	setBrushSize: (brushSize) => set({ brushSize }),
+	setBrushThinning: (brushThinning) => set({ brushThinning }),
 	setBrushSmoothing: (brushSmoothing) => set({ brushSmoothing }),
 	holdTool: (tool) => {
 		const { activeTool, previousTool } = get();

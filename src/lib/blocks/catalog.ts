@@ -779,6 +779,22 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				description: 'SVG path data of the stroke.',
 			},
 			{
+				key: 'points',
+				kind: 'text',
+				default: '',
+				description:
+					'Points of the stroke as `x,y,pressure` triples separated by spaces. With them the width and the thinning can be changed after drawing.',
+			},
+			{
+				key: 'thinning',
+				kind: 'number',
+				default: 50,
+				min: 0,
+				max: 100,
+				description:
+					'How much the stroke thins with pressure or speed, in percent. 0 keeps one width from end to end.',
+			},
+			{
 				key: 'viewWidth',
 				kind: 'number',
 				default: 100,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Brush, Spline } from 'lucide-react';
+import { Brush, PenLine, Spline } from 'lucide-react';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { Slider } from '../ui/slider';
 import { Tooltip } from '../CustomControls/Tooltip';
@@ -13,9 +13,11 @@ export const BrushBar: React.FC = () => {
 	const setSize = useUIStore((state) => state.setBrushSize);
 	const smoothing = useUIStore((state) => state.brushSmoothing);
 	const setSmoothing = useUIStore((state) => state.setBrushSmoothing);
+	const thinning = useUIStore((state) => state.brushThinning);
+	const setThinning = useUIStore((state) => state.setBrushThinning);
 
 	return (
-		<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex w-80 flex-row items-center gap-2 rounded-[10px] border border-border bg-popover px-3 py-1.5 shadow-lg shadow-black/20'>
+		<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex w-[26rem] flex-row items-center gap-2 rounded-[10px] border border-border bg-popover px-3 py-1.5 shadow-lg shadow-black/20'>
 			<Tooltip message={`Size: ${size}px`} placement='top'>
 				<div className='flex flex-auto items-center gap-2'>
 					<Brush size={16} className='shrink-0 text-muted-foreground'></Brush>
@@ -43,6 +45,26 @@ export const BrushBar: React.FC = () => {
 						value={[smoothing]}
 						onValueChange={(value) => {
 							setSmoothing(value[0]);
+						}}
+					/>
+				</div>
+			</Tooltip>
+
+			{/* How much the stroke thins with pressure, or with speed on a mouse */}
+			<Tooltip message={`Thinning: ${thinning}%`} placement='top'>
+				<div className='flex flex-auto items-center gap-2'>
+					<PenLine
+						size={16}
+						className='shrink-0 text-muted-foreground'
+					></PenLine>
+					<Slider
+						className='flex flex-auto'
+						min={0}
+						max={100}
+						step={5}
+						value={[thinning]}
+						onValueChange={(value) => {
+							setThinning(value[0]);
 						}}
 					/>
 				</div>

@@ -39,7 +39,13 @@ import { Wallpapers } from '../utils/wallpapers';
 import noiseTexture from '../assets/noisy.png';
 import { addBlock, readProperty } from '@/lib/editor/actions';
 import { boxFromDrag, isDrawn, toCanvasPoint } from '@/lib/canvas/drawing';
-import { smoothPath, strokeFromPoints } from '@/lib/canvas/stroke';
+import {
+	type StrokePoint,
+	outlinePath,
+	serializePoints,
+	smoothPath,
+	strokeFromPoints,
+} from '@/lib/canvas/stroke';
 import { toast } from 'sonner';
 import type { TextSizing } from '@/lib/blocks/catalog';
 import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
@@ -98,6 +104,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	const brushColor = useUIStore((state) => state.brushColor);
 	const brushSize = useUIStore((state) => state.brushSize);
 	const brushSmoothing = useUIStore((state) => state.brushSmoothing);
+	const brushThinning = useUIStore((state) => state.brushThinning);
 	const setActiveTool = useUIStore((state) => state.setActiveTool);
 	// Panning and drawing hide the handles; cropping and warping replace what
 	// a drag does.
@@ -656,8 +663,31 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 
 	/* Brush: the points the pointer goes through become a vector stroke when
 	   the drag ends. The live path is drawn from the same points. */
-	const brushPoints = useRef<DrawPoint[]>([]);
+	const brushPoints = useRef<StrokePoint[]>([]);
 	const [brushPath, setBrushPath] = useState('');
+
+	/* While drawing, the line is painted the same way the block will paint it:
+	   an outline when it thins, a plain stroke when it does not. */
+	const brushOutline = brushThinning > 0;
+	const paintBrush = (points: StrokePoint[]) => {
+		setBrushPath(
+			brushOutline
+				? outlinePath(points, {
+						width: brushSize,
+						thinning: brushThinning / 100,
+						taper: brushSize * 1.5,
+					})
+				: smoothPath(points),
+		);
+	};
+
+	const brushPointAt = (
+		event: { clientX: number; clientY: number; pressure?: number },
+		rect: { left: number; top: number; width: number; height: number },
+	): StrokePoint => ({
+		...toCanvasPoint(event, rect, canvasSize),
+		pressure: event.pressure,
+	});
 
 	const onBrushStart = (event: React.PointerEvent<HTMLDivElement>) => {
 		const rect = canvasRect();
@@ -668,8 +698,8 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		} catch {
 			/* the stroke still works without capture */
 		}
-		brushPoints.current = [toCanvasPoint(event, rect, canvasSize)];
-		setBrushPath(smoothPath(brushPoints.current));
+		brushPoints.current = [brushPointAt(event.nativeEvent, rect)];
+		paintBrush(brushPoints.current);
 	};
 
 	const onBrushMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -687,9 +717,9 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		const moves = coalesced.length > 0 ? coalesced : [event.nativeEvent];
 
 		moves.forEach((move) => {
-			brushPoints.current.push(toCanvasPoint(move, rect, canvasSize));
+			brushPoints.current.push(brushPointAt(move, rect));
 		});
-		setBrushPath(smoothPath(brushPoints.current));
+		paintBrush(brushPoints.current);
 	};
 
 	const onBrushEnd = () => {
@@ -713,6 +743,10 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 				height: Math.max(4, Math.round(stroke.box.height)),
 				properties: {
 					path: stroke.path,
+					// The points travel with the block, so its width and thinning
+					// can still be changed once it is drawn.
+					points: serializePoints(stroke.points),
+					thinning: brushThinning,
 					viewWidth: Math.max(4, Math.round(stroke.box.width)),
 					viewHeight: Math.max(4, Math.round(stroke.box.height)),
 					strokeColor: brushColor,
@@ -812,8 +846,8 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 								<svg className='pointer-events-none absolute inset-0 h-full w-full overflow-visible'>
 									<path
 										d={brushPath}
-										fill='none'
-										stroke={brushColor}
+										fill={brushOutline ? brushColor : 'none'}
+										stroke={brushOutline ? 'none' : brushColor}
 										strokeWidth={brushSize}
 										strokeLinecap='round'
 										strokeLinejoin='round'
