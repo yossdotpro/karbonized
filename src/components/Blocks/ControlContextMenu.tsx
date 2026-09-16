@@ -15,6 +15,7 @@ import {
 	ArrowUp,
 	ArrowUpToLine,
 	Copy,
+	Crop,
 	EyeOff,
 	ImageDown,
 	Lock,
@@ -40,6 +41,8 @@ interface ControlContextMenuProps {
 	onHide?: () => void;
 	onToggleLock?: () => void;
 	locked?: boolean;
+	/** Undo the crop of the block; missing when it is not cropped. */
+	onResetCrop?: () => void;
 	children: ReactNode;
 }
 
@@ -59,6 +62,7 @@ export const ControlContextMenu: React.FC<ControlContextMenuProps> = ({
 	onHide,
 	onToggleLock,
 	locked = false,
+	onResetCrop,
 	children,
 }) => {
 	const hasLayerActions = onMoveStep !== undefined || onMoveEdge !== undefined;
@@ -144,6 +148,13 @@ export const ControlContextMenu: React.FC<ControlContextMenuProps> = ({
 							</ContextMenuItem>
 						)}
 					</>
+				)}
+
+				{onResetCrop && (
+					<ContextMenuItem onSelect={onResetCrop}>
+						<Crop />
+						Reset crop
+					</ContextMenuItem>
 				)}
 
 				<ContextMenuSeparator />

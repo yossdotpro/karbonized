@@ -1,11 +1,17 @@
 import { create } from 'zustand';
 import type { WorkspaceMode, SelectedTab } from '../types';
 
+/**
+ * What a drag on the canvas does. One tool is active at a time: the panels,
+ * the canvas and the shortcuts all read this instead of keeping their own
+ * flags in step.
+ */
+export type EditorTool = 'select' | 'pan' | 'crop' | 'warp';
+
 interface UIState {
-	editing: boolean;
-	drag: boolean;
-	crop: boolean;
-	warp: boolean;
+	activeTool: EditorTool;
+	/** The tool to go back to when a held key (Space) is released. */
+	previousTool: EditorTool | null;
 	isExporting: boolean;
 	/** Leave out the workspace background while exporting. */
 	exportTransparent: boolean;
@@ -15,10 +21,11 @@ interface UIState {
 }
 
 interface UIActions {
-	setEditing: (editing: boolean) => void;
-	setDrag: (drag: boolean) => void;
-	setCrop: (crop: boolean) => void;
-	setWarp: (warp: boolean) => void;
+	setActiveTool: (tool: EditorTool) => void;
+	/** Switch to `tool` while a key is held, remembering the current one. */
+	holdTool: (tool: EditorTool) => void;
+	/** Go back to the tool that was active before `holdTool`. */
+	releaseTool: () => void;
 	setIsExporting: (isExporting: boolean) => void;
 	setExportTransparent: (exportTransparent: boolean) => void;
 	setLockAspect: (lockAspect: boolean) => void;
@@ -28,24 +35,37 @@ interface UIActions {
 
 type UIStore = UIState & UIActions;
 
-export const useUIStore = create<UIStore>((set) => ({
-	editing: true,
-	drag: false,
-	crop: false,
-	warp: false,
+export const useUIStore = create<UIStore>((set, get) => ({
+	activeTool: 'select',
+	previousTool: null,
 	isExporting: false,
 	exportTransparent: false,
 	lockAspect: false,
 	workspaceMode: 'zen',
 	selectedTab: 'hierarchy',
 
-	setEditing: (editing) => set({ editing }),
-	setDrag: (drag) => set({ drag }),
-	setCrop: (crop) => set({ crop }),
-	setWarp: (warp) => set({ warp }),
+	setActiveTool: (activeTool) => set({ activeTool, previousTool: null }),
+	holdTool: (tool) => {
+		const { activeTool, previousTool } = get();
+		if (activeTool === tool) return;
+		set({ activeTool: tool, previousTool: previousTool ?? activeTool });
+	},
+	releaseTool: () => {
+		const { previousTool } = get();
+		if (previousTool === null) return;
+		set({ activeTool: previousTool, previousTool: null });
+	},
 	setIsExporting: (isExporting) => set({ isExporting }),
 	setExportTransparent: (exportTransparent) => set({ exportTransparent }),
 	setLockAspect: (lockAspect) => set({ lockAspect }),
 	setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
 	setSelectedTab: (selectedTab) => set({ selectedTab }),
 }));
+
+/** The selection handles show for every tool but panning. */
+export const selectToolState = (state: UIStore) => ({
+	editing: state.activeTool !== 'pan',
+	drag: state.activeTool === 'pan',
+	crop: state.activeTool === 'crop',
+	warp: state.activeTool === 'warp',
+});

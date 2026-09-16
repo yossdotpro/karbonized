@@ -16,6 +16,7 @@ import {
 } from '../stores';
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
+import { isEditableTarget } from '@/lib/commands/shortcuts';
 import { redo, undo } from '@/lib/editor/history';
 import { useBeedlyUI } from '@/lib/beedly/ui-store';
 import {
@@ -87,10 +88,11 @@ export const Editor: React.FC = () => {
 	/* App Store */
 	const duplicateControl = useControlsStore((state) => state.duplicateControl);
 	const deleteControl = useControlsStore((state) => state.deleteControl);
-	const drag = useUIStore((state) => state.drag);
+	const activeTool = useUIStore((state) => state.activeTool);
+	const drag = activeTool === 'pan';
 	const canDraw = useDrawingStore((state) => state.isDrawing);
 	const isErasing = useDrawingStore((state) => state.isErasing);
-	const crop = useUIStore((state) => state.crop);
+	const crop = activeTool === 'crop';
 	const lineWidth = useDrawingStore((state) => state.lineWidth);
 	const strokeColor = useDrawingStore((state) => state.strokeColor);
 	const setStrokeColor = useDrawingStore((state) => state.setStrokeColor);
@@ -110,6 +112,36 @@ export const Editor: React.FC = () => {
 	const selectedControlIDs = useControlsStore(
 		(state) => state.selectedControlIDs,
 	);
+
+	/* Holding Space pans the canvas and releasing it goes back to the tool
+	   that was active, the way every canvas editor does it. */
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.code !== 'Space' || isEditableTarget(event.target)) return;
+			// Space also scrolls the page.
+			event.preventDefault();
+			useUIStore.getState().holdTool('pan');
+		};
+
+		const onKeyUp = (event: KeyboardEvent) => {
+			if (event.code !== 'Space') return;
+			useUIStore.getState().releaseTool();
+		};
+
+		// The pointer may leave the window while Space is held.
+		const onBlur = () => {
+			useUIStore.getState().releaseTool();
+		};
+
+		window.addEventListener('keydown', onKeyDown);
+		window.addEventListener('keyup', onKeyUp);
+		window.addEventListener('blur', onBlur);
+		return () => {
+			window.removeEventListener('keydown', onKeyDown);
+			window.removeEventListener('keyup', onKeyUp);
+			window.removeEventListener('blur', onBlur);
+		};
+	}, []);
 
 	/* Keep the marquee's own selection in sync (Shift+drag continues it) */
 	useEffect(() => {
@@ -228,8 +260,17 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			shortcut: 'Escape',
 			hidden: true,
-			when: hasSelection,
-			run: () => useControlsStore.getState().setSelection([]),
+			when: () =>
+				hasSelection() || useUIStore.getState().activeTool !== 'select',
+			run: () => {
+				// Escape leaves the current tool first, then clears the selection.
+				const { activeTool, setActiveTool } = useUIStore.getState();
+				if (activeTool !== 'select') {
+					setActiveTool('select');
+					return;
+				}
+				useControlsStore.getState().setSelection([]);
+			},
 		},
 		...(
 			[

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
 	useControlsStore,
 	useHistoryStore,
@@ -13,13 +13,21 @@ export function useControlState<T>(
 	manual: boolean = false,
 ): [T, (newState: T) => void] {
 	const controlState = useHistoryStore((state) => state.controlState);
-	const ControlProperties = useControlsStore(
-		(state) => state.ControlProperties,
+	/* Only this property, not the whole list: a block re-renders when one of
+	   its own values changes, not when any block on the canvas moves. The
+	   entries are replaced when they change, so their identity is the check. */
+	const storedProperty = useControlsStore(
+		useCallback(
+			(state) => state.ControlProperties.find((item) => item.id === id),
+			[id],
+		),
 	);
-	const initialProperties = useControlsStore(
-		(state) => state.initialProperties,
+	const initialProperty = useControlsStore(
+		useCallback(
+			(state) => state.initialProperties.find((item) => item.id === id),
+			[id],
+		),
 	);
-	const currentControlID = useControlsStore((state) => state.currentControlID);
 	const removeInitialProperty = useControlsStore(
 		(state) => state.removeInitialProperty,
 	);
@@ -31,25 +39,16 @@ export function useControlState<T>(
 	const setPastHistory = useHistoryStore((state) => state.setPast);
 	const setFutureHistory = useHistoryStore((state) => state.setFuture);
 
-	const hasInitialProperty = (id: string) => {
-		for (const item of initialProperties) {
-			if (item.id === id) return item.value;
-		}
-		return null;
-	};
-
 	const serialize = (value: unknown): string => {
 		if (typeof value === 'string') return value;
 		return JSON.stringify(value);
 	};
 
-	const controlRef = id.split('-').slice(0, 2).join('-');
-
 	const [state, setState] = useState(initialState);
 
 	/* Set Initial Properties */
 	useEffect(() => {
-		const prop = hasInitialProperty(id);
+		const prop = initialProperty?.value ?? null;
 		if (prop) {
 			const nextValue =
 				id.endsWith('-src') &&
@@ -76,7 +75,7 @@ export function useControlState<T>(
 
 			removeInitialProperty(id);
 		}
-	}, [id, initialProperties, removeInitialProperty, state]);
+	}, [id, initialProperty, removeInitialProperty, state]);
 
 	/* Apply undo/redo and batch changes that target this property. Each entry
 	   is applied once: re-applying it when the local value changes later would
@@ -101,7 +100,6 @@ export function useControlState<T>(
 	}, [controlState, id, state]);
 
 	useEffect(() => {
-		const storedProperty = ControlProperties.find((item) => item.id === id);
 		if (
 			storedProperty !== undefined &&
 			serialize(storedProperty.value) !== serialize(state)
@@ -109,7 +107,7 @@ export function useControlState<T>(
 			// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the controls store
 			setState(storedProperty.value);
 		}
-	}, [ControlProperties, controlRef, currentControlID, id]);
+	}, [storedProperty, id]);
 
 	/* Save Control Property in Store. Runs when the local value changes, not
 	   on every render: callers often pass a new `initialState` object each
@@ -118,7 +116,6 @@ export function useControlState<T>(
 	const initialKey = serialize(initialState);
 	useEffect(() => {
 		const currentWorkspaceID = useWorkspaceStore.getState().currentWorkspaceID;
-		const storedProperty = ControlProperties.find((item) => item.id === id);
 		const currentValue = storedProperty
 			? serialize(storedProperty.value)
 			: serialize(initialState);

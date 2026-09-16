@@ -35,6 +35,12 @@ interface ControlMenuProps {
 	controlSize?: { w: number; h: number };
 	/** The width or height was typed in the position panel. */
 	onSizeInput?: (axis: 'w' | 'h') => void;
+	/** In-plane rotation of the block, in degrees. */
+	rotation: number;
+	/** The block was warped, so its rotation lives inside a matrix. */
+	warped: boolean;
+	/** Turn the block to `degrees`, replacing any warp. */
+	onRotate?: (degrees: number) => void;
 	pastHistory: any[];
 	setPastHistory: (value: any[]) => void;
 	setFutureHistory: (value: any[]) => void;
@@ -105,6 +111,9 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 	controlPos,
 	controlSize,
 	onSizeInput,
+	rotation,
+	warped,
+	onRotate,
 	pastHistory,
 	setPastHistory,
 	setFutureHistory,
@@ -373,6 +382,40 @@ export const ControlMenu: React.FC<ControlMenuProps> = ({
 							<Label className='text-sm font-semibold text-foreground'>
 								Rotation
 							</Label>
+
+							{/* In-plane rotation, the one the handle above the block turns */}
+							<div className='flex items-center gap-2'>
+								<Label className='w-4 text-xs text-muted-foreground'>Z</Label>
+								<Input
+									type='number'
+									className='h-8 text-sm'
+									disabled={warped}
+									title={
+										warped
+											? 'The block was warped: reset it to rotate it by degrees'
+											: undefined
+									}
+									onChange={(ev) => {
+										const degrees = parseFloat(ev.target.value);
+										if (Number.isFinite(degrees)) onRotate?.(degrees);
+									}}
+									value={rotation}
+								></Input>
+								<Label className='text-xs text-muted-foreground'>deg</Label>
+
+								{warped && (
+									<Button
+										size='sm'
+										variant='outline'
+										className='h-8 text-xs'
+										onClick={() => {
+											onRotate?.(0);
+										}}
+									>
+										Reset warp
+									</Button>
+								)}
+							</div>
 
 							<div className='flex gap-2 items-center'>
 								{/* Rotation X */}

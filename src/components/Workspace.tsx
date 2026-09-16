@@ -45,6 +45,14 @@ import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
 interface Props {
 	reference: RefObject<HTMLDivElement>;
 }
+
+interface TargetSnapshot {
+	pos: { x: number; y: number };
+	size: { w: number; h: number };
+	transform: string;
+	clip: string;
+	sizing: TextSizing | undefined;
+}
 export const Workspace: React.FC<Props> = ({ reference }) => {
 	/* App Store */
 	const controlID = useControlsStore((state) => state.currentControlID);
@@ -52,7 +60,8 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		(state) => state.selectedControlIDs,
 	);
 	const commitBatch = useHistoryStore((state) => state.commitBatch);
-	const groupDragStart = useRef<Record<string, { x: number; y: number }>>({});
+	/** Box of each target when a gesture starts, to record it as one step. */
+	const gestureStart = useRef<Record<string, TargetSnapshot>>({});
 	/** A text block being resized: its box and sizing mode before the drag. */
 	const textResize = useRef<{
 		size: { w: number; h: number };
@@ -79,9 +88,11 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		(state) => state.ControlProperties,
 	);
 
-	const editing = useUIStore((state) => state.editing);
-	const crop = useUIStore((state) => state.crop);
-	const warp = useUIStore((state) => state.warp);
+	const activeTool = useUIStore((state) => state.activeTool);
+	// Panning hides the handles; cropping and warping replace what a drag does.
+	const editing = activeTool !== 'pan';
+	const crop = activeTool === 'crop';
+	const warp = activeTool === 'warp';
 	const lockAspect = useUIStore((state) => state.lockAspect);
 	const snapping = useViewStore((state) => state.snapping);
 	const isExporting = useUIStore((state) => state.isExporting);
@@ -101,10 +112,6 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		(state) => state.setControlProperties,
 	);
 
-	const setControlState = useHistoryStore((state) => state.setControlState);
-	const pastHistory = useHistoryStore((state) => state.pastHistory);
-	const setPastHistory = useHistoryStore((state) => state.setPast);
-	const setFutureHistory = useHistoryStore((state) => state.setFuture);
 	const blurAmount = useMemo(
 		() => currentWorkspace?.workspaceBlur ?? 0,
 		[currentWorkspace],
@@ -171,100 +178,65 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	>(null);
 
 	useLayoutEffect(() => {
-		/* Several selected blocks move and resize together */
-		if (selectedControlIDs.length > 1) {
-			const ids = selectedControlIDs.flatMap((id) => {
-				const control = currentControls.find((item) => item.id === id);
-				if (
-					!control ||
-					control.locked ||
-					control.isDeleted ||
-					control.isVisible === false
-				) {
-					return [];
-				}
-				return control.type === 'group'
-					? getGroupDescendantIds(currentControls, control.id)
-					: [control.id];
-			});
+		/* Ids of the blocks the handles act on: the selection, the blocks of a
+		   group, or the selected block. */
+		const ids: string[] =
+			selectedControlIDs.length > 1
+				? selectedControlIDs.flatMap((id) => {
+						const control = currentControls.find((item) => item.id === id);
+						if (
+							!control ||
+							control.locked ||
+							control.isDeleted ||
+							control.isVisible === false
+						) {
+							return [];
+						}
+						return control.type === 'group'
+							? getGroupDescendantIds(currentControls, control.id)
+							: [control.id];
+					})
+				: !canTransformControl
+					? []
+					: currentControl.type === 'group'
+						? groupTargetIds
+						: [controlID];
 
-			let frame = 0;
-			let cancelled = false;
-			let attempts = 0;
-
-			const resolveTargets = () => {
-				if (cancelled) return;
-
-				const targets = ids
-					.map((id) => document.getElementById(id))
-					.filter((item): item is HTMLElement => item !== null);
-
-				if (targets.length === ids.length || attempts >= 20) {
-					setMoveableTarget(targets.length > 0 ? targets : null);
-					return;
-				}
-
-				attempts += 1;
-				frame = window.requestAnimationFrame(resolveTargets);
-			};
-
-			frame = window.requestAnimationFrame(resolveTargets);
-
-			return () => {
-				cancelled = true;
-				window.cancelAnimationFrame(frame);
-			};
+		if (ids.length === 0) {
+			/* eslint-disable-next-line react-hooks/set-state-in-effect -- the handles
+			   follow the selection in the same layout pass, before paint */
+			setMoveableTarget(null);
+			return;
 		}
 
-		if (!canTransformControl) return;
-
-		if (currentControl.type === 'group') {
-			let frame = 0;
-			let cancelled = false;
-			let attempts = 0;
-
-			const resolveGroupTargets = () => {
-				if (cancelled) return;
-
-				const groupTargets = groupTargetIds
-					.map((id) => document.getElementById(id))
-					.filter((item): item is HTMLElement => item !== null);
-
-				if (groupTargets.length > 0 || attempts >= 20) {
-					setMoveableTarget(groupTargets.length > 0 ? groupTargets : null);
-					return;
-				}
-
-				attempts += 1;
-				frame = window.requestAnimationFrame(resolveGroupTargets);
-			};
-
-			frame = window.requestAnimationFrame(resolveGroupTargets);
-
-			return () => {
-				cancelled = true;
-				window.cancelAnimationFrame(frame);
-			};
-		}
-
+		const asGroup = ids.length > 1 || selectedControlIDs.length > 1;
 		let frame = 0;
 		let cancelled = false;
 		let attempts = 0;
 
-		const resolveTarget = () => {
+		/* Blocks mount asynchronously (they are lazy loaded), so a missing one
+		   is retried on the next frame. The first attempt is synchronous: it
+		   must not depend on frames, which do not run while the window is
+		   hidden. */
+		const resolve = () => {
 			if (cancelled) return;
 
-			const target = document.getElementById(controlID);
-			if (target !== null || attempts >= 20) {
-				setMoveableTarget(target);
+			const targets = ids
+				.map((id) => document.getElementById(id))
+				.filter((item): item is HTMLElement => item !== null);
+
+			if (targets.length === ids.length || attempts >= 20) {
+				setMoveableTarget(
+					targets.length === 0 ? null : asGroup ? targets : targets[0],
+				);
 				return;
 			}
 
 			attempts += 1;
-			frame = window.requestAnimationFrame(resolveTarget);
+			frame = window.requestAnimationFrame(resolve);
 		};
 
-		frame = window.requestAnimationFrame(resolveTarget);
+		resolve();
 
 		return () => {
 			cancelled = true;
@@ -279,6 +251,83 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		selectedControlIDs,
 		canTransformControl,
 	]);
+
+	const snapshotTargets = (targets: Array<HTMLElement | SVGElement>) => {
+		gestureStart.current = Object.fromEntries(
+			targets.map((target) => [
+				target.id,
+				{
+					pos: readTargetPosition(target),
+					size: readTargetSize(target),
+					transform: readTargetTransform(target),
+					clip: (target as HTMLElement).style.clipPath,
+					sizing: textSizingOf(target.id),
+				},
+			]),
+		);
+	};
+
+	/**
+	 * Record what a gesture changed on its targets as one undoable step.
+	 * `resized` also stores the fixed sizing text blocks switch to. Returns
+	 * whether anything changed.
+	 */
+	const commitGesture = (
+		targets: Array<HTMLElement | SVGElement>,
+		keys: ReadonlyArray<'pos' | 'size' | 'transform' | 'clip'>,
+		resized = false,
+	): boolean => {
+		const start = gestureStart.current;
+		gestureStart.current = {};
+
+		const changes = targets.flatMap((target) => {
+			const before = start[target.id];
+			if (!before) return [];
+
+			const after: TargetSnapshot = {
+				pos: readTargetPosition(target),
+				size: readTargetSize(target),
+				transform: readTargetTransform(target),
+				clip: (target as HTMLElement).style.clipPath,
+				sizing: before.sizing,
+			};
+			const ids = {
+				pos: `${target.id}-pos`,
+				size: `${target.id}-control_size`,
+				transform: `${target.id}-transform`,
+				clip: `${target.id}-clip`,
+			};
+
+			const changed: Array<{ id: string; previous: unknown; next: unknown }> =
+				keys
+					.filter(
+						(key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]),
+					)
+					.map((key) => ({
+						id: ids[key],
+						previous: before[key],
+						next: after[key],
+					}));
+
+			if (
+				resized &&
+				changed.length > 0 &&
+				before.sizing &&
+				before.sizing !== 'fixed'
+			) {
+				changed.push({
+					id: `${target.id}-sizing`,
+					previous: before.sizing,
+					next: 'fixed',
+				});
+			}
+
+			return changed;
+		});
+
+		commitBatch(changes);
+		return changes.length > 0;
+	};
 
 	const syncGroupTargetsToStore = (
 		targets: Array<HTMLElement | SVGAElement>,
@@ -620,25 +669,10 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					draggable={!crop}
 					throttleDrag={0}
 					onDragStart={({ target }) => {
-						// console.log('onDragStart', target);
-						setPastHistory([
-							...pastHistory,
-							{
-								id: `${controlID}-pos`,
-								value: {
-									x: parseFloat(target.style.left.replace('px', '')),
-									y: parseFloat(target.style.top.replace('px', '')),
-								},
-							},
-						]);
+						snapshotTargets([target]);
 					}}
 					onDragGroupStart={({ targets }: any) => {
-						groupDragStart.current = Object.fromEntries(
-							(targets as HTMLElement[]).map((target) => [
-								target.id,
-								readTargetPosition(target),
-							]),
-						);
+						snapshotTargets(targets);
 					}}
 					onDragGroup={({ events }: any) => {
 						events.forEach(({ target, left, top }: any) => {
@@ -648,22 +682,9 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					}}
 					onDragGroupEnd={({ targets }: any) => {
 						// Record the move of every block as one undoable step.
-						commitBatch(
-							(targets as HTMLElement[])
-								.map((target) => ({
-									id: `${target.id}-pos`,
-									previous: groupDragStart.current[target.id],
-									next: readTargetPosition(target),
-								}))
-								.filter(
-									(change) =>
-										change.previous &&
-										(change.previous.x !== change.next.x ||
-											change.previous.y !== change.next.y),
-								),
-						);
-						syncGroupTargetsToStore(targets);
-						setFutureHistory([]);
+						if (commitGesture(targets, ['pos'])) {
+							syncGroupTargetsToStore(targets);
+						}
 					}}
 					onDrag={({ target, left, top }: OnDrag) => {
 						// console.log('onDrag left, top', left, top);
@@ -671,15 +692,10 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						target.style.top = `${top}px`;
 					}}
 					onDragEnd={({ target }) => {
-						const nextPosition = readTargetPosition(target);
-
-						setControlPos(nextPosition);
-						setControlState({
-							id: `${controlID}-pos`,
-							value: nextPosition,
-						});
-
-						setFutureHistory([]);
+						// A click without movement is not a step.
+						if (commitGesture([target], ['pos'])) {
+							setControlPos(readTargetPosition(target));
+						}
 					}}
 					/* When resize or scale, keeps a ratio of the width, height. */
 					keepRatio={lockAspect}
@@ -717,16 +733,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 							return;
 						}
 
-						setPastHistory([
-							...pastHistory,
-							{
-								id: `${controlID}-control_size`,
-								value: {
-									w: parseFloat(target.style.width.replace('px', '')),
-									h: parseFloat(target.style.height.replace('px', '')),
-								},
-							},
-						]);
+						snapshotTargets([target]);
 					}}
 					onResize={({ target, width, height, delta }: OnResize) => {
 						// console.log('onResize', target);
@@ -746,9 +753,14 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 							delta[1] !== 0 && (target.style.height = `${nextSize.height}px`);
 						});
 					}}
+					onResizeGroupStart={({ targets }: any) => {
+						snapshotTargets(targets);
+					}}
 					onResizeGroupEnd={({ targets }: any) => {
-						syncGroupTargetsToStore(targets, true);
-						setFutureHistory([]);
+						// Resizing a group also moves its blocks.
+						if (commitGesture(targets, ['pos', 'size'], true)) {
+							syncGroupTargetsToStore(targets, true);
+						}
 					}}
 					onResizeEnd={({ target, isDrag }: OnResizeEnd) => {
 						const text = textResize.current;
@@ -787,16 +799,11 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 							return;
 						}
 
-						const nextSize = readTargetSize(target);
-
-						setControlSize(nextSize);
-						// console.log('onResizeEnd', target, isDrag);
-						setControlState({
-							id: `${controlID}-control_size`,
-							value: nextSize,
-						});
-
-						setFutureHistory([]);
+						// Resizing from the top or left edge also moves the block.
+						if (isDrag && commitGesture([target], ['size', 'pos'])) {
+							setControlSize(readTargetSize(target));
+							setControlPos(readTargetPosition(target));
+						}
 					}}
 					/* scalable */
 					/* Only one of resizable, scalable, warpable can be used. */
@@ -823,13 +830,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					rotatable={true}
 					throttleRotate={0}
 					onRotateStart={({ target }: OnRotateStart) => {
-						setPastHistory([
-							...pastHistory,
-							{
-								id: `${controlID}-transform`,
-								value: target.style.transform,
-							},
-						]);
+						snapshotTargets([target]);
 					}}
 					onRotate={({ target, transform }: OnRotate) => {
 						// console.log('onRotate', dist);
@@ -840,21 +841,19 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 							target.style.transform = transform;
 						});
 					}}
+					onRotateGroupStart={({ targets }: any) => {
+						snapshotTargets(targets);
+					}}
 					onRotateGroupEnd={({ targets }: any) => {
-						syncGroupTargetsToStore(targets);
-						setFutureHistory([]);
+						// Rotating a group turns its blocks around the group center.
+						if (commitGesture(targets, ['pos', 'transform'])) {
+							syncGroupTargetsToStore(targets);
+						}
 					}}
 					onRotateEnd={({ target }) => {
-						const nextTransform = readTargetTransform(target);
-
-						setControlTransform(nextTransform);
-						setControlState({
-							id: `${controlID}-transform`,
-							value: nextTransform,
-						});
-
-						setFutureHistory([]);
-						// console.log('onRotateEnd', target, isDrag);
+						if (commitGesture([target], ['transform'])) {
+							setControlTransform(readTargetTransform(target));
+						}
 					}}
 					// Enabling pinchable lets you use events that
 					// can be used in draggable, resizable, scalable, and rotateable.
@@ -880,52 +879,31 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					clippable={crop}
 					dragWithClip={false}
 					clipTargetBounds
+					/* Percentages, so a crop follows the block when it is resized */
+					clipRelative
+					/* The crop area itself can be dragged, not only its corners */
+					clipArea
 					onClip={(e) => {
 						e.target.style.clipPath = e.clipStyle;
 					}}
 					onClipStart={({ target }) => {
-						setPastHistory([
-							...pastHistory,
-							{
-								id: `${controlID}-clip`,
-								value: target.style.clipPath,
-							},
-						]);
+						snapshotTargets([target]);
 					}}
 					onClipEnd={({ target }) => {
-						// console.log('onResizeEnd', target, isDrag);
-						setControlState({
-							id: `${controlID}-clip`,
-							value: target.style.clipPath,
-						});
-
-						setFutureHistory([]);
+						commitGesture([target], ['clip']);
 					}}
 					warpable={warp}
 					onWarpStart={({ target }: OnWarpStart) => {
-						setPastHistory([
-							...pastHistory,
-							{
-								id: `${controlID}-transform`,
-								value: target.style.transform,
-							},
-						]);
+						snapshotTargets([target]);
 					}}
 					onWarp={({ target, transform }: OnWarp) => {
 						// console.log('onRotate', dist);
 						target.style.transform = transform;
 					}}
 					onWarpEnd={({ target }) => {
-						const nextTransform = readTargetTransform(target);
-
-						setControlTransform(nextTransform);
-						setControlState({
-							id: `${controlID}-transform`,
-							value: nextTransform,
-						});
-
-						setFutureHistory([]);
-						// console.log('onRotateEnd', target, isDrag);
+						if (commitGesture([target], ['transform'])) {
+							setControlTransform(readTargetTransform(target));
+						}
 					}}
 					renderDirections={['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']}
 				/>

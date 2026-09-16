@@ -10,6 +10,7 @@ import {
 	distributeSelection,
 	readBox,
 } from '@/lib/canvas/selection';
+import { cascadePosition, viewCenterPlacement } from '@/lib/canvas/placement';
 import { generateNewId } from '@/lib/utils';
 import { getRandomNumber } from '@/utils/getRandom';
 import { isTextSizing, sizingForSize } from '@/lib/blocks/text-sizing';
@@ -38,6 +39,32 @@ export class EditorActionError extends Error {}
 
 /** Where `ControlTemplate` puts a block whose position was never stored. */
 const DEFAULT_POSITION = { x: 33, y: 190 };
+
+/**
+ * Where a new block goes when the caller gave no position: the middle of what
+ * the editor shows, stepping aside from blocks already there. Falls back to
+ * the middle of the canvas when it is not on screen.
+ */
+const placeNewBlock = (
+	canvas: { width: number; height: number },
+	block: { width: number; height: number },
+	workspace: Workspace,
+): { x: number; y: number } => {
+	const base = viewCenterPlacement(canvas, block) ?? {
+		x: Math.round((canvas.width - block.width) / 2),
+		y: Math.round((canvas.height - block.height) / 2),
+	};
+
+	const taken = liveControls(workspace).flatMap((item) => {
+		const stored = readProperty(propertyId(item.id, 'pos')).value as
+			{ x: number; y: number } | undefined;
+		return stored && Number.isFinite(stored.x) && Number.isFinite(stored.y)
+			? [stored]
+			: [];
+	});
+
+	return cascadePosition(base, taken, canvas, block);
+};
 
 const HTML_CODE_DEFAULTS: Record<string, string> = {
 	html: defaultHTMLContent,
@@ -131,14 +158,34 @@ const propertyValue = (block: Item, key: string): unknown => {
 	return stored.found ? stored.value : defaultPropertyValue(block, key);
 };
 
+/** Whether a transform was written by the warp tool, which is a matrix. */
+export const isWarped = (transform: unknown): boolean =>
+	typeof transform === 'string' && /matrix3?d?\(/.test(transform);
+
 export const parseRotation = (transform: unknown): number => {
 	if (typeof transform !== 'string') return 0;
+
 	const match = /rotate\((-?[\d.]+)deg\)/.exec(transform);
-	return match ? parseFloat(match[1]) : 0;
+	if (match) return parseFloat(match[1]);
+
+	// The warp tool stores a matrix: read the angle of its first column, so
+	// blocks still report how far they are turned.
+	const matrix = /matrix(3d)?\(([^)]+)\)/.exec(transform);
+	if (!matrix) return 0;
+
+	// The first column of both matrix() and matrix3d() is the rotated x axis.
+	const [a, b] = matrix[2].split(',').map((value) => parseFloat(value));
+	if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+
+	const degrees = (Math.atan2(b, a) * 180) / Math.PI;
+	return Math.round(degrees * 100) / 100;
 };
 
 export const withRotation = (transform: unknown, degrees: number): string => {
-	const base = typeof transform === 'string' ? transform : '';
+	// A warped block has its rotation baked into the matrix; replacing the
+	// whole transform is the only way to give it a plain angle again.
+	const base =
+		typeof transform === 'string' && !isWarped(transform) ? transform : '';
 	const rotate = `rotate(${Math.round(degrees * 100) / 100}deg)`;
 	return /rotate\([^)]*\)/.test(base)
 		? base.replace(/rotate\([^)]*\)/, rotate)
@@ -409,11 +456,20 @@ export const addBlock = (input: AddBlockInput): Item => {
 	const canvasWidth = parseFloat(workspace.workspaceWidth);
 	const canvasHeight = parseFloat(workspace.workspaceHeight);
 
+	const placed =
+		input.x === undefined || input.y === undefined
+			? placeNewBlock(
+					{ width: canvasWidth, height: canvasHeight },
+					{ width, height },
+					workspace,
+				)
+			: undefined;
+
 	const initial: Record<string, unknown> = {
 		...input.properties,
 		pos: {
-			x: Math.round(input.x ?? (canvasWidth - width) / 2),
-			y: Math.round(input.y ?? (canvasHeight - height) / 2),
+			x: Math.round(input.x ?? placed?.x ?? (canvasWidth - width) / 2),
+			y: Math.round(input.y ?? placed?.y ?? (canvasHeight - height) / 2),
 		},
 		control_size: { w: Math.round(width), h: Math.round(height) },
 	};

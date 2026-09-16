@@ -18,6 +18,7 @@ import {
 	useUIStore,
 	useHistoryStore,
 } from '../../stores';
+import { isWarped, parseRotation, withRotation } from '@/lib/editor/actions';
 import { ControlContextMenu } from './ControlContextMenu';
 import { ControlMenu } from './ControlMenu';
 
@@ -45,6 +46,8 @@ interface ControlProps {
 	autoSize?: 'none' | 'both' | 'height';
 	/** The width or height was typed in the position panel. */
 	onSizeInput?: (axis: 'w' | 'h') => void;
+	/** Replaces the default double click (which toggles the edit panel). */
+	onDoubleClick?: () => void;
 
 	onClick?: () => void;
 	onCreateDynamicBackground?: () => Promise<void> | void;
@@ -68,6 +71,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	defaultWidth = '80px',
 	autoSize = 'none',
 	onSizeInput,
+	onDoubleClick,
 	onCreateDynamicBackground,
 }) => {
 	// App Store
@@ -89,6 +93,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	const setPastHistory = useHistoryStore((state) => state.setPast);
 	const setFutureHistory = useHistoryStore((state) => state.setFuture);
 	const setControlState = useHistoryStore((state) => state.setControlState);
+	const commitBatch = useHistoryStore((state) => state.commitBatch);
 	const deleteControl = useControlsStore((state) => state.deleteControl);
 	const duplicateControl = useControlsStore((state) => state.duplicateControl);
 	const moveControlByStep = useControlsStore(
@@ -131,7 +136,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		`${id}-control_size`,
 		true,
 	);
-	const [clip] = useControlState('', `${id}-clip`, true);
+	const [clip, setClip] = useControlState('', `${id}-clip`, true);
 	const [borderRadius, setBorderRadius] = useControlState(
 		border,
 		`${id}-borderRadius`,
@@ -303,6 +308,28 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		}
 	}, [controlTransform]);
 
+	/** Drop the crop of the block as one undoable step. */
+	const resetCrop = useCallback(() => {
+		if (clip === '') return;
+
+		commitBatch([{ id: `${id}-clip`, previous: clip, next: '' }]);
+		setClip('');
+	}, [clip, commitBatch, id, setClip]);
+
+	/** Turn the block to `degrees` as one undoable step. A warped block loses
+	    its matrix: an angle cannot be applied on top of it. */
+	const rotateTo = useCallback(
+		(degrees: number) => {
+			const next = withRotation(transform, degrees);
+			if (next === transform) return;
+
+			commitBatch([{ id: `${id}-transform`, previous: transform, next }]);
+			setTransform(next);
+			if (id === controlID) setControlTransform(next);
+		},
+		[commitBatch, controlID, id, setControlTransform, setTransform, transform],
+	);
+
 	/* Export this block as an image with the current export settings */
 	const exportBlock = useCallback(
 		async (format: ExportFormat) => {
@@ -395,6 +422,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 						}
 						onHide={() => toggleControlVisibility(id, currentWorkspace)}
 						onToggleLock={() => toggleControlLock(id, currentWorkspace)}
+						onResetCrop={clip === '' ? undefined : resetCrop}
 						locked={
 							currentWorkspace?.controls.find((item) => item.id === id)
 								?.locked ?? false
@@ -429,6 +457,11 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 									onMouseDown={syncSelectionState}
 									onTouchStart={syncSelectionState}
 									onDoubleClick={() => {
+										if (onDoubleClick) {
+											onDoubleClick();
+											return;
+										}
+
 										setWorkspaceTab('control');
 
 										if (workspaceMode !== 'edit') {
@@ -494,6 +527,9 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 					controlPos={controlPos}
 					controlSize={controlSize}
 					onSizeInput={onSizeInput}
+					rotation={parseRotation(transform)}
+					warped={isWarped(transform)}
+					onRotate={rotateTo}
 					pastHistory={pastHistory}
 					setPastHistory={setPastHistory}
 					setFutureHistory={setFutureHistory}

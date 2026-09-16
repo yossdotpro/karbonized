@@ -8,6 +8,7 @@ import {
 	estimateTextSize,
 	getHtmlBlockCode,
 	getWorkspaceSummary,
+	isWarped,
 	parseRotation,
 	setCanvasSettings,
 	setHtmlBlockCode,
@@ -246,5 +247,26 @@ describe('editor actions', () => {
 			'translate(4px, 2px) rotate(90deg)',
 		);
 		expect(withRotation('', 15)).toBe('rotate(15deg)');
+	});
+
+	it('reads the rotation of a warped block from its matrix', () => {
+		// 30 degrees: cos 0.866, sin 0.5
+		expect(parseRotation('matrix(0.866, 0.5, -0.5, 0.866, 0, 0)')).toBe(30);
+		expect(
+			parseRotation(
+				'matrix3d(0.866, 0.5, 0, 0, -0.5, 0.866, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)',
+			),
+		).toBe(30);
+		expect(parseRotation('matrix(1, 0, 0, 1, 0, 0)')).toBe(0);
+	});
+
+	it('replaces a warp when a rotation is set, instead of adding to it', () => {
+		expect(
+			isWarped('matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)'),
+		).toBe(true);
+		expect(isWarped('rotate(10deg)')).toBe(false);
+		expect(withRotation('matrix(0.866, 0.5, -0.5, 0.866, 0, 0)', 10)).toBe(
+			'rotate(10deg)',
+		);
 	});
 });
