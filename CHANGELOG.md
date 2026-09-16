@@ -40,6 +40,7 @@
 ### 🧹 Removed
 
 - **Tweet block**: it depended on an external service to load tweets and is no longer available. Projects that used it open without it
+- **Badge block**: a text and an avatar in a pill, which a text block and an image cover. Projects that used it open without it
 
 ### 🐛 Fixes
 
@@ -47,7 +48,7 @@
 - The crop tool showed no crop handles when the selection handles had not been resolved yet, which also happened while the window was in the background
 - Resizing or rotating several blocks at once could not be undone
 - Clicking a block without moving it added an empty undo step
-- QR codes could not be resized (they were fixed at 100×100) and badges were stuck at 270×80; both now scale, and the badge keeps its proportions
+- QR codes could not be resized: they were fixed at 100×100
 - HTML blocks were limited to 1200×800
 - The image block and the block itself kept two different corner radius values
 - Undo and redo entries could be applied again later and revert newer edits of the same property, and a block could overwrite a value it had just received with its previous one

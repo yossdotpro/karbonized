@@ -29,7 +29,7 @@ See the full [changelog](./CHANGELOG.md).
 
 ## 🚀 Features
 
-* **🧱 Block-based canvas:** code snippets, text, images, icons, shapes, phone and window mockups, badges, QR codes and HTML blocks. Move, resize, rotate, crop and warp them, group them into layers and undo any change.
+* **🧱 Block-based canvas:** code snippets, text, images, icons, shapes, phone and window mockups, QR codes and HTML blocks. Move, resize, rotate, crop and warp them, group them into layers and undo any change.
 * **🎨 Backgrounds:** solid colors, gradients, textures, images and dynamic backgrounds, with blur and noise.
 * **✨ Beedly:** an assistant panel that designs with you using the model of your choice. See the [Beedly guide](./docs/beedly.md).
 * **🔌 MCP server:** the desktop app can expose its editing tools to MCP clients like Claude Desktop, Claude Code and Cursor.

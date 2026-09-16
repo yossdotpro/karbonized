@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react';
 import {
 	AppWindow,
-	Badge as BadgeIcon,
 	Boxes,
 	Circle,
 	CodeSquare,
@@ -17,7 +16,6 @@ import {
 	Users,
 } from 'lucide-react';
 import { IconBrandHtml5 } from '@tabler/icons-react';
-import BadgeBlock from '@/components/Blocks/BadgeBlock';
 import { BlockLoader } from '@/components/Blocks/BlockLoader';
 
 /**
@@ -85,7 +83,6 @@ export const BLOCKS: readonly BlockDefinition[] = [
 		component: PhoneBlock,
 	},
 	{ type: 'qr', label: 'QR Code', icon: QrCode, component: QrBlock },
-	{ type: 'badge', label: 'Badge', icon: BadgeIcon, component: BadgeBlock },
 	{ type: 'window', label: 'Window', icon: AppWindow, component: WindowBlock },
 	{ type: 'html', label: 'HTML', icon: IconBrandHtml5, component: HTMLBlock },
 	{

@@ -764,34 +764,6 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		],
 	},
 	{
-		type: 'badge',
-		label: 'Badge',
-		description: 'A small pill with an avatar and a handle.',
-		defaultSize: size(270, 80),
-		minSize: size(120, 40),
-		maxSize: size(2000, 600),
-		properties: [
-			{
-				key: 'text',
-				kind: 'string',
-				default: '@karbonized_app',
-				description: 'Badge text.',
-			},
-			{
-				key: 'color',
-				kind: 'color',
-				default: '#ffffff',
-				description: 'Text color.',
-			},
-			{
-				key: 'src',
-				kind: 'image',
-				default: '',
-				description: 'Avatar image (URL or data URL).',
-			},
-		],
-	},
-	{
 		type: 'html',
 		label: 'HTML',
 		description:
