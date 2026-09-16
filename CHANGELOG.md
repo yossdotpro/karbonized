@@ -43,6 +43,7 @@
 ### 🧹 Removed
 
 - **Tweet block**: it depended on an external service to load tweets and is no longer available. Projects that used it open without it
+- **Avatar block**: a picture in a circle with no settings of its own, which an image block with a circle mask covers. It had no button to add it and never saved what it held
 - **Badge block**: a text and an avatar in a pill, which a text block and an image cover. Projects that used it open without it
 - **Freehand drawing on a canvas layer**: it was never reachable, was not saved with the project and could not be undone. The vector brush replaces it
 

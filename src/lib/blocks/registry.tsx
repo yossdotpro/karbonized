@@ -14,7 +14,6 @@ import {
 	Smartphone,
 	Sticker,
 	Type,
-	Users,
 } from 'lucide-react';
 import { IconBrandHtml5 } from '@tabler/icons-react';
 import { BlockLoader } from '@/components/Blocks/BlockLoader';
@@ -47,9 +46,6 @@ const PhoneBlock = React.lazy(
 );
 const ImageBlock = React.lazy(
 	async () => await import('@/components/Blocks/ImageBlock'),
-);
-const AvatarBlock = React.lazy(
-	async () => await import('@/components/Blocks/AvatarBlock'),
 );
 const ShapeBlock = React.lazy(
 	async () => await import('@/components/Blocks/ShapeBlock'),
@@ -95,13 +91,6 @@ export const BLOCKS: readonly BlockDefinition[] = [
 		label: 'Drawing',
 		icon: Brush,
 		component: DrawingBlock,
-		insertable: false,
-	},
-	{
-		type: 'avatar',
-		label: 'Avatar',
-		icon: Users,
-		component: AvatarBlock,
 		insertable: false,
 	},
 	{
