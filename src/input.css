@@ -219,7 +219,11 @@
 .monaco-editor .block-action-scope {
 	margin-left: 5px;
 	width: 2px !important;
-	background-color: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+	background-color: color-mix(
+		in srgb,
+		var(--muted-foreground) 45%,
+		transparent
+	);
 }
 
 .monaco-editor .block-action-hint {

@@ -80,11 +80,14 @@
 	background: #fff;
 }
 
-.moveable-control-box .moveable-rotation .moveable-rotation-control.moveable-rotation-control {
+.moveable-control-box
+	.moveable-rotation
+	.moveable-rotation-control.moveable-rotation-control {
 	border-radius: 50%;
 }
 
-.moveable-control-box .moveable-guideline.moveable-guideline:not(.moveable-bounds) {
+.moveable-control-box
+	.moveable-guideline.moveable-guideline:not(.moveable-bounds) {
 	background: #e5484d;
 }
 

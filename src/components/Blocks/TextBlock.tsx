@@ -4,6 +4,7 @@ import {
 	AlignJustify,
 	AlignLeft,
 	AlignRight,
+	Sparkles,
 	Type,
 } from 'lucide-react';
 import { ColorPicker } from '../CustomControls/ColorPicker';
@@ -13,6 +14,7 @@ import { NumberInput } from '../CustomControls/NumberInput';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
 import { Label } from '../ui/label';
+import { Slider } from '../ui/slider';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
@@ -85,6 +87,27 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 	const [letterSpacing, setLetterSpacing] = useControlState(
 		0,
 		`${id}-letterSpacing`,
+	);
+
+	/* An outline and a shadow of the letters themselves, which the shadow of
+	   the block (a drop shadow of the whole box) cannot give. */
+	const [outlineWidth, setOutlineWidth] = useControlState(
+		0,
+		`${id}-outlineWidth`,
+	);
+	const [outlineColor, setOutlineColor] = useControlState(
+		'#090b11',
+		`${id}-outlineColor`,
+	);
+	const [textShadowBlur, setTextShadowBlur] = useControlState(
+		0,
+		`${id}-textShadowBlur`,
+	);
+	const [textShadowX, setTextShadowX] = useControlState(0, `${id}-textShadowX`);
+	const [textShadowY, setTextShadowY] = useControlState(2, `${id}-textShadowY`);
+	const [textShadowColor, setTextShadowColor] = useControlState(
+		'#090b11',
+		`${id}-textShadowColor`,
 	);
 
 	/* Google families are fetched when the block shows them, not only when the
@@ -356,6 +379,85 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 								label='Text Color'
 							></ColorPicker>
 						</CustomCollapse>
+
+						{/* Outline and shadow of the letters */}
+						<CustomCollapse
+							menu={
+								<div className='flex items-center gap-2 text-foreground'>
+									<Sparkles size={18} className='text-muted-foreground' />
+									<Label className='text-sm font-semibold'>Text effects</Label>
+								</div>
+							}
+						>
+							<div className='flex flex-row items-center gap-2 text-xs'>
+								<Label className='my-auto w-24 text-xs text-muted-foreground'>
+									Outline: {outlineWidth}
+								</Label>
+								<Slider
+									className='flex-1'
+									min={0}
+									max={20}
+									value={[outlineWidth]}
+									onValueChange={(value) => {
+										setOutlineWidth(value[0]);
+									}}
+								></Slider>
+							</div>
+
+							{outlineWidth > 0 && (
+								<ColorPicker
+									type='HexAlpha'
+									isGradientEnable={false}
+									color={outlineColor}
+									onColorChange={setOutlineColor}
+									label='Outline Color'
+								></ColorPicker>
+							)}
+
+							<div className='flex flex-row items-center gap-2 text-xs'>
+								<Label className='my-auto w-24 text-xs text-muted-foreground'>
+									Shadow blur
+								</Label>
+								<Slider
+									className='flex-1'
+									min={0}
+									max={40}
+									value={[textShadowBlur]}
+									onValueChange={(value) => {
+										setTextShadowBlur(value[0]);
+									}}
+								></Slider>
+							</div>
+
+							<div className='flex flex-row gap-2 text-xs'>
+								<div className='flex flex-1 flex-row items-center gap-2'>
+									<Label className='my-auto text-xs text-muted-foreground'>
+										X
+									</Label>
+									<NumberInput
+										onChange={setTextShadowX}
+										number={textShadowX}
+									></NumberInput>
+								</div>
+								<div className='flex flex-1 flex-row items-center gap-2'>
+									<Label className='my-auto text-xs text-muted-foreground'>
+										Y
+									</Label>
+									<NumberInput
+										onChange={setTextShadowY}
+										number={textShadowY}
+									></NumberInput>
+								</div>
+							</div>
+
+							<ColorPicker
+								type='HexAlpha'
+								isGradientEnable={false}
+								color={textShadowColor}
+								onColorChange={setTextShadowColor}
+								label='Shadow Color'
+							></ColorPicker>
+						</CustomCollapse>
 					</>
 				}
 			>
@@ -386,6 +488,13 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 						lineHeight: lineHeight > 0 ? lineHeight : undefined,
 						letterSpacing:
 							letterSpacing !== 0 ? `${letterSpacing}px` : undefined,
+						WebkitTextStrokeWidth:
+							outlineWidth > 0 ? `${outlineWidth}px` : undefined,
+						WebkitTextStrokeColor: outlineWidth > 0 ? outlineColor : undefined,
+						textShadow:
+							textShadowBlur > 0 || textShadowX !== 0 || textShadowY !== 0
+								? `${textShadowX}px ${textShadowY}px ${textShadowBlur}px ${textShadowColor}`
+								: undefined,
 					}}
 					className={cn(
 						// A block box, not a flex one, so `text-align` reaches the lines.

@@ -60,6 +60,9 @@ const DrawingBlock = React.lazy(
 	async () => await import('@/components/Blocks/DrawingBlock'),
 );
 
+/** What a block dragged from the toolbar carries. */
+export const BLOCK_DROP_TYPE = 'application/x-karbonized-block';
+
 export interface BlockDefinition {
 	type: string;
 	/** Name shown in the toolbar and the command palette. */

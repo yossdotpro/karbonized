@@ -37,7 +37,7 @@ import Moveable, {
 import WorkspaceTexture from './WorkspaceTexture';
 import { Wallpapers } from '../utils/wallpapers';
 import noiseTexture from '../assets/noisy.png';
-import { addBlock, readProperty } from '@/lib/editor/actions';
+import { addBlock, deleteBlocks, readProperty } from '@/lib/editor/actions';
 import { boxFromDrag, isDrawn, toCanvasPoint } from '@/lib/canvas/drawing';
 import {
 	type StrokePoint,
@@ -57,7 +57,8 @@ import {
 	removeNode,
 } from '@/lib/canvas/nodes';
 import { toast } from 'sonner';
-import type { TextSizing } from '@/lib/blocks/catalog';
+import { type TextSizing, getBlockType } from '@/lib/blocks/catalog';
+import { BLOCK_DROP_TYPE } from '@/lib/blocks/registry';
 import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
 
 interface Props {
@@ -122,14 +123,17 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		activeTool !== 'pan' &&
 		activeTool !== 'draw' &&
 		activeTool !== 'brush' &&
-		activeTool !== 'nodes';
+		activeTool !== 'nodes' &&
+		activeTool !== 'eraser';
 	const crop = activeTool === 'crop';
 	const warp = activeTool === 'warp';
 	const draw = activeTool === 'draw';
 	const brush = activeTool === 'brush';
 	const editingNodes = activeTool === 'nodes';
+	const erasing = activeTool === 'eraser';
 	const lockAspect = useUIStore((state) => state.lockAspect);
 	const snapping = useViewStore((state) => state.snapping);
+	const guides = useViewStore((state) => state.guides);
 	const isExporting = useUIStore((state) => state.isExporting);
 	const exportTransparent = useUIStore((state) => state.exportTransparent);
 
@@ -589,6 +593,57 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		};
 	};
 
+	/** A block dragged from the toolbar lands where it is dropped. */
+	const onBlockDrop = (event: React.DragEvent<HTMLDivElement>) => {
+		const type = event.dataTransfer.getData(BLOCK_DROP_TYPE);
+		const rect = canvasRect();
+		if (type === '' || !rect) return;
+
+		event.preventDefault();
+		const point = toCanvasPoint(event, rect, canvasSize);
+		const size = getBlockType(type)?.defaultSize;
+
+		try {
+			const block = addBlock({
+				type,
+				x: Math.round(point.x - (size?.width ?? 0) / 2),
+				y: Math.round(point.y - (size?.height ?? 0) / 2),
+			});
+			useControlsStore.getState().setSelection([block.id]);
+			useControlsStore.getState().setCurrentControlID(block.id);
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : 'The block was not added',
+			);
+		}
+	};
+
+	/**
+	 * Leave a copy of the blocks where they are, so the drag that started
+	 * moves the originals away from it (Alt+drag).
+	 */
+	const duplicateInPlace = (ids: readonly string[]) => {
+		const controls = useControlsStore.getState();
+		const workspace = useWorkspaceStore.getState().currentWorkspace;
+		ids.forEach((id) => {
+			controls.duplicateControl(id, workspace, workspace?.id ?? '');
+		});
+	};
+
+	/** Shift keeps a drag on one axis, the one it has moved along the most. */
+	const constrainDrag = (
+		id: string,
+		position: { x: number; y: number },
+		inputEvent: { shiftKey?: boolean } | undefined,
+	) => {
+		const start = gestureStart.current[id]?.pos;
+		if (inputEvent?.shiftKey !== true || !start) return position;
+
+		return Math.abs(position.x - start.x) > Math.abs(position.y - start.y)
+			? { x: position.x, y: start.y }
+			: { x: start.x, y: position.y };
+	};
+
 	/* Drawing a shape: the drag is followed here and the block is created when
 	   it ends, so the canvas shows the shape exactly where it was drawn. */
 	const canvasSize = {
@@ -679,6 +734,8 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	   the drag ends. The live path is drawn from the same points. */
 	const brushPoints = useRef<StrokePoint[]>([]);
 	const [brushPath, setBrushPath] = useState('');
+	/** Where the brush is, to show how wide it paints at this zoom. */
+	const [brushCursor, setBrushCursor] = useState<DrawPoint | null>(null);
 
 	/* While drawing, the line is painted the same way the block will paint it:
 	   an outline when it thins, a plain stroke when it does not. */
@@ -703,6 +760,23 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		pressure: event.pressure,
 	});
 
+	/**
+	 * The stroke follows the pointer at a distance instead of copying it: the
+	 * higher the smoothing, the more the line lags behind and the steadier it
+	 * comes out, which is how a stabilised brush feels.
+	 */
+	const easeTowards = (point: StrokePoint): StrokePoint => {
+		const previous = brushPoints.current[brushPoints.current.length - 1];
+		const ease = Math.max(0.15, 1 - brushSmoothing / 8);
+		if (!previous || ease >= 1) return point;
+
+		return {
+			x: previous.x + (point.x - previous.x) * ease,
+			y: previous.y + (point.y - previous.y) * ease,
+			pressure: point.pressure,
+		};
+	};
+
 	const onBrushStart = (event: React.PointerEvent<HTMLDivElement>) => {
 		const rect = canvasRect();
 		if (!rect || event.button !== 0) return;
@@ -717,10 +791,11 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	};
 
 	const onBrushMove = (event: React.PointerEvent<HTMLDivElement>) => {
-		if (brushPoints.current.length === 0) return;
-
 		const rect = canvasRect();
 		if (!rect) return;
+
+		setBrushCursor(toCanvasPoint(event, rect, canvasSize));
+		if (brushPoints.current.length === 0) return;
 
 		// Coalesced events keep the curve faithful on a fast stroke; not every
 		// pointer reports them, and then the event itself is the only point.
@@ -731,7 +806,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		const moves = coalesced.length > 0 ? coalesced : [event.nativeEvent];
 
 		moves.forEach((move) => {
-			brushPoints.current.push(brushPointAt(move, rect));
+			brushPoints.current.push(easeTowards(brushPointAt(move, rect)));
 		});
 		paintBrush(brushPoints.current);
 	};
@@ -774,6 +849,47 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 				error instanceof Error ? error.message : 'The stroke was not drawn',
 			);
 		}
+	};
+
+	/* The eraser: blocks the pointer goes over while the button is down are
+	   deleted, all of them in one step. */
+	const erasedIds = useRef<string[]>([]);
+	const [eraserCursor, setEraserCursor] = useState<DrawPoint | null>(null);
+
+	const eraseAt = (event: React.PointerEvent<HTMLDivElement>) => {
+		const element = document
+			.elementsFromPoint(event.clientX, event.clientY)
+			.find((item) => item.closest('[data-block-id]'));
+		const id = element
+			?.closest('[data-block-id]')
+			?.getAttribute('data-block-id');
+
+		if (!id || erasedIds.current.includes(id)) return;
+
+		erasedIds.current.push(id);
+		deleteBlocks([id]);
+	};
+
+	const onEraseStart = (event: React.PointerEvent<HTMLDivElement>) => {
+		if (event.button !== 0) return;
+
+		try {
+			event.currentTarget.setPointerCapture(event.pointerId);
+		} catch {
+			/* erasing still works without capture */
+		}
+		erasedIds.current = [];
+		useHistoryStore.getState().transaction(() => {
+			eraseAt(event);
+		});
+	};
+
+	const onEraseMove = (event: React.PointerEvent<HTMLDivElement>) => {
+		const rect = canvasRect();
+		if (rect) setEraserCursor(toCanvasPoint(event, rect, canvasSize));
+		if (event.buttons !== 1) return;
+
+		eraseAt(event);
 	};
 
 	/* Editing the nodes of a stroke: the points of the selected block are
@@ -928,6 +1044,14 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	return (
 		<div ref={reference} id='workspace'>
 			<div
+				onDragOver={(event) => {
+					// Only a block from the toolbar: files are dropped on a block.
+					if (event.dataTransfer.types.includes(BLOCK_DROP_TYPE)) {
+						event.preventDefault();
+						event.dataTransfer.dropEffect = 'copy';
+					}
+				}}
+				onDrop={onBlockDrop}
 				className={`relative overflow-hidden transition-all ${isExporting ? '' : 'shadow-2xl'}`}
 				style={{
 					height: currentWorkspace?.workspaceHeight + 'px',
@@ -993,6 +1117,25 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						</div>
 					))}
 
+					{/* Eraser: what the pointer goes over while pressed is deleted */}
+					{erasing && !isExporting && (
+						<div
+							className='absolute inset-0 z-50 cursor-crosshair'
+							onPointerDown={onEraseStart}
+							onPointerMove={onEraseMove}
+							onPointerLeave={() => {
+								setEraserCursor(null);
+							}}
+						>
+							{eraserCursor && (
+								<div
+									className='pointer-events-none absolute size-6 -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-red-500 bg-red-500/10'
+									style={{ left: eraserCursor.x, top: eraserCursor.y }}
+								></div>
+							)}
+						</div>
+					)}
+
 					{/* Nodes: the points of the selected stroke, to drag and edit */}
 					{editingNodes && nodeFrame && !isExporting && (
 						<div
@@ -1028,7 +1171,22 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 								brushPoints.current = [];
 								setBrushPath('');
 							}}
+							onPointerLeave={() => {
+								setBrushCursor(null);
+							}}
 						>
+							{brushCursor && (
+								<div
+									className='pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-foreground/60'
+									style={{
+										left: brushCursor.x,
+										top: brushCursor.y,
+										width: brushSize,
+										height: brushSize,
+									}}
+								></div>
+							)}
+
 							{brushPath !== '' && (
 								<svg className='pointer-events-none absolute inset-0 h-full w-full overflow-visible'>
 									<path
@@ -1091,19 +1249,23 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						middle: true,
 					}}
 					snapThreshold={10}
+					/* The edges and thirds of the canvas, plus the guides dragged
+					   out of the rulers */
 					verticalGuidelines={[
 						0,
 						parseFloat(currentWorkspace?.workspaceWidth ?? '1080') * 0.2,
 						parseFloat(currentWorkspace?.workspaceWidth ?? '1080') / 2,
 						parseFloat(currentWorkspace?.workspaceWidth ?? '1080') * 0.8,
-						currentWorkspace?.workspaceWidth ?? 1080,
+						parseFloat(currentWorkspace?.workspaceWidth ?? '1080'),
+						...guides.vertical,
 					]}
 					horizontalGuidelines={[
 						0,
 						parseFloat(currentWorkspace?.workspaceHeight ?? '1980') * 0.2,
 						parseFloat(currentWorkspace?.workspaceHeight ?? '1980') / 2,
 						parseFloat(currentWorkspace?.workspaceHeight ?? '1980') * 0.8,
-						currentWorkspace?.workspaceHeight ?? 1980,
+						parseFloat(currentWorkspace?.workspaceHeight ?? '1980'),
+						...guides.horizontal,
 					]}
 					elementSnapDirections
 					elementGuidelines={controlsClass}
@@ -1114,16 +1276,30 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 					/* draggable */
 					draggable={!crop}
 					throttleDrag={0}
-					onDragStart={({ target }) => {
+					onDragStart={({ target, inputEvent }) => {
+						// Alt leaves a copy behind, the way every editor does it.
+						if (inputEvent?.altKey === true) {
+							duplicateInPlace([target.id]);
+						}
 						snapshotTargets([target]);
 					}}
-					onDragGroupStart={({ targets }: any) => {
+					onDragGroupStart={({ targets, inputEvent }: any) => {
+						if (inputEvent?.altKey === true) {
+							duplicateInPlace(
+								(targets as HTMLElement[]).map((target) => target.id),
+							);
+						}
 						snapshotTargets(targets);
 					}}
-					onDragGroup={({ events }: any) => {
+					onDragGroup={({ events, inputEvent }: any) => {
 						events.forEach(({ target, left, top }: any) => {
-							target.style.left = `${left}px`;
-							target.style.top = `${top}px`;
+							const next = constrainDrag(
+								target.id,
+								{ x: left, y: top },
+								inputEvent,
+							);
+							target.style.left = `${next.x}px`;
+							target.style.top = `${next.y}px`;
 						});
 					}}
 					onDragGroupEnd={({ targets }: any) => {
@@ -1132,10 +1308,14 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 							syncGroupTargetsToStore(targets);
 						}
 					}}
-					onDrag={({ target, left, top }: OnDrag) => {
-						// console.log('onDrag left, top', left, top);
-						target.style.left = `${left}px`;
-						target.style.top = `${top}px`;
+					onDrag={({ target, left, top, inputEvent }: OnDrag) => {
+						const next = constrainDrag(
+							target.id,
+							{ x: left, y: top },
+							inputEvent,
+						);
+						target.style.left = `${next.x}px`;
+						target.style.top = `${next.y}px`;
 					}}
 					onDragEnd={({ target }) => {
 						// A click without movement is not a step.

@@ -20,18 +20,55 @@ interface ViewerLike {
 
 type ViewerRef = RefObject<ViewerLike | null>;
 
+export type GuideAxis = 'vertical' | 'horizontal';
+
 interface ViewState {
 	zoom: number;
 	snapping: boolean;
+	/** Rulers around the canvas, and the guides dragged out of them. */
+	showRulers: boolean;
+	guides: Record<GuideAxis, number[]>;
 	setZoomValue: (zoom: number) => void;
 	setSnapping: (snapping: boolean) => void;
+	setShowRulers: (show: boolean) => void;
+	addGuide: (axis: GuideAxis, position: number) => void;
+	moveGuide: (axis: GuideAxis, index: number, position: number) => void;
+	removeGuide: (axis: GuideAxis, index: number) => void;
+	clearGuides: () => void;
 }
 
 export const useViewStore = create<ViewState>((set) => ({
 	zoom: 1,
 	snapping: true,
+	showRulers: false,
+	guides: { vertical: [], horizontal: [] },
 	setZoomValue: (zoom) => set({ zoom }),
 	setSnapping: (snapping) => set({ snapping }),
+	setShowRulers: (showRulers) => set({ showRulers }),
+	addGuide: (axis, position) =>
+		set((state) => ({
+			guides: {
+				...state.guides,
+				[axis]: [...state.guides[axis], Math.round(position)],
+			},
+		})),
+	moveGuide: (axis, index, position) =>
+		set((state) => ({
+			guides: {
+				...state.guides,
+				[axis]: state.guides[axis].map((value, current) =>
+					current === index ? Math.round(position) : value,
+				),
+			},
+		})),
+	removeGuide: (axis, index) =>
+		set((state) => ({
+			guides: {
+				...state.guides,
+				[axis]: state.guides[axis].filter((_, current) => current !== index),
+			},
+		})),
+	clearGuides: () => set({ guides: { vertical: [], horizontal: [] } }),
 }));
 
 const clampZoom = (zoom: number) =>

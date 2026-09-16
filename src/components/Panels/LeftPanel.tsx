@@ -14,6 +14,7 @@ import {
 	ChevronRight,
 	Crop,
 	Ellipsis,
+	Eraser,
 	Hand,
 	LayoutTemplate,
 	Moon,
@@ -36,12 +37,12 @@ import { Separator } from '../ui/separator';
 import { ComponentsGalleryDialog } from '../Modals/ComponentsGalleryDialog';
 import { KComponent } from '../../models/KComponent';
 import { useCommands } from '@/lib/commands/registry';
-import { INSERTABLE_BLOCKS } from '@/lib/blocks/registry';
+import { BLOCK_DROP_TYPE, INSERTABLE_BLOCKS } from '@/lib/blocks/registry';
 import { addBlock } from '@/lib/editor/actions';
 import { toast } from 'sonner';
 
 /** Tools come first in the bar, then the blocks that can be inserted. */
-const TOOL_COUNT = 6;
+const TOOL_COUNT = 7;
 
 export const LeftPanel: React.FC = () => {
 	/* App Store */
@@ -140,6 +141,14 @@ export const LeftPanel: React.FC = () => {
 				shortcut: 'A',
 				action: pickTool('nodes'),
 				isActive: activeTool === 'nodes',
+			},
+			{
+				id: 'eraser',
+				icon: Eraser,
+				label: 'Eraser',
+				shortcut: 'E',
+				action: pickTool('eraser'),
+				isActive: activeTool === 'eraser',
 			},
 			/* Every block type comes from the registry, so a new block only
 			   has to be added there */
@@ -247,6 +256,12 @@ export const LeftPanel: React.FC = () => {
 						<Tooltip message={tool.label} shortcut={tool.shortcut}>
 							<Button
 								onClick={tool.action}
+								/* Blocks can also be dragged to a spot on the canvas */
+								draggable={index >= TOOL_COUNT && tool.id !== 'components'}
+								onDragStart={(event) => {
+									event.dataTransfer.setData(BLOCK_DROP_TYPE, tool.id);
+									event.dataTransfer.effectAllowed = 'copy';
+								}}
 								variant='ghost'
 								size='icon'
 								aria-label={tool.label}

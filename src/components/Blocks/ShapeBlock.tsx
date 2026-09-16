@@ -10,9 +10,14 @@ import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { ControlTemplate } from './ControlTemplate';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { ShapeHandler } from './ShapeHandler';
+import { ContextMenuItem } from '../ui/context-menu';
+import { useControlsStore, useHistoryStore } from '@/stores';
+import { addBlock, deleteBlocks, readProperty } from '@/lib/editor/actions';
+import { serializePoints, smoothPath } from '@/lib/canvas/stroke';
 import {
 	DEFAULT_GEOMETRY,
 	SHAPE_OPTIONS,
+	shapeNodes,
 	type ShapeKind,
 	type StrokeStyle,
 	isStrokedShape,
@@ -86,6 +91,24 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 		DEFAULT_GEOMETRY.innerRadius,
 		`${id}-innerRadius`,
 	);
+	/* A gradient fill, painted by the SVG itself so it follows the shape. */
+	const [fillMode, setFillMode] = useControlState<'solid' | 'gradient'>(
+		'solid',
+		`${id}-fillMode`,
+	);
+	const [gradientFrom, setGradientFrom] = useControlState(
+		'#0da2e7',
+		`${id}-gradientFrom`,
+	);
+	const [gradientTo, setGradientTo] = useControlState(
+		'#5895c8',
+		`${id}-gradientTo`,
+	);
+	const [gradientAngle, setGradientAngle] = useControlState(
+		45,
+		`${id}-gradientAngle`,
+	);
+	const gradientId = `shape-gradient-${id}`;
 
 	/* The shape is drawn in the block's own pixels, so it is measured instead
 	   of stretched: corner radii and strokes keep their size. */
@@ -120,6 +143,53 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 		};
 	}, [measure]);
 
+	/**
+	 * Turn the shape into a stroke block with the same outline, which the node
+	 * tool can then edit point by point.
+	 */
+	const convertToStroke = () => {
+		const kind = resolveShape(shape)?.kind;
+		if (!kind || box.width === 0) return;
+
+		const geometry = {
+			width: box.width,
+			height: box.height,
+			cornerRadius,
+			sides,
+			points,
+			innerRadius,
+		};
+		const nodes = shapeNodes(kind, geometry, width);
+		if (nodes.length < 2) return;
+
+		const position = readProperty(`${id}-pos`).value as
+			{ x: number; y: number } | undefined;
+
+		useHistoryStore.getState().transaction(() => {
+			const block = addBlock({
+				type: 'drawing',
+				x: position?.x ?? 0,
+				y: position?.y ?? 0,
+				width: Math.round(box.width),
+				height: Math.round(box.height),
+				properties: {
+					points: serializePoints(nodes),
+					path: smoothPath(nodes),
+					thinning: 0,
+					closed: !isStrokedShape(kind),
+					fillColor: isStrokedShape(kind) ? '#00000000' : color,
+					strokeColor: strokeColor,
+					strokeWidth: Math.max(1, width),
+					viewWidth: Math.round(box.width),
+					viewHeight: Math.round(box.height),
+				},
+			});
+			deleteBlocks([id]);
+			useControlsStore.getState().setSelection([block.id]);
+			useControlsStore.getState().setCurrentControlID(block.id);
+		});
+	};
+
 	const resolved = resolveShape(shape);
 	const kind = resolved?.kind;
 	const stroked = kind !== undefined && isStrokedShape(kind);
@@ -139,6 +209,11 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 				minWidth={'10px'}
 				maxWidth={'4000px'}
 				maxHeight={'4000px'}
+				contextMenu={
+					<ContextMenuItem onClick={convertToStroke}>
+						Convert to stroke
+					</ContextMenuItem>
+				}
 				menu={
 					<>
 						<CustomCollapse
@@ -241,13 +316,69 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 							)}
 
 							{!stroked && (
-								<ColorPicker
-									type='HexAlpha'
-									label='Fill'
-									isGradientEnable={false}
-									color={color}
-									onColorChange={setColor}
-								></ColorPicker>
+								<>
+									<ToggleGroup
+										type='single'
+										variant='outline'
+										size='sm'
+										className='w-full'
+										value={fillMode}
+										onValueChange={(value) =>
+											value && setFillMode(value as 'solid' | 'gradient')
+										}
+									>
+										<ToggleGroupItem value='solid' className='flex-1 text-xs'>
+											Solid
+										</ToggleGroupItem>
+										<ToggleGroupItem
+											value='gradient'
+											className='flex-1 text-xs'
+										>
+											Gradient
+										</ToggleGroupItem>
+									</ToggleGroup>
+
+									{fillMode === 'solid' ? (
+										<ColorPicker
+											type='HexAlpha'
+											label='Fill'
+											isGradientEnable={false}
+											color={color}
+											onColorChange={setColor}
+										></ColorPicker>
+									) : (
+										<>
+											<ColorPicker
+												type='HexAlpha'
+												label='From'
+												isGradientEnable={false}
+												color={gradientFrom}
+												onColorChange={setGradientFrom}
+											></ColorPicker>
+											<ColorPicker
+												type='HexAlpha'
+												label='To'
+												isGradientEnable={false}
+												color={gradientTo}
+												onColorChange={setGradientTo}
+											></ColorPicker>
+											<div className='flex flex-row items-center gap-2 text-xs'>
+												<Label className='my-auto w-24 text-xs text-muted-foreground'>
+													Angle: {gradientAngle}°
+												</Label>
+												<Slider
+													className='flex-1'
+													min={0}
+													max={360}
+													value={[gradientAngle]}
+													onValueChange={(value) => {
+														setGradientAngle(value[0]);
+													}}
+												></Slider>
+											</div>
+										</>
+									)}
+								</>
 							)}
 						</CustomCollapse>
 
@@ -319,6 +450,18 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 								viewBox={`0 0 ${box.width} ${box.height}`}
 								className='flex flex-auto overflow-visible'
 							>
+								{fillMode === 'gradient' && !stroked && (
+									<defs>
+										<linearGradient
+											id={gradientId}
+											gradientUnits='objectBoundingBox'
+											gradientTransform={`rotate(${gradientAngle} 0.5 0.5)`}
+										>
+											<stop offset='0%' stopColor={gradientFrom}></stop>
+											<stop offset='100%' stopColor={gradientTo}></stop>
+										</linearGradient>
+									</defs>
+								)}
 								<g transform={`translate(${inset} ${inset})`}>
 									<path
 										d={shapePath(
@@ -333,7 +476,13 @@ export const ShapeBlock: React.FC<Props> = ({ id }) => {
 											},
 											width,
 										)}
-										fill={stroked ? 'none' : color}
+										fill={
+											stroked
+												? 'none'
+												: fillMode === 'gradient'
+													? `url(#${gradientId})`
+													: color
+										}
 										stroke={width > 0 ? strokeColor : 'none'}
 										strokeWidth={width}
 										strokeDasharray={strokeDashArray(strokeStyle, width)}

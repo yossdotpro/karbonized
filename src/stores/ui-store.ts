@@ -8,7 +8,7 @@ import type { WorkspaceMode, SelectedTab } from '../types';
  * flags in step.
  */
 export type EditorTool =
-	'select' | 'pan' | 'crop' | 'warp' | 'draw' | 'brush' | 'nodes';
+	'select' | 'pan' | 'crop' | 'warp' | 'draw' | 'brush' | 'nodes' | 'eraser';
 
 interface UIState {
 	activeTool: EditorTool;

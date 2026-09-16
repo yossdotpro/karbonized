@@ -259,3 +259,99 @@ export const strokeDashArray = (
 			return undefined;
 	}
 };
+
+/**
+ * The corners of a shape as points, so it can become a stroke the node tool
+ * edits. Curves are walked along instead of being described.
+ */
+export const shapeNodes = (
+	kind: ShapeKind,
+	geometry: Partial<ShapeGeometry> = {},
+	strokeWidth = 0,
+): Array<{ x: number; y: number }> => {
+	const { width, height, cornerRadius, sides, points, innerRadius } = {
+		...DEFAULT_GEOMETRY,
+		...geometry,
+	};
+	const w = Math.max(1, width - strokeWidth);
+	const h = Math.max(1, height - strokeWidth);
+	const inset = shapeInset(strokeWidth);
+	const shift = (list: Array<{ x: number; y: number }>) =>
+		list.map((point) => ({ x: point.x + inset, y: point.y + inset }));
+
+	switch (kind) {
+		case 'line':
+			return shift([
+				{ x: 0, y: h / 2 },
+				{ x: w, y: h / 2 },
+			]);
+		case 'arrow':
+			return shift([
+				{ x: 0, y: h / 2 },
+				{ x: w, y: h / 2 },
+			]);
+		case 'rectangle':
+			return shift([
+				{ x: 0, y: 0 },
+				{ x: w, y: 0 },
+				{ x: w, y: h },
+				{ x: 0, y: h },
+				{ x: 0, y: 0 },
+			]);
+		case 'triangle':
+			return shift(
+				[
+					...regularPolygonPoints(w, h, 3),
+					regularPolygonPoints(w, h, 3)[0],
+				].map(([x, y]) => ({ x, y })),
+			);
+		case 'polygon': {
+			const corners = regularPolygonPoints(
+				w,
+				h,
+				Math.max(3, Math.round(sides)),
+			);
+			return shift([...corners, corners[0]].map(([x, y]) => ({ x, y })));
+		}
+		case 'star': {
+			const corners = regularPolygonPoints(
+				w,
+				h,
+				Math.max(3, Math.round(points)),
+				Math.min(0.95, Math.max(0.05, innerRadius / 100)),
+			);
+			return shift([...corners, corners[0]].map(([x, y]) => ({ x, y })));
+		}
+		case 'ellipse':
+		case 'heart': {
+			// Curves are sampled: a stroke is made of points, not of arcs.
+			const steps = 32;
+			const centerX = w / 2;
+			const centerY = h / 2;
+			const sampled = Array.from({ length: steps + 1 }, (_, index) => {
+				const angle = -Math.PI / 2 + (index / steps) * Math.PI * 2;
+				if (kind === 'ellipse') {
+					return {
+						x: centerX + Math.cos(angle) * centerX,
+						y: centerY + Math.sin(angle) * centerY,
+					};
+				}
+				// A heart, from its classic parametric form.
+				const t = (index / steps) * Math.PI * 2;
+				const x = 16 * Math.sin(t) ** 3;
+				const y =
+					13 * Math.cos(t) -
+					5 * Math.cos(2 * t) -
+					2 * Math.cos(3 * t) -
+					Math.cos(4 * t);
+				return {
+					x: centerX + (x / 17) * centerX,
+					y: centerY - (y / 17) * centerY,
+				};
+			});
+			return shift(sampled);
+		}
+		default:
+			return [];
+	}
+};

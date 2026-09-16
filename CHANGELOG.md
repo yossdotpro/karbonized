@@ -18,6 +18,13 @@
 - **Typography controls** for text: alignment (left, center, right, justified), weight (300–800), line height and letter spacing
 - **Edit text on the canvas**: double click a text block to type in place; `Esc` (or clicking away) saves
 - **Vector brush** (`B`): draw freehand on the canvas and the stroke is kept as a curve, not as pixels. The points are smoothed and thinned into a bezier path, so it stays sharp at any size; the bar at the bottom sets width, smoothing, thinning and color, and each stroke becomes a block that can be moved, resized, rotated, recolored, closed and filled, and undone
+- **Eraser** (`E`): press and go over what you want gone; everything the pointer touches in one pass is deleted in one step
+- **Rulers and guides** (`Shift+R`): rulers along the top and the left in canvas pixels, that follow the pan and the zoom. Drag out of them to leave a guide the blocks snap to, drag a guide off the canvas to take it away, and **Clear guides** removes them all
+- **Alt+drag leaves a copy** of the block behind, and **Shift keeps a drag on one axis**
+- **Drag a block from the toolbar** to the spot on the canvas where it should land
+- **Shapes take a gradient fill**, and **Convert to stroke** in their menu turns a shape into a stroke, so the node tool can edit it point by point
+- **Text takes an outline and a shadow of its own letters**, not only the shadow of the block
+- The brush steadies the line while it is drawn, not only when it is let go, and shows a circle of the width it paints at the current zoom
 - **Edit the nodes of a stroke** (`A`): pick a stroke and its points show on the canvas; drag one to move it, click the stroke to add one and `Alt`+click to take one out. Every edit is one step of undo
 - **The brush has a stroke that lives**: it follows the pressure of a pen, and the speed of the hand when there is no pen, so a line is thicker where it lingers and thinner where it runs, with tapered ends. The stroke keeps its points, so its width and how much it thins can still be changed after it is drawn
 - **Shapes are drawn on the canvas**: pick the shape tool (`R`), choose a shape in the bar at the bottom and drag to draw it where and as big as you want; `Shift` keeps it square and `Alt` draws from the center. A click without dragging still drops one at its default size

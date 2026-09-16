@@ -12,6 +12,7 @@ import { useWorkspaceStore, useControlsStore, useUIStore } from '../stores';
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
 import { ShapeBar } from '@/components/Panels/ShapeBar';
+import { Rulers } from '@/components/Base/Rulers';
 import { BrushBar } from '@/components/Panels/BrushBar';
 import { isEditableTarget } from '@/lib/commands/shortcuts';
 import { redo, undo } from '@/lib/editor/history';
@@ -42,6 +43,7 @@ import {
 	Brush,
 	Copy,
 	Magnet,
+	Ruler,
 	Trash2,
 	Focus,
 	Lock,
@@ -303,6 +305,32 @@ export const Editor: React.FC = () => {
 			run: () => distributeSelection('vertical'),
 		},
 		{
+			id: 'view.toggle-rulers',
+			title: useViewStore.getState().showRulers ? 'Hide rulers' : 'Show rulers',
+			group: 'View',
+			icon: Ruler,
+			shortcut: 'Shift+R',
+			keywords: ['ruler', 'guides', 'grid'],
+			run: () => {
+				const { showRulers, setShowRulers } = useViewStore.getState();
+				setShowRulers(!showRulers);
+			},
+		},
+		{
+			id: 'view.clear-guides',
+			title: 'Clear guides',
+			group: 'View',
+			icon: Ruler,
+			keywords: ['ruler', 'guides'],
+			when: () => {
+				const { guides } = useViewStore.getState();
+				return guides.vertical.length + guides.horizontal.length > 0;
+			},
+			run: () => {
+				useViewStore.getState().clearGuides();
+			},
+		},
+		{
 			id: 'view.toggle-snapping',
 			title: useViewStore.getState().snapping
 				? 'Disable snapping'
@@ -412,9 +440,11 @@ export const Editor: React.FC = () => {
 
 					{/* Workspace */}
 					<div
-						className={`canvas-grid flex flex-auto flex-col ${drag && 'cursor-move'}`}
+						className={`canvas-grid relative flex flex-auto flex-col ${drag && 'cursor-move'}`}
 					>
-						{/* Ruler Horizontal */}
+						{/* Rulers and the guides dragged out of them */}
+						<Rulers></Rulers>
+
 						<InfiniteViewer
 							ref={viewerRef}
 							className='viewer flex flex-auto'
