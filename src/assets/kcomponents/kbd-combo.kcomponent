@@ -1,0 +1,121 @@
+manifest:
+  name: "Keyboard Shortcut"
+  author: "Karbonized"
+  description: "A keycap combo with a caption, for documenting shortcuts in a README or a release post."
+  version: "1.0.0"
+  category: "UI"
+  width: 400
+  height: 150
+  tags:
+    - "keyboard"
+    - "shortcut"
+    - "docs"
+    - "starter"
+
+html: |
+  <div class="combo">
+    <div class="keys">
+      <span class="key">⌘</span>
+      <span class="plus">+</span>
+      <span class="key">K</span>
+    </div>
+    <p class="caption">Open the command palette</p>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #12141a;
+    /* @type:color */
+    --key-bg: #222735;
+    /* @type:color */
+    --key-edge: #10131b;
+    /* @type:color */
+    --key-text: #e6e9ef;
+    /* @type:color */
+    --caption: #8b93a7;
+    /* @type:number min:16 max:48 step:1 unit:px */
+    --key-size: 26px;
+    /* @type:number min:4 max:20 step:1 unit:px */
+    --key-radius: 10px;
+    /* @type:number min:4 max:28 step:1 unit:px */
+    --gap: 12px;
+    /* @type:number min:0 max:32 step:1 unit:px */
+    --radius: 16px;
+  }
+
+  .combo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    width: 100%;
+    padding: 26px;
+    border-radius: var(--radius);
+    background: var(--bg);
+    font-family: 'Geist Variable', 'Noto Sans Variable', system-ui, sans-serif;
+  }
+
+  .keys {
+    display: flex;
+    align-items: center;
+    gap: var(--gap);
+  }
+
+  .key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: calc(var(--key-size) * 1.9);
+    height: calc(var(--key-size) * 1.75);
+    padding: 0 10px;
+    border-radius: var(--key-radius);
+    background: var(--key-bg);
+    box-shadow: var(--key-edge) 0px 4px 0px 0px;
+    color: var(--key-text);
+    font-size: var(--key-size);
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  .plus {
+    color: var(--caption);
+    font-size: calc(var(--key-size) * 0.7);
+  }
+
+  .caption {
+    margin: 0;
+    color: var(--caption);
+    font-size: 14px;
+  }
+
+js: |
+  // Write the combo as keys separated by spaces, for example "Ctrl Shift P".
+  // @var keys:string = "⌘ K"
+  // @var caption:string = "Open the command palette"
+
+  const row = document.querySelector('.keys');
+
+  if (row) {
+    row.textContent = '';
+    keys
+      .split(/\s+/)
+      .filter(Boolean)
+      .forEach((key, index) => {
+        if (index > 0) {
+          const plus = document.createElement('span');
+          plus.className = 'plus';
+          plus.textContent = '+';
+          row.appendChild(plus);
+        }
+
+        const cap = document.createElement('span');
+        cap.className = 'key';
+        cap.textContent = key;
+        row.appendChild(cap);
+      });
+  }
+
+  const caption_node = document.querySelector('.caption');
+  if (caption_node) caption_node.textContent = caption;

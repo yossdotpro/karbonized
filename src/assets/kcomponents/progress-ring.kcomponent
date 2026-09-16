@@ -1,0 +1,112 @@
+manifest:
+  name: "Progress Ring"
+  author: "Karbonized"
+  description: "A circular progress ring drawn with a conic gradient. Drag the progress slider and run the action to rewrite the label."
+  version: "1.0.0"
+  category: "UI"
+  width: 300
+  height: 300
+  tags:
+    - "progress"
+    - "ring"
+    - "meter"
+    - "starter"
+
+html: |
+  <div class="wrap">
+    <div class="ring">
+      <div class="hole">
+        <span class="figure">70%</span>
+        <span class="caption">coverage</span>
+      </div>
+    </div>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #12141a;
+    /* @type:color */
+    --fill: #3987e5;
+    /* @type:color */
+    --track: #222735;
+    /* @type:color */
+    --text: #e6e9ef;
+    /* @type:color */
+    --muted: #8b93a7;
+    /* @type:number min:0 max:100 step:1 unit:% */
+    --progress: 70%;
+    /* @type:number min:8 max:48 step:1 unit:px */
+    --thickness: 18px;
+    /* @type:number min:20 max:56 step:1 unit:px */
+    --figure-size: 36px;
+  }
+
+  .wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 16px;
+    background: var(--bg);
+    font-family: 'Geist Variable', 'Noto Sans Variable', system-ui, sans-serif;
+  }
+
+  .ring {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1 / 1;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 50%;
+    background: conic-gradient(var(--fill) 0 var(--progress), var(--track) var(--progress) 100%);
+  }
+
+  .hole {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: calc(100% - var(--thickness) * 2);
+    height: calc(100% - var(--thickness) * 2);
+    border-radius: 50%;
+    background: var(--bg);
+  }
+
+  .figure {
+    color: var(--text);
+    font-size: var(--figure-size);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+
+  .caption {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+js: |
+  // The label is plain text, so it stays right even with scripts disabled.
+  // Enable scripts and run the action to read the ring and rewrite the number.
+  // @var caption:string = "coverage"
+
+  const setText = (selector, text) => {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = text;
+  };
+
+  const syncFigure = () => {
+    const raw = getComputedStyle(host).getPropertyValue('--progress');
+    const percent = Math.round(parseFloat(raw) || 0);
+    setText('.figure', percent + '%');
+    return percent;
+  };
+
+  setText('.caption', caption);
+
+  // @action:Sync label with ring
+  const percent = syncFigure();
+  log('Ring is at ' + percent + '%');

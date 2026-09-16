@@ -1,5 +1,6 @@
 import { blockTools } from './blocks';
 import { commandTools } from './commands';
+import { componentTools } from './components';
 import { exportTools } from './export';
 import type { ToolDefinition } from './registry';
 import { workspaceTools } from './workspace';
@@ -10,6 +11,7 @@ export * from './registry';
 export const editorTools: readonly ToolDefinition[] = [
 	...workspaceTools,
 	...blockTools,
+	...componentTools,
 	...exportTools,
 	...commandTools,
 ];

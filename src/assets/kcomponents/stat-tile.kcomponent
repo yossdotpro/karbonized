@@ -1,0 +1,157 @@
+manifest:
+  name: "Stat Tile"
+  author: "Karbonized"
+  description: "A headline metric with a signed delta against a named period and a 12 point sparkline. The trend line stays de-emphasised and only the current point wears the accent."
+  version: "1.0.0"
+  category: "Data"
+  width: 380
+  height: 230
+  tags:
+    - "metric"
+    - "kpi"
+    - "sparkline"
+    - "starter"
+
+html: |
+  <div class="tile">
+    <p class="label">Monthly active users</p>
+    <p class="value">12.9K</p>
+    <p class="delta">
+      <span class="arrow">▲</span>
+      <span class="pct">12.4%</span>
+      <span class="period">vs last week</span>
+    </p>
+    <svg class="spark" viewBox="0 0 240 56" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Twelve week trend, rising">
+      <polyline class="trend" points="4,44 25,41 46,45 68,36 89,38 110,30 132,33 153,24 174,26 196,18 217,14 236,8" />
+      <circle class="now" cx="236" cy="8" r="4" />
+    </svg>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #12141a;
+    /* @type:color */
+    --border: #262b36;
+    /* @type:color */
+    --text: #e6e9ef;
+    /* @type:color */
+    --muted: #8b93a7;
+    /* @type:color */
+    --accent: #3987e5;
+    /* @type:color */
+    --trend: #5b6a85;
+    /* @type:color */
+    --good: #0ca30c;
+    /* @type:number min:28 max:72 step:1 unit:px */
+    --value-size: 48px;
+    /* @type:number min:0 max:32 step:1 unit:px */
+    --radius: 16px;
+    /* @type:number min:12 max:40 step:1 unit:px */
+    --padding: 24px;
+    /* @type:shadow */
+    --shadow: #0000005e 0px 18px 40px 0px;
+  }
+
+  .tile {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: var(--padding);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    font-family: 'Geist Variable', 'Noto Sans Variable', system-ui, sans-serif;
+  }
+
+  .label {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 0.01em;
+  }
+
+  .value {
+    margin: 6px 0 0 0;
+    font-size: var(--value-size);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+
+  .delta {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin: 8px 0 0 0;
+    font-size: 13px;
+  }
+
+  .arrow, .pct {
+    color: var(--good);
+    font-weight: 500;
+  }
+
+  .arrow { font-size: 0.85em; }
+
+  .period { color: var(--muted); }
+
+  .spark {
+    width: 100%;
+    height: 56px;
+    margin-top: auto;
+    overflow: visible;
+  }
+
+  .trend {
+    fill: none;
+    stroke: var(--trend);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .now {
+    fill: var(--accent);
+    stroke: var(--bg);
+    stroke-width: 2;
+  }
+
+js: |
+  // @var label:string = "Monthly active users"
+  // @var value:string = "12.9K"
+  // @var delta:number = 12.4
+  // @var period:string = "vs last week"
+  // @var higherIsBetter:boolean = true
+
+  const setText = (selector, text) => {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = text;
+  };
+
+  // Direction crossed with whether up is good decides the colour, never the sign alone.
+  const render = () => {
+    const rising = delta >= 0;
+    const good = rising === higherIsBetter;
+    const tone = good ? 'var(--good)' : '#d03b3b';
+
+    setText('.label', label);
+    setText('.value', value);
+    setText('.arrow', rising ? '▲' : '▼');
+    setText('.pct', Math.abs(delta).toFixed(1) + '%');
+    setText('.period', period);
+
+    ['.arrow', '.pct'].forEach((selector) => {
+      const node = document.querySelector(selector);
+      if (node) node.style.color = tone;
+    });
+  };
+
+  render();
+
+  // @action:Flip the trend
+  delta = -delta;
+  render();
+  log('Delta is now ' + delta + '%');

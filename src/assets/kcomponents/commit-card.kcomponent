@@ -1,0 +1,174 @@
+manifest:
+  name: "Commit Card"
+  author: "Karbonized"
+  description: "A commit summary with author, branch, short hash and diff stats. Good for release notes and changelog screenshots."
+  version: "1.0.0"
+  category: "Dev"
+  width: 540
+  height: 180
+  tags:
+    - "git"
+    - "commit"
+    - "changelog"
+    - "starter"
+
+html: |
+  <div class="card">
+    <div class="head">
+      <span class="avatar">YS</span>
+      <span class="who">
+        <span class="name">Yoannis Sánchez</span>
+        <span class="when">committed 2 hours ago</span>
+      </span>
+      <span class="branch">main</span>
+    </div>
+    <p class="message">feat(kcomponents): harden the format and rework the library</p>
+    <div class="foot">
+      <span class="hash">9191e17</span>
+      <span class="sep"></span>
+      <span class="add">+1501</span>
+      <span class="del">−377</span>
+      <span class="files">13 files changed</span>
+    </div>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #12141a;
+    /* @type:color */
+    --border: #262b36;
+    /* @type:color */
+    --text: #e6e9ef;
+    /* @type:color */
+    --muted: #8b93a7;
+    /* @type:color */
+    --accent: #3987e5;
+    /* @type:color */
+    --add: #0ca30c;
+    /* @type:color */
+    --del: #d03b3b;
+    /* @type:number min:0 max:32 step:1 unit:px */
+    --radius: 14px;
+    /* @type:number min:12 max:36 step:1 unit:px */
+    --padding: 22px;
+    /* @type:shadow */
+    --shadow: #0000005e 0px 18px 40px 0px;
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    padding: var(--padding);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    font-family: 'Geist Variable', 'Noto Sans Variable', system-ui, sans-serif;
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .who {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.35;
+  }
+
+  .name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .when {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .branch {
+    margin-left: auto;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-family: 'Geist Mono Variable', ui-monospace, monospace;
+    font-size: 12px;
+  }
+
+  .message {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.45;
+  }
+
+  .foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-family: 'Geist Mono Variable', ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .hash { color: var(--accent); }
+  .add { color: var(--add); }
+  .del { color: var(--del); }
+
+  .sep {
+    width: 1px;
+    height: 12px;
+    background: var(--border);
+  }
+
+js: |
+  // @var author:string = "Yoannis Sánchez"
+  // @var message:string = "feat(kcomponents): harden the format and rework the library"
+  // @var branch:string = "main"
+  // @var hash:string = "9191e17"
+
+  const setText = (selector, value) => {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = value;
+  };
+
+  const initials = (value) =>
+    value
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+
+  setText('.name', author);
+  setText('.avatar', initials(author));
+  setText('.message', message);
+  setText('.branch', branch);
+  setText('.hash', hash);
+
+  // @action:New random hash
+  hash = Math.random().toString(16).slice(2, 9);
+  setText('.hash', hash);
+  log('Hash is now ' + hash);

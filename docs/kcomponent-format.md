@@ -6,7 +6,8 @@ The `.kcomponent` file format is a YAML-based format for defining custom compone
 
 ## File Structure
 
-A `.kcomponent` file is a YAML file with the following structure:
+A `.kcomponent` file is a YAML file with the following structure. Only
+`manifest.name` and `html` are required; `css` and `js` can be omitted.
 
 ```yaml
 manifest:
@@ -44,12 +45,18 @@ js: |
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | The name of the component |
-| `author` | string | No | The author of the component |
-| `description` | string | No | A brief description of the component |
+| `name` | string | Yes | The name of the component (max. 80 chars) |
+| `author` | string | No | The author of the component (max. 80 chars) |
+| `description` | string | No | A brief description of the component (max. 500 chars) |
 | `version` | string | No | Version following semantic versioning (e.g., "1.0.0") |
 | `category` | string | No | Category for organizing components (e.g., "UI Components", "Forms") |
-| `tags` | array of strings | No | Tags for searching and filtering components |
+| `tags` | array of strings | No | Tags for searching and filtering (max. 12, comma separated text is also accepted) |
+| `width` | number | No | Preferred block width in px when added to the canvas (16–4096) |
+| `height` | number | No | Preferred block height in px when added to the canvas (16–4096) |
+| `thumbnail` | string | No | Preview image shown in the library: an `https://` URL or an inline `data:image/…;base64,` value |
+
+`name` and `author` together identify a component: importing a file with the
+same pair updates the existing entry instead of creating a duplicate.
 
 ## HTML Section
 
@@ -275,11 +282,35 @@ js: |
 
 ## Validation Rules
 
-- The `manifest` field is required
+The importer separates hard errors (the file is rejected) from warnings (the
+file is imported, but a field was dropped or normalized).
+
+Errors:
+
+- The YAML must be valid; syntax errors report the offending line
+- The `manifest` field is required and must be an object
 - `manifest.name` is required
-- `html`, `css`, and `js` fields are required
-- The YAML must be valid
-- All fields must use the correct syntax
+- `html` is required and cannot be empty
+- `html`, `css` and `js` must be text, and each section must stay under 512 KB
+- The whole file must stay under 1 MB
+
+Warnings:
+
+- `css` or `js` missing: the component is imported without styles or actions
+- Unknown fields, at the root or inside the manifest, are ignored
+- Text fields longer than their limit are truncated
+- Duplicate tags are removed, and only the first 12 are kept
+- `width`/`height` outside 16–4096 px are ignored
+- A `thumbnail` that is not an `https://` URL or an inline base64 image is ignored
+- A `version` that does not look like `1.2.3` is kept but flagged
+
+## Sizes and Limits
+
+| Limit | Value |
+|-------|-------|
+| Maximum file size | 1 MB |
+| Maximum size per `html`/`css`/`js` section | 512 KB |
+| Maximum components in the library | 200 |
 
 ## Best Practices
 

@@ -12,15 +12,17 @@ import { KComponent } from '@/models/KComponent';
 interface ComponentsGalleryDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onAddToCanvas: (component: KComponent) => void;
+	onAddToCanvas: (component: KComponent, importedId?: string) => void;
+	/** Closes the dialog once a component lands on the canvas. */
+	closeOnAdd?: boolean;
 }
 
 export const ComponentsGalleryDialog: React.FC<
 	ComponentsGalleryDialogProps
-> = ({ open, onOpenChange, onAddToCanvas }) => {
+> = ({ open, onOpenChange, onAddToCanvas, closeOnAdd = true }) => {
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className='flex h-[70vh] flex-col overflow-hidden sm:max-w-xl'>
+			<DialogContent className='flex h-[70vh] flex-col overflow-hidden sm:max-w-2xl'>
 				<DialogHeader>
 					<DialogTitle>Component library</DialogTitle>
 					<DialogDescription>
@@ -28,7 +30,12 @@ export const ComponentsGalleryDialog: React.FC<
 					</DialogDescription>
 				</DialogHeader>
 				<div className='-mx-5 -mb-5 flex min-h-0 flex-1 flex-col border-t border-border'>
-					<ComponentsGallery onAddToCanvas={onAddToCanvas} />
+					<ComponentsGallery
+						onAddToCanvas={(component, importedId) => {
+							onAddToCanvas(component, importedId);
+							if (closeOnAdd) onOpenChange(false);
+						}}
+					/>
 				</div>
 			</DialogContent>
 		</Dialog>

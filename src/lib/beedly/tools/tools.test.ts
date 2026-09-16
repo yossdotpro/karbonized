@@ -305,8 +305,25 @@ describe('tool helpers', () => {
 
 	it('allows only editing commands', () => {
 		expect(isAllowedCommand('edit.undo')).toBe(true);
+		expect(isAllowedCommand('arrange.distribute-horizontal')).toBe(true);
+		expect(isAllowedCommand('view.zoom-in')).toBe(true);
+		// Vetted one by one, outside the safe families.
+		expect(isAllowedCommand('file.copy-image')).toBe(true);
+
+		// Picking the tool the user then draws with, and inserting blocks.
+		expect(isAllowedCommand('tools.brush')).toBe(true);
+		expect(isAllowedCommand('tools.text')).toBe(true);
+
+		// Clears the canvas with no undo step.
 		expect(isAllowedCommand('workspace.clean')).toBe(false);
 		expect(isAllowedCommand('view.toggle-beedly')).toBe(false);
+		// The gallery is a dialog; list_components reaches the library directly.
+		expect(isAllowedCommand('tools.components')).toBe(false);
+		// Dialogs, saving and the block editor page need a person.
+		expect(isAllowedCommand('file.import-components')).toBe(false);
+		expect(isAllowedCommand('file.save')).toBe(false);
+		expect(isAllowedCommand('block.export-component')).toBe(false);
+		expect(isAllowedCommand('help.about')).toBe(false);
 	});
 
 	it('splits data URLs and scales snapshots', () => {

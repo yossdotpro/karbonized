@@ -5,12 +5,36 @@ import { ToolError, defineTool } from './registry';
 /**
  * Editor commands a model may run. Anything that opens dialogs, leaves the
  * editor or clears the canvas without an undo step stays out.
+ *
+ * Whole families that are safe: `edit.` and `arrange.` are undoable document
+ * changes, `view.` only moves the viewport and toggles editor chrome, and
+ * `tools.` picks the tool the user then draws with, or inserts a block.
+ *
+ * Deliberately out, because they need a person or a dedicated tool does the
+ * job properly:
+ * - `file.*` and `help.*` open dialogs, write files or leave the editor.
+ *   `export_image` and `export_component` cover what a model needs.
+ * - `tools.components` opens the gallery dialog; `list_components` and
+ *   `add_component` reach the library directly.
+ * - `block.*` belongs to the block editor page, not the canvas.
+ * - `workspace.clean` wipes the canvas with no undo step; `delete_blocks`
+ *   removes blocks and can be undone.
  */
-const ALLOWED_PREFIXES = ['edit.', 'arrange.', 'view.'];
-const BLOCKED = new Set(['view.toggle-beedly', 'view.cycle-mode']);
+const ALLOWED_PREFIXES = ['edit.', 'arrange.', 'view.', 'tools.'];
+
+/** Vetted one by one, outside the safe families. */
+const ALLOWED_IDS = new Set(['file.copy-image']);
+
+const BLOCKED = new Set([
+	'view.toggle-beedly',
+	'view.cycle-mode',
+	'tools.components',
+]);
 
 export const isAllowedCommand = (id: string): boolean =>
-	!BLOCKED.has(id) && ALLOWED_PREFIXES.some((prefix) => id.startsWith(prefix));
+	!BLOCKED.has(id) &&
+	(ALLOWED_IDS.has(id) ||
+		ALLOWED_PREFIXES.some((prefix) => id.startsWith(prefix)));
 
 const availableCommands = () =>
 	commandRegistry
