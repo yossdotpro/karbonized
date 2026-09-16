@@ -54,7 +54,48 @@ export const COMMON_SYSTEM_FONTS: readonly string[] = [
 	'Verdana',
 ];
 
-/** A selection of Google Fonts, grouped the way the picker shows them. */
+export type FontCategory =
+	'sans' | 'serif' | 'display' | 'handwriting' | 'mono';
+
+export const FONT_CATEGORIES: ReadonlyArray<{
+	value: FontCategory | 'all';
+	label: string;
+}> = [
+	{ value: 'all', label: 'All' },
+	{ value: 'sans', label: 'Sans' },
+	{ value: 'serif', label: 'Serif' },
+	{ value: 'display', label: 'Display' },
+	{ value: 'handwriting', label: 'Hand' },
+	{ value: 'mono', label: 'Mono' },
+];
+
+export interface GoogleFont {
+	family: string;
+	category: FontCategory;
+	/** The weights the family really has. */
+	weights: number[];
+}
+
+/**
+ * The whole Google Fonts catalog, most used first. It is a generated file of
+ * some two thousand families, so it is fetched the first time the picker
+ * needs it instead of riding along in the main bundle.
+ */
+let catalog: Promise<GoogleFont[]> | null = null;
+
+export const loadGoogleCatalog = async (): Promise<GoogleFont[]> => {
+	catalog ??= import('./google-fonts').then(({ GOOGLE_FONT_ROWS }) =>
+		GOOGLE_FONT_ROWS.map(([family, category, weights]) => ({
+			family,
+			category: category as FontCategory,
+			weights: weights.split(',').map(Number),
+		})),
+	);
+
+	return await catalog;
+};
+
+/** Families shown before the catalog has loaded, and as the popular ones. */
 export const GOOGLE_FONTS: readonly string[] = [
 	'Abril Fatface',
 	'Anton',
@@ -124,12 +165,13 @@ export const GOOGLE_FONTS: readonly string[] = [
 	'Work Sans',
 ];
 
-const GOOGLE_FAMILIES = new Set(GOOGLE_FONTS);
+const POPULAR_FAMILIES = new Set(GOOGLE_FONTS);
 
+/** Whether a family is one of the popular ones listed above. */
 export const isGoogleFont = (family: string): boolean =>
-	GOOGLE_FAMILIES.has(family);
+	POPULAR_FAMILIES.has(family);
 
-/** Weights requested from Google Fonts: regular, semibold and bold text. */
+/** Weights the text panel offers. */
 export const FONT_WEIGHTS = [300, 400, 500, 600, 700, 800] as const;
 
 /**
@@ -146,12 +188,14 @@ export const fontStack = (family: string): string => {
 export const googleFontHref = (
 	families: readonly string[],
 	text?: string,
+	weights: readonly number[] = FONT_WEIGHTS,
 ): string => {
+	const axis = weights.length > 0 ? weights : FONT_WEIGHTS;
 	const params = families
 		.filter((family) => family.trim() !== '')
 		.map(
 			(family) =>
-				`family=${encodeURIComponent(family.trim()).replace(/%20/g, '+')}:wght@${FONT_WEIGHTS.join(';')}`,
+				`family=${encodeURIComponent(family.trim()).replace(/%20/g, '+')}:wght@${axis.join(';')}`,
 		);
 
 	if (text !== undefined && text !== '') {
@@ -200,16 +244,30 @@ const injectStylesheet = (href: string, key: string): Promise<void> => {
 };
 
 /** Load a Google family and wait until the browser can render it. */
-export const loadGoogleFont = async (family: string): Promise<void> => {
+export const loadGoogleFont = async (
+	family: string,
+	weights?: readonly number[],
+): Promise<void> => {
 	const name = family.trim();
 	if (name === '') return;
 
-	await injectStylesheet(googleFontHref([name]), `family:${name}`);
+	// Ask only for the weights the family has, when they are known.
+	const axis =
+		weights ??
+		(await loadGoogleCatalog().catch(() => [])).find(
+			(font) => font.family === name,
+		)?.weights ??
+		FONT_WEIGHTS;
+
+	await injectStylesheet(
+		googleFontHref([name], undefined, axis),
+		`family:${name}`,
+	);
 
 	if (typeof document === 'undefined' || !document.fonts) return;
 	try {
 		await Promise.all(
-			FONT_WEIGHTS.map(
+			axis.map(
 				async (weight) => await document.fonts.load(`${weight} 16px "${name}"`),
 			),
 		);
@@ -218,14 +276,41 @@ export const loadGoogleFont = async (family: string): Promise<void> => {
 	}
 };
 
-/** Load the small subset used to preview family names in the picker. */
+/**
+ * The families of a catalog that match what was typed and the chosen
+ * category, in catalog order (most used first) and capped, because no one
+ * reads two thousand names at once.
+ */
+export const filterFonts = (
+	fonts: readonly GoogleFont[],
+	query: string,
+	category: FontCategory | 'all' = 'all',
+	limit = 60,
+): GoogleFont[] => {
+	const needle = query.trim().toLowerCase();
+
+	return fonts
+		.filter(
+			(font) =>
+				(category === 'all' || font.category === category) &&
+				(needle === '' || font.family.toLowerCase().includes(needle)),
+		)
+		.slice(0, limit);
+};
+
+/**
+ * Load the glyphs needed to show these family names in their own font. Only
+ * the names are fetched (`text=`), so a page of the picker costs a few KB.
+ */
 export const loadGoogleFontPreviews = async (
-	families: readonly string[] = GOOGLE_FONTS,
+	families: readonly string[],
 ): Promise<void> => {
 	if (families.length === 0) return;
+
+	const key = `previews:${families.join('|')}`;
 	await injectStylesheet(
-		googleFontHref(families, previewText(families)),
-		'previews',
+		googleFontHref(families, previewText(families), [400]),
+		key,
 	);
 };
 

@@ -48,6 +48,7 @@ The app includes **Beedly**, an in-app AI assistant, and a local **MCP server** 
 - `docs/plugin_system.md`: functional documentation for the plugin system
 - `src-electron/`: main process/preload for the Vite-based Electron variant, including `beedly/` (API keys, provider requests) and `mcp/` (MCP server and stdio bridge)
 - `scripts/install-electron.cjs`: postinstall that downloads the Electron binary (Yarn 4 skips dependency install scripts)
+- `scripts/update-google-fonts.mjs`: regenerates `src/lib/fonts/google-fonts.ts` from the public Google Fonts catalog (no key). Run it to refresh the families the text block offers
 - `electron/`: additional/legacy Electron implementation based on Capacitor; do not assume both runtime paths are equally active without checking
 
 ## App Flow
