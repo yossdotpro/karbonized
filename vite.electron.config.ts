@@ -1,8 +1,19 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import electron from 'vite-plugin-electron';
 import path from "path"
 import tailwindcss from '@tailwindcss/vite';
+
+// vite-plugin-electron defaults to `formats: ['es']` (package.json is
+// "type": "module") and Vite concatenates arrays when merging configs, so
+// `formats: ['cjs']` becomes ['es', 'cjs']. Both builds would then be written
+// to the same `.cjs` file at once and corrupt it.
+const cjsOnly = (): Plugin => ({
+	name: 'karbonized:cjs-only',
+	config(config) {
+		if (config.build?.lib) config.build.lib.formats = ['cjs'];
+	},
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -25,6 +36,7 @@ export default defineConfig({
 					args.reload();
 				},
 				vite: {
+					plugins: [cjsOnly()],
 					build: {
 						outDir: 'dist-electron',
 						lib: {
@@ -40,6 +52,7 @@ export default defineConfig({
 				entry: 'src-electron/mcp/stdio-proxy.ts',
 				onstart() {},
 				vite: {
+					plugins: [cjsOnly()],
 					build: {
 						outDir: 'dist-electron',
 						lib: {
