@@ -43,6 +43,7 @@ import {
 	Heart,
 	ImageDown,
 	Info,
+	Package,
 	PackagePlus,
 	Plus,
 	Save,
@@ -57,6 +58,8 @@ import {
 	useCommands,
 } from '@/lib/commands/registry';
 import { shortcutLabel } from '@/lib/commands/shortcuts';
+import { useKComponentStore } from '@/stores/kcomponent-store';
+import { useAddKComponentToCanvas } from '@/hooks/useAddKComponentToCanvas';
 import TabBar from './TabBar';
 import { BeedlyMenu } from '../Beedly/BeedlyMenu';
 import { Button } from '@/components/ui/button';
@@ -98,6 +101,16 @@ export const MenuBar: React.FC = () => {
 	const [showChangelog, setShowChangelog] = useState(false);
 	const [showDonations, setShowDonations] = useState(false);
 	const [showImportComponents, setShowImportComponents] = useState(false);
+
+	/* KComponent Store */
+	/* The library dialog itself lives in the editor's left panel. */
+	const setShowComponentLibrary = useKComponentStore(
+		(state) => state.setGalleryOpen,
+	);
+	const importedCount = useKComponentStore(
+		(state) => state.importedComponents.length,
+	);
+	const addKComponentToCanvas = useAddKComponentToCanvas();
 
 	/* App Store */
 	const ControlProperties = useControlsStore(
@@ -372,6 +385,15 @@ export const MenuBar: React.FC = () => {
 			run: () => setShowImportComponents(true),
 		},
 		{
+			id: 'file.component-library',
+			title: 'Open component library…',
+			group: 'File',
+			icon: Package,
+			keywords: ['kcomponent', 'components', 'gallery', 'library'],
+			when: () => isEditor,
+			run: () => setShowComponentLibrary(true),
+		},
+		{
 			id: 'workspace.clean',
 			title: 'Clear workspace',
 			group: 'Workspaces',
@@ -570,6 +592,17 @@ export const MenuBar: React.FC = () => {
 							>
 								Import Components
 							</MenubarItem>
+							<MenubarItem
+								disabled={!isEditor || importedCount === 0}
+								onClick={() => {
+									if (isEditor) setShowComponentLibrary(true);
+								}}
+							>
+								Component Library
+								{importedCount > 0 && (
+									<MenubarShortcut>{importedCount}</MenubarShortcut>
+								)}
+							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
 
@@ -735,7 +768,13 @@ export const MenuBar: React.FC = () => {
 					<ImportComponentsDialog
 						open={showImportComponents}
 						onOpenChange={setShowImportComponents}
-						onAddToCanvas={() => {}}
+						onAddToCanvas={
+							isEditor
+								? (component) => {
+										addKComponentToCanvas(component);
+									}
+								: undefined
+						}
 					/>
 				</Suspense>
 			)}

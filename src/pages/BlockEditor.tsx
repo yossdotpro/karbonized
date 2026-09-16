@@ -65,7 +65,7 @@ import {
 	EDITOR_THEME_LIGHT,
 	registerEditorThemes,
 } from '@/lib/theme/editor-theme';
-import { stringifyKComponent } from '@/utils/kcomponentParser';
+import { downloadKComponent } from '@/utils/kcomponentFile';
 import { useHTMLBlockBindings } from '@/hooks/useHTMLBlockBindings';
 import {
 	HTMLBlockActionsControls,
@@ -592,9 +592,9 @@ const BlockEditor: React.FC = () => {
 				: (blockId ?? 'custom-block')
 		).trim();
 
-		const yamlContent = stringifyKComponent({
+		downloadKComponent({
 			manifest: {
-				name: componentName,
+				name: componentName || 'Custom block',
 				description: `Exported from block ${blockId ?? 'editor'} in Karbonized`,
 				version: '1.0.0',
 				category: 'HTML Blocks',
@@ -604,23 +604,6 @@ const BlockEditor: React.FC = () => {
 			css: editorState.cssContent,
 			js: editorState.jsContent,
 		});
-
-		const filename = componentName
-			.toLowerCase()
-			.replace(/[^a-z0-9]+/g, '-')
-			.replace(/^-|-$/g, '');
-
-		const blob = new Blob([yamlContent], {
-			type: 'text/yaml;charset=utf-8',
-		});
-		const url = window.URL.createObjectURL(blob);
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = `${filename || 'custom-block'}.kcomponent`;
-		document.body.appendChild(link);
-		link.click();
-		link.remove();
-		window.URL.revokeObjectURL(url);
 	};
 
 	const executeCustomAction = (action: CustomAction) => {

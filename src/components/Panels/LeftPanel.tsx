@@ -35,7 +35,8 @@ import { isElectron } from '../../utils/isElectron';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { Separator } from '../ui/separator';
 import { ComponentsGalleryDialog } from '../Modals/ComponentsGalleryDialog';
-import { KComponent } from '../../models/KComponent';
+import { useKComponentStore } from '../../stores/kcomponent-store';
+import { useAddKComponentToCanvas } from '@/hooks/useAddKComponentToCanvas';
 import { useCommands } from '@/lib/commands/registry';
 import { BLOCK_DROP_TYPE, INSERTABLE_BLOCKS } from '@/lib/blocks/registry';
 import { addBlock } from '@/lib/editor/actions';
@@ -54,8 +55,13 @@ export const LeftPanel: React.FC = () => {
 	const startDrawing = useUIStore((state) => state.startDrawing);
 	const drawShape = useUIStore((state) => state.drawShape);
 
-	/* Component Gallery Dialog State */
-	const [showComponentsDialog, setShowComponentsDialog] = useState(false);
+	/* The library dialog lives in the store so the menu bar can open it too. */
+	const showComponentsDialog = useKComponentStore(
+		(state) => state.isGalleryOpen,
+	);
+	const setShowComponentsDialog = useKComponentStore(
+		(state) => state.setGalleryOpen,
+	);
 
 	/* Component State */
 	const isHorizontal = useScreenDirection();
@@ -67,24 +73,7 @@ export const LeftPanel: React.FC = () => {
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	/** Put an imported component on the canvas as an HTML block. */
-	const handleAddKComponentToCanvas = (component: KComponent) => {
-		try {
-			addBlock({
-				type: 'html',
-				name: component.manifest.name,
-				properties: {
-					html: component.html,
-					css: component.css,
-					js: component.js,
-				},
-			});
-		} catch (error) {
-			toast.error(
-				error instanceof Error ? error.message : 'The component was not added',
-			);
-		}
-	};
+	const handleAddKComponentToCanvas = useAddKComponentToCanvas();
 
 	const tools = useMemo(() => {
 		/* Picking the active tool again goes back to Select, so every tool can
@@ -192,7 +181,13 @@ export const LeftPanel: React.FC = () => {
 				isActive: false,
 			},
 		];
-	}, [activeTool, setActiveTool, startDrawing, drawShape]);
+	}, [
+		activeTool,
+		setActiveTool,
+		startDrawing,
+		drawShape,
+		setShowComponentsDialog,
+	]);
 
 	// Calculate visible tools based on screen height
 	useEffect(() => {
