@@ -22,11 +22,13 @@ import {
 	Plus,
 	Puzzle,
 	Search,
+	Sparkles,
 	Star,
 	Trash2,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { downloadKComponent } from '@/utils/kcomponentFile';
+import { STARTER_PACK_SIZE, loadStarterPack } from '@/utils/starterPack';
 import { cn } from '@/components/lib/utils';
 import { Tooltip } from '../CustomControls/Tooltip';
 
@@ -59,6 +61,7 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 	const [filter, setFilter] = useState<string>('');
 	const [sort, setSort] = useState<SortMode>('recent');
 	const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+	const [isLoadingPack, setIsLoadingPack] = useState(false);
 
 	const importedComponents = useKComponentStore(
 		(state) => state.importedComponents,
@@ -67,6 +70,9 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 		(state) => state.removeImportedComponent,
 	);
 	const toggleFavorite = useKComponentStore((state) => state.toggleFavorite);
+	const importComponents = useKComponentStore(
+		(state) => state.importComponents,
+	);
 
 	const categories = useMemo(
 		() =>
@@ -109,6 +115,15 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 			);
 		});
 	}, [importedComponents, searchQuery, filter, sort]);
+
+	const handleLoadStarterPack = async () => {
+		setIsLoadingPack(true);
+		try {
+			importComponents(await loadStarterPack(), { replace: true });
+		} finally {
+			setIsLoadingPack(false);
+		}
+	};
 
 	const handleDelete = (id: string) => {
 		if (pendingDelete !== id) {
@@ -200,6 +215,20 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 								? 'Try a different name, tag or category.'
 								: 'Import .kcomponent files from File → Import components.'}
 						</p>
+						{!importedComponents.length && (
+							<Button
+								size='sm'
+								variant='outline'
+								className='mt-3'
+								disabled={isLoadingPack}
+								onClick={handleLoadStarterPack}
+							>
+								<Sparkles className='size-3.5' />
+								{isLoadingPack
+									? 'Loading…'
+									: `Load starter pack (${STARTER_PACK_SIZE})`}
+							</Button>
+						)}
 					</div>
 				) : (
 					<ul className='grid grid-cols-1 gap-2 p-3 sm:grid-cols-2'>

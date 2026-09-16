@@ -1,0 +1,139 @@
+manifest:
+  name: "Quote Card"
+  author: "Karbonized"
+  description: "A pull quote with an initials avatar, name and handle. Built for testimonials and social posts."
+  version: "1.0.0"
+  category: "Social"
+  width: 540
+  height: 260
+  tags:
+    - "quote"
+    - "testimonial"
+    - "social"
+    - "starter"
+
+html: |
+  <div class="card">
+    <span class="mark">”</span>
+    <p class="quote">The best editor is the one that gets out of your way. Karbonized turns a rough screenshot into something worth shipping in about a minute.</p>
+    <div class="author">
+      <span class="avatar">AM</span>
+      <span class="who">
+        <span class="name">Ana Morales</span>
+        <span class="handle">@anamorales</span>
+      </span>
+    </div>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #ffffff;
+    /* @type:color */
+    --border: #e6e8ee;
+    /* @type:color */
+    --text: #11131a;
+    /* @type:color */
+    --muted: #6b7280;
+    /* @type:color */
+    --accent: #2a78d6;
+    /* @type:number min:14 max:32 step:1 unit:px */
+    --quote-size: 20px;
+    /* @type:number min:0 max:40 step:1 unit:px */
+    --radius: 18px;
+    /* @type:number min:16 max:48 step:1 unit:px */
+    --padding: 30px;
+    /* @type:shadow */
+    --shadow: #1113201f 0px 16px 40px 0px;
+  }
+
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: var(--padding);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    font-family: 'Geist Variable', 'Noto Sans Variable', system-ui, sans-serif;
+  }
+
+  .mark {
+    position: absolute;
+    top: 6px;
+    right: 24px;
+    color: var(--accent);
+    font-size: 96px;
+    line-height: 1;
+    opacity: 0.16;
+  }
+
+  .quote {
+    margin: 0;
+    font-size: var(--quote-size);
+    font-weight: 500;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+  }
+
+  .author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+    padding-top: 22px;
+  }
+
+  .avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .who {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.35;
+  }
+
+  .name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .handle {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+js: |
+  // @var quote:string = "The best editor is the one that gets out of your way. Karbonized turns a rough screenshot into something worth shipping in about a minute."
+  // @var name:string = "Ana Morales"
+  // @var handle:string = "@anamorales"
+
+  const setText = (selector, text) => {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = text;
+  };
+
+  const initials = (value) =>
+    value
+      .split(/\s+/)
+      .slice(0, 2)
+      .map((part) => part.charAt(0).toUpperCase())
+      .join('');
+
+  setText('.quote', quote);
+  setText('.name', name);
+  setText('.handle', handle);
+  setText('.avatar', initials(name));

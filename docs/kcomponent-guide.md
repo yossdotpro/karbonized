@@ -4,6 +4,18 @@
 
 This guide explains how to import custom `.kcomponent` files into Karbonized and how to create your own components.
 
+## The Starter Pack
+
+Karbonized ships with eight worked examples. Open the component library with an
+empty library and click **Load starter pack**, or import any single file from
+`src/assets/kcomponents/`.
+
+They are the reference implementations of this format: between them they cover
+every binding the properties panel can generate (colors, numbers with units,
+shadows, `@var` strings and numbers, and `@action` buttons), and every one is
+written to look finished with scripts disabled. `src/assets/kcomponents/README.md`
+lists the house rules they follow — worth reading before authoring your own.
+
 ## Importing Components
 
 ### Method 1: Using the Menu Bar
