@@ -42,10 +42,20 @@ import { boxFromDrag, isDrawn, toCanvasPoint } from '@/lib/canvas/drawing';
 import {
 	type StrokePoint,
 	outlinePath,
+	parsePoints,
 	serializePoints,
 	smoothPath,
 	strokeFromPoints,
 } from '@/lib/canvas/stroke';
+import {
+	type NodeFrame,
+	canvasToNode,
+	insertNode,
+	moveNode,
+	nodeAt,
+	nodeToCanvas,
+	removeNode,
+} from '@/lib/canvas/nodes';
 import { toast } from 'sonner';
 import type { TextSizing } from '@/lib/blocks/catalog';
 import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
@@ -109,11 +119,15 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 	// Panning and drawing hide the handles; cropping and warping replace what
 	// a drag does.
 	const editing =
-		activeTool !== 'pan' && activeTool !== 'draw' && activeTool !== 'brush';
+		activeTool !== 'pan' &&
+		activeTool !== 'draw' &&
+		activeTool !== 'brush' &&
+		activeTool !== 'nodes';
 	const crop = activeTool === 'crop';
 	const warp = activeTool === 'warp';
 	const draw = activeTool === 'draw';
 	const brush = activeTool === 'brush';
+	const editingNodes = activeTool === 'nodes';
 	const lockAspect = useUIStore((state) => state.lockAspect);
 	const snapping = useViewStore((state) => state.snapping);
 	const isExporting = useUIStore((state) => state.isExporting);
@@ -762,6 +776,155 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		}
 	};
 
+	/* Editing the nodes of a stroke: the points of the selected block are
+	   shown on the canvas and can be dragged, added and taken out. */
+	const strokeBlock =
+		editingNodes && currentControl?.type === 'drawing'
+			? currentControl
+			: undefined;
+
+	const nodeFrame: NodeFrame | undefined = useMemo(() => {
+		if (!strokeBlock) return undefined;
+
+		const position = readProperty(`${strokeBlock.id}-pos`).value as
+			{ x: number; y: number } | undefined;
+		const size = readProperty(`${strokeBlock.id}-control_size`).value as
+			{ w: number; h: number } | undefined;
+		const viewWidth = Number(
+			readProperty(`${strokeBlock.id}-viewWidth`).value ?? size?.w ?? 100,
+		);
+		const viewHeight = Number(
+			readProperty(`${strokeBlock.id}-viewHeight`).value ?? size?.h ?? 100,
+		);
+
+		return {
+			x: position?.x ?? 0,
+			y: position?.y ?? 0,
+			width: size?.w ?? viewWidth,
+			height: size?.h ?? viewHeight,
+			viewWidth,
+			viewHeight,
+		};
+		// The stored values are read again whenever the block changes.
+	}, [strokeBlock, controlProperties]);
+
+	/** The points as they are stored right now, for the handlers. */
+	const readStrokePoints = (): StrokePoint[] =>
+		strokeBlock
+			? parsePoints(readProperty(`${strokeBlock.id}-points`).value)
+			: [];
+
+	/* The handles are drawn from the stored points, which change on every
+	   move: reading them again is what keeps the handles under the pointer. */
+	const strokePoints = useMemo(
+		() => readStrokePoints(),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[strokeBlock, controlProperties],
+	);
+
+	/** The node being dragged and the stroke as it was when the drag started. */
+	const nodeDrag = useRef<{
+		index: number;
+		points: StrokePoint[];
+		path: string;
+	} | null>(null);
+
+	/** Write the points and the path of the stroke without recording a step. */
+	const applyStrokePoints = (points: StrokePoint[]) => {
+		if (!strokeBlock) return;
+
+		const controls = useControlsStore.getState();
+		controls.addControlProperty(
+			{ id: `${strokeBlock.id}-points`, value: serializePoints(points) },
+			currentWorkspaceID,
+		);
+		controls.addControlProperty(
+			{ id: `${strokeBlock.id}-path`, value: smoothPath(points) },
+			currentWorkspaceID,
+		);
+	};
+
+	/** Record what a node edit changed as one undoable step. */
+	const commitStrokePoints = (
+		points: StrokePoint[],
+		previous: {
+			points: StrokePoint[];
+			path: string;
+		},
+	) => {
+		if (!strokeBlock) return;
+
+		const path = smoothPath(points);
+		if (path === previous.path) return;
+
+		commitBatch([
+			{
+				id: `${strokeBlock.id}-points`,
+				previous: serializePoints(previous.points),
+				next: serializePoints(points),
+			},
+			{ id: `${strokeBlock.id}-path`, previous: previous.path, next: path },
+		]);
+	};
+
+	const onNodePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+		const rect = canvasRect();
+		if (!rect || !nodeFrame || !strokeBlock || event.button !== 0) return;
+
+		const point = toCanvasPoint(event, rect, canvasSize);
+		const points = readStrokePoints();
+		const index = nodeAt(points, point, nodeFrame, 12);
+		const previous = {
+			points,
+			path: String(readProperty(`${strokeBlock.id}-path`).value ?? ''),
+		};
+
+		// Alt takes a node out; clicking beside the stroke adds one.
+		if (index >= 0 && event.altKey) {
+			const next = removeNode(points, index);
+			applyStrokePoints(next);
+			commitStrokePoints(next, previous);
+			return;
+		}
+
+		try {
+			event.currentTarget.setPointerCapture(event.pointerId);
+		} catch {
+			/* dragging still works without capture */
+		}
+
+		if (index >= 0) {
+			nodeDrag.current = { index, ...previous };
+			return;
+		}
+
+		const added = insertNode(points, canvasToNode(point, nodeFrame));
+		nodeDrag.current = { index: added.index, ...previous };
+		applyStrokePoints(added.points);
+	};
+
+	const onNodePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+		const drag = nodeDrag.current;
+		const rect = canvasRect();
+		if (!drag || !rect || !nodeFrame) return;
+
+		const node = canvasToNode(
+			toCanvasPoint(event, rect, canvasSize),
+			nodeFrame,
+		);
+		applyStrokePoints(moveNode(readStrokePoints(), drag.index, node));
+	};
+
+	const onNodePointerUp = () => {
+		const drag = nodeDrag.current;
+		nodeDrag.current = null;
+		if (!drag) return;
+
+		// Read the points again: a click that adds a node and lets go never
+		// re-rendered, so what this closure captured is one step behind.
+		commitStrokePoints(readStrokePoints(), drag);
+	};
+
 	return (
 		<div ref={reference} id='workspace'>
 			<div
@@ -829,6 +992,30 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 								))}
 						</div>
 					))}
+
+					{/* Nodes: the points of the selected stroke, to drag and edit */}
+					{editingNodes && nodeFrame && !isExporting && (
+						<div
+							className='absolute inset-0 z-50 cursor-crosshair'
+							onPointerDown={onNodePointerDown}
+							onPointerMove={onNodePointerMove}
+							onPointerUp={onNodePointerUp}
+							onPointerCancel={() => {
+								nodeDrag.current = null;
+							}}
+						>
+							{strokePoints.map((node, index) => {
+								const canvas = nodeToCanvas(node, nodeFrame);
+								return (
+									<div
+										key={`${index}-${canvas.x}-${canvas.y}`}
+										className='pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border border-blue-500 bg-background'
+										style={{ left: canvas.x, top: canvas.y }}
+									></div>
+								);
+							})}
+						</div>
+					)}
 
 					{/* Brush: the layer that follows the stroke, above the blocks */}
 					{brush && !isExporting && (

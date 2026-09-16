@@ -7,7 +7,8 @@ import type { WorkspaceMode, SelectedTab } from '../types';
  * the canvas and the shortcuts all read this instead of keeping their own
  * flags in step.
  */
-export type EditorTool = 'select' | 'pan' | 'crop' | 'warp' | 'draw' | 'brush';
+export type EditorTool =
+	'select' | 'pan' | 'crop' | 'warp' | 'draw' | 'brush' | 'nodes';
 
 interface UIState {
 	activeTool: EditorTool;

@@ -12,6 +12,7 @@ import { useWorkspaceStore, useControlsStore, useUIStore } from '../stores';
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
 import { ShapeBar } from '@/components/Panels/ShapeBar';
+import { BrushBar } from '@/components/Panels/BrushBar';
 import { isEditableTarget } from '@/lib/commands/shortcuts';
 import { redo, undo } from '@/lib/editor/history';
 import { useBeedlyUI } from '@/lib/beedly/ui-store';
@@ -389,11 +390,22 @@ export const Editor: React.FC = () => {
 			>
 				{/* Content */}
 				<div className='relative flex flex-auto flex-col overflow-hidden md:flex-row'>
-					{/* Which shape the draw tool puts on the canvas */}
-					{activeTool === 'draw' && (
+					{/* Settings of the tool that draws on the canvas */}
+					{(activeTool === 'draw' ||
+						activeTool === 'brush' ||
+						activeTool === 'nodes') && (
 						<div className='pointer-events-none absolute flex h-full w-full'>
 							<div className='pointer-events-auto flex h-full w-full'>
-								<ShapeBar></ShapeBar>
+								{activeTool === 'draw' ? (
+									<ShapeBar></ShapeBar>
+								) : activeTool === 'brush' ? (
+									<BrushBar></BrushBar>
+								) : (
+									<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex flex-row items-center gap-2 rounded-[10px] border border-border bg-popover px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg shadow-black/20'>
+										Pick a stroke, then drag a node to move it · click the
+										stroke to add one · Alt+click to take one out
+									</div>
+								)}
 							</div>
 						</div>
 					)}
@@ -444,7 +456,8 @@ export const Editor: React.FC = () => {
 						{!drag &&
 							!crop &&
 							activeTool !== 'draw' &&
-							activeTool !== 'brush' && (
+							activeTool !== 'brush' &&
+							activeTool !== 'nodes' && (
 								<Selecto
 									ref={selectoRef}
 									dragContainer='.viewer'

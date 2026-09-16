@@ -21,6 +21,7 @@ import {
 	Package,
 	PenTool,
 	Puzzle,
+	Spline,
 	Square,
 	Sun,
 } from 'lucide-react';
@@ -40,7 +41,7 @@ import { addBlock } from '@/lib/editor/actions';
 import { toast } from 'sonner';
 
 /** Tools come first in the bar, then the blocks that can be inserted. */
-const TOOL_COUNT = 5;
+const TOOL_COUNT = 6;
 
 export const LeftPanel: React.FC = () => {
 	/* App Store */
@@ -131,6 +132,14 @@ export const LeftPanel: React.FC = () => {
 				shortcut: 'B',
 				action: pickTool('brush'),
 				isActive: activeTool === 'brush',
+			},
+			{
+				id: 'nodes',
+				icon: Spline,
+				label: 'Edit nodes',
+				shortcut: 'A',
+				action: pickTool('nodes'),
+				isActive: activeTool === 'nodes',
 			},
 			/* Every block type comes from the registry, so a new block only
 			   has to be added there */
