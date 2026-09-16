@@ -39,6 +39,8 @@ The app includes **Beedly**, an in-app AI assistant, and a local **MCP server** 
 - `src/lib/blocks/registry.tsx`: which block types exist in the editor (label, icon, component). The toolbar, the canvas and the hierarchy icons read it
 - `src/lib/blocks/catalog.ts`: what each block type stores: properties, defaults and size limits
 - `src/lib/canvas/placement.ts`: where a new block lands (the middle of the visible canvas, stepping aside from the blocks already there)
+- `src/lib/canvas/drawing.ts`, `stroke.ts`, `nodes.ts`, `rulers.ts`: the geometry behind the tools that draw — the box of a drag, the curve and the variable width of a brush stroke, the points of a stroke, and the ticks of a ruler. All pure and covered by tests
+- `src/stores/ui-store.ts`: `activeTool` says what a drag on the canvas does (`select`, `pan`, `crop`, `warp`, `draw`, `brush`, `nodes`, `eraser`) and holds the settings of the brush. `src/components/Workspace.tsx` renders one layer per tool over the canvas
 - `src/lib/beedly/`: Beedly assistant (tools, provider adapters, agent loop, settings, conversations) and the renderer side of the MCP server
 - `src/components/Beedly/`: Beedly panel, settings dialog and MCP settings
 - `src/utils/`: exporting, platform utilities, helper lists, and static data

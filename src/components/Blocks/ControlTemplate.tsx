@@ -21,6 +21,10 @@ import {
 import { isWarped, parseRotation, withRotation } from '@/lib/editor/actions';
 import { ControlContextMenu } from './ControlContextMenu';
 import { ControlMenu } from './ControlMenu';
+import {
+	ControlMenuContext,
+	type ControlMenuValue,
+} from './ControlMenuContext';
 
 interface ControlProps {
 	id: string;
@@ -394,6 +398,74 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		],
 	);
 
+	/* Everything the panel of the block reads and writes. */
+	const menuValue: ControlMenuValue = {
+		id,
+		controlID,
+		shadowEditable,
+		maskEditable,
+		borderEditable,
+		Masks,
+		controlPos,
+		controlSize,
+		onSizeInput,
+		rotation: parseRotation(transform),
+		warped: isWarped(transform),
+		onRotate: rotateTo,
+		pastHistory,
+		setPastHistory,
+		setFutureHistory,
+		setControlState,
+		setControlPos,
+		setControlSize,
+		setID,
+		onDeleteControl: () => {
+			deleteControl(id, currentWorkspace);
+		},
+		flipX,
+		setFlipX,
+		flipY,
+		setFlipY,
+		zIndex,
+		setzIndex,
+		rotateX,
+		setRotateX,
+		rotateY,
+		setRotateY,
+		shadowX,
+		setShadowX,
+		shadowY,
+		setShadowY,
+		shadowBlur,
+		setShadowBlur,
+		shadowColor,
+		setShadowColor,
+		borderRadius,
+		setBorderRadius,
+		mask,
+		setMask,
+		maskRepeat,
+		setMaskRepeat,
+		blur,
+		setBlur,
+		brightness,
+		setBrightness,
+		contrast,
+		setContrast,
+		grayscale,
+		setGrayscale,
+		huerotate,
+		setHueRotate,
+		invert,
+		setInvert,
+		saturate,
+		setSaturate,
+		opacity,
+		setOpacity,
+		sepia,
+		setSepia,
+	};
+
 	return (
 		<>
 			<AnimatePresence>
@@ -515,76 +587,10 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 					</ControlContextMenu>
 				)}
 
-				{/* Menu */}
-				<ControlMenu
-					id={id}
-					controlID={controlID}
-					menu={menu}
-					shadowEditable={shadowEditable}
-					maskEditable={maskEditable}
-					borderEditable={borderEditable}
-					Masks={Masks}
-					controlPos={controlPos}
-					controlSize={controlSize}
-					onSizeInput={onSizeInput}
-					rotation={parseRotation(transform)}
-					warped={isWarped(transform)}
-					onRotate={rotateTo}
-					pastHistory={pastHistory}
-					setPastHistory={setPastHistory}
-					setFutureHistory={setFutureHistory}
-					setControlState={setControlState}
-					setControlPos={setControlPos}
-					setControlSize={setControlSize}
-					currentWorkspace={currentWorkspace}
-					setWorkspaceControls={() => {}}
-					setID={setID}
-					onDeleteControl={() => {
-						deleteControl(id, currentWorkspace);
-					}}
-					flipX={flipX}
-					setFlipX={setFlipX}
-					flipY={flipY}
-					setFlipY={setFlipY}
-					zIndex={zIndex}
-					setzIndex={setzIndex}
-					rotateX={rotateX}
-					setRotateX={setRotateX}
-					rotateY={rotateY}
-					setRotateY={setRotateY}
-					shadowX={shadowX}
-					setShadowX={setShadowX}
-					shadowY={shadowY}
-					setShadowY={setShadowY}
-					shadowBlur={shadowBlur}
-					setShadowBlur={setShadowBlur}
-					shadowColor={shadowColor}
-					setShadowColor={setShadowColor}
-					borderRadius={borderRadius}
-					setBorderRadius={setBorderRadius}
-					mask={mask}
-					setMask={setMask}
-					maskRepeat={maskRepeat}
-					setMaskRepeat={setMaskRepeat}
-					blur={blur}
-					setBlur={setBlur}
-					brightness={brightness}
-					setBrightness={setBrightness}
-					contrast={contrast}
-					setContrast={setContrast}
-					grayscale={grayscale}
-					setGrayscale={setGrayscale}
-					huerotate={huerotate}
-					setHueRotate={setHueRotate}
-					invert={invert}
-					setInvert={setInvert}
-					saturate={saturate}
-					setSaturate={setSaturate}
-					opacity={opacity}
-					setOpacity={setOpacity}
-					sepia={sepia}
-					setSepia={setSepia}
-				/>
+				{/* The panel of the block: what it shows travels in a context */}
+				<ControlMenuContext.Provider value={menuValue}>
+					<ControlMenu menu={menu}></ControlMenu>
+				</ControlMenuContext.Provider>
 			</AnimatePresence>
 		</>
 	);

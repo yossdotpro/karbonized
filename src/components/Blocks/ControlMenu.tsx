@@ -22,151 +22,79 @@ import {
 import { motion } from 'framer-motion';
 import { Portal } from 'react-portal';
 import { Checkbox } from '../ui/checkbox';
+import { useControlMenu } from './ControlMenuContext';
 
 interface ControlMenuProps {
-	id: string;
-	controlID: string;
+	/** The section the block adds to the panel, under the common ones. */
 	menu?: ReactNode;
-	shadowEditable: boolean;
-	maskEditable: boolean;
-	borderEditable: boolean;
-	Masks: string[];
-	controlPos?: { x: number; y: number };
-	controlSize?: { w: number; h: number };
-	/** The width or height was typed in the position panel. */
-	onSizeInput?: (axis: 'w' | 'h') => void;
-	/** In-plane rotation of the block, in degrees. */
-	rotation: number;
-	/** The block was warped, so its rotation lives inside a matrix. */
-	warped: boolean;
-	/** Turn the block to `degrees`, replacing any warp. */
-	onRotate?: (degrees: number) => void;
-	pastHistory: any[];
-	setPastHistory: (value: any[]) => void;
-	setFutureHistory: (value: any[]) => void;
-	setControlState: (value: any) => void;
-	setControlPos: (value: any) => void;
-	setControlSize: (value: any) => void;
-	currentWorkspace: any;
-	setWorkspaceControls: (value: any) => void;
-	setID: (value: string) => void;
-	onDeleteControl: () => void;
-	// Position state
-	flipX: boolean;
-	setFlipX: (value: boolean) => void;
-	flipY: boolean;
-	setFlipY: (value: boolean) => void;
-	zIndex: string;
-	setzIndex: (value: string) => void;
-	rotateX: number;
-	setRotateX: (value: number) => void;
-	rotateY: number;
-	setRotateY: (value: number) => void;
-	// Shadow state
-	shadowX: number;
-	setShadowX: (value: number) => void;
-	shadowY: number;
-	setShadowY: (value: number) => void;
-	shadowBlur: number;
-	setShadowBlur: (value: number) => void;
-	shadowColor: string;
-	setShadowColor: (value: string) => void;
-	// Border state
-	borderRadius: number;
-	setBorderRadius: (value: number) => void;
-	// Mask state
-	mask: string;
-	setMask: (value: string) => void;
-	maskRepeat: boolean;
-	setMaskRepeat: (value: boolean) => void;
-	// Filter state
-	blur: number;
-	setBlur: (value: number) => void;
-	brightness: number;
-	setBrightness: (value: number) => void;
-	contrast: number;
-	setContrast: (value: number) => void;
-	grayscale: number;
-	setGrayscale: (value: number) => void;
-	huerotate: number;
-	setHueRotate: (value: number) => void;
-	invert: number;
-	setInvert: (value: number) => void;
-	saturate: number;
-	setSaturate: (value: number) => void;
-	opacity: number;
-	setOpacity: (value: number) => void;
-	sepia: number;
-	setSepia: (value: number) => void;
 }
 
-export const ControlMenu: React.FC<ControlMenuProps> = ({
-	id,
-	controlID,
-	menu,
-	shadowEditable,
-	maskEditable,
-	borderEditable,
-	Masks,
-	controlPos,
-	controlSize,
-	onSizeInput,
-	rotation,
-	warped,
-	onRotate,
-	pastHistory,
-	setPastHistory,
-	setFutureHistory,
-	setControlState,
-	setControlPos,
-	setControlSize,
-	currentWorkspace,
-	setWorkspaceControls,
-	setID,
-	onDeleteControl,
-	flipX,
-	setFlipX,
-	flipY,
-	setFlipY,
-	zIndex,
-	setzIndex,
-	rotateX,
-	setRotateX,
-	rotateY,
-	setRotateY,
-	shadowX,
-	setShadowX,
-	shadowY,
-	setShadowY,
-	shadowBlur,
-	setShadowBlur,
-	shadowColor,
-	setShadowColor,
-	borderRadius,
-	setBorderRadius,
-	mask,
-	setMask,
-	maskRepeat,
-	setMaskRepeat,
-	blur,
-	setBlur,
-	brightness,
-	setBrightness,
-	contrast,
-	setContrast,
-	grayscale,
-	setGrayscale,
-	huerotate,
-	setHueRotate,
-	invert,
-	setInvert,
-	saturate,
-	setSaturate,
-	opacity,
-	setOpacity,
-	sepia,
-	setSepia,
-}) => {
+export const ControlMenu: React.FC<ControlMenuProps> = ({ menu }) => {
+	const {
+		id,
+		controlID,
+		shadowEditable,
+		maskEditable,
+		borderEditable,
+		Masks,
+		controlPos,
+		controlSize,
+		onSizeInput,
+		rotation,
+		warped,
+		onRotate,
+		pastHistory,
+		setPastHistory,
+		setFutureHistory,
+		setControlState,
+		setControlPos,
+		setControlSize,
+		setID,
+		onDeleteControl,
+		flipX,
+		setFlipX,
+		flipY,
+		setFlipY,
+		zIndex,
+		setzIndex,
+		rotateX,
+		setRotateX,
+		rotateY,
+		setRotateY,
+		shadowX,
+		setShadowX,
+		shadowY,
+		setShadowY,
+		shadowBlur,
+		setShadowBlur,
+		shadowColor,
+		setShadowColor,
+		borderRadius,
+		setBorderRadius,
+		mask,
+		setMask,
+		maskRepeat,
+		setMaskRepeat,
+		blur,
+		setBlur,
+		brightness,
+		setBrightness,
+		contrast,
+		setContrast,
+		grayscale,
+		setGrayscale,
+		huerotate,
+		setHueRotate,
+		invert,
+		setInvert,
+		saturate,
+		setSaturate,
+		opacity,
+		setOpacity,
+		sepia,
+		setSepia,
+	} = useControlMenu();
+
 	const menuNode = useElementById('menu');
 
 	if (controlID !== id || !menuNode) {
