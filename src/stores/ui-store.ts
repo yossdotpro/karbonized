@@ -7,12 +7,17 @@ import type { WorkspaceMode, SelectedTab } from '../types';
  * the canvas and the shortcuts all read this instead of keeping their own
  * flags in step.
  */
-export type EditorTool = 'select' | 'pan' | 'crop' | 'warp' | 'draw';
+export type EditorTool = 'select' | 'pan' | 'crop' | 'warp' | 'draw' | 'brush';
 
 interface UIState {
 	activeTool: EditorTool;
 	/** Shape the draw tool puts on the canvas. */
 	drawShape: ShapeKind;
+	/** Brush settings, kept between strokes. */
+	brushColor: string;
+	brushSize: number;
+	/** How far a point may stray before it is dropped, in canvas pixels. */
+	brushSmoothing: number;
 	/** The tool to go back to when a held key (Space) is released. */
 	previousTool: EditorTool | null;
 	isExporting: boolean;
@@ -27,6 +32,9 @@ interface UIActions {
 	setActiveTool: (tool: EditorTool) => void;
 	/** Draw `shape` on the canvas by dragging. */
 	startDrawing: (shape: ShapeKind) => void;
+	setBrushColor: (color: string) => void;
+	setBrushSize: (size: number) => void;
+	setBrushSmoothing: (smoothing: number) => void;
 	/** Switch to `tool` while a key is held, remembering the current one. */
 	holdTool: (tool: EditorTool) => void;
 	/** Go back to the tool that was active before `holdTool`. */
@@ -43,6 +51,9 @@ type UIStore = UIState & UIActions;
 export const useUIStore = create<UIStore>((set, get) => ({
 	activeTool: 'select',
 	drawShape: 'rectangle',
+	brushColor: '#f3f4f6',
+	brushSize: 6,
+	brushSmoothing: 1.2,
 	previousTool: null,
 	isExporting: false,
 	exportTransparent: false,
@@ -53,6 +64,9 @@ export const useUIStore = create<UIStore>((set, get) => ({
 	setActiveTool: (activeTool) => set({ activeTool, previousTool: null }),
 	startDrawing: (drawShape) =>
 		set({ activeTool: 'draw', drawShape, previousTool: null }),
+	setBrushColor: (brushColor) => set({ brushColor }),
+	setBrushSize: (brushSize) => set({ brushSize }),
+	setBrushSmoothing: (brushSmoothing) => set({ brushSmoothing }),
 	holdTool: (tool) => {
 		const { activeTool, previousTool } = get();
 		if (activeTool === tool) return;

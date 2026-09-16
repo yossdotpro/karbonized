@@ -17,6 +17,7 @@
 - **Fonts for text blocks**: pick any font installed on the machine or one of 65 Google Fonts, previewed in their own font in a searchable picker; Google families are fetched when needed and the exported image keeps them
 - **Typography controls** for text: alignment (left, center, right, justified), weight (300–800), line height and letter spacing
 - **Edit text on the canvas**: double click a text block to type in place; `Esc` (or clicking away) saves
+- **Vector brush** (`B`): draw freehand on the canvas and the stroke is kept as a curve, not as pixels. The points are smoothed and thinned into a bezier path, so it stays sharp at any size; the bar at the bottom sets width, smoothing and color, and each stroke becomes a block that can be moved, resized, rotated, recolored, closed and filled, and undone
 - **Shapes are drawn on the canvas**: pick the shape tool (`R`), choose a shape in the bar at the bottom and drag to draw it where and as big as you want; `Shift` keeps it square and `Alt` draws from the center. A click without dragging still drops one at its default size
 - **Shapes redrawn**: rectangle with adjustable corners, ellipse, triangle, polygon with 3–12 sides, star with 3–12 points and adjustable depth, heart, line and arrow. Every shape takes a fill, a stroke (width, color, solid, dashed or dotted) and is drawn at the block's real size, so corners and strokes keep their thickness. Shapes from older projects keep working
 - **Images frame their picture**: stretch, cover or fit, offset X and Y, zoom, corner radius, a URL field and "use original size"; an image file can be dropped on the block and an image in the clipboard pasted onto it
@@ -42,6 +43,7 @@
 
 - **Tweet block**: it depended on an external service to load tweets and is no longer available. Projects that used it open without it
 - **Badge block**: a text and an avatar in a pill, which a text block and an image cover. Projects that used it open without it
+- **Freehand drawing on a canvas layer**: it was never reachable, was not saved with the project and could not be undone. The vector brush replaces it
 
 ### 🐛 Fixes
 

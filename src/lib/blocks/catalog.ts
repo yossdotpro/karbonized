@@ -764,6 +764,72 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		],
 	},
 	{
+		type: 'drawing',
+		label: 'Drawing',
+		description:
+			'A freehand stroke kept as a vector path, drawn with the brush tool. `path` is SVG path data measured inside `viewWidth` × `viewHeight`.',
+		defaultSize: size(100, 100),
+		minSize: size(4, 4),
+		maxSize: size(8000, 8000),
+		properties: [
+			{
+				key: 'path',
+				kind: 'text',
+				default: '',
+				description: 'SVG path data of the stroke.',
+			},
+			{
+				key: 'viewWidth',
+				kind: 'number',
+				default: 100,
+				min: 1,
+				max: 8000,
+				description: 'Width of the box the path was drawn in.',
+			},
+			{
+				key: 'viewHeight',
+				kind: 'number',
+				default: 100,
+				min: 1,
+				max: 8000,
+				description: 'Height of the box the path was drawn in.',
+			},
+			{
+				key: 'strokeColor',
+				kind: 'color',
+				default: '#f3f4f6',
+				description: 'Stroke color.',
+			},
+			{
+				key: 'strokeWidth',
+				kind: 'number',
+				default: 6,
+				min: 1,
+				max: 80,
+				description: 'Stroke width in pixels.',
+			},
+			{
+				key: 'strokeStyle',
+				kind: 'enum',
+				default: 'solid',
+				options: ['solid', 'dashed', 'dotted'],
+				description: 'Stroke style.',
+			},
+			{
+				key: 'closed',
+				kind: 'boolean',
+				default: false,
+				description: 'Join the ends of the stroke and allow a fill.',
+			},
+			{
+				key: 'fillColor',
+				kind: 'color',
+				default: '#00000000',
+				description: 'Fill color when the stroke is closed.',
+			},
+		],
+	},
+	{
 		type: 'html',
 		label: 'HTML',
 		description:

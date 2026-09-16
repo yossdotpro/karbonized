@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
 	BoxSelect,
+	Brush,
 	ChevronLeft,
 	ChevronRight,
 	Crop,
@@ -37,6 +38,9 @@ import { useCommands } from '@/lib/commands/registry';
 import { INSERTABLE_BLOCKS } from '@/lib/blocks/registry';
 import { addBlock } from '@/lib/editor/actions';
 import { toast } from 'sonner';
+
+/** Tools come first in the bar, then the blocks that can be inserted. */
+const TOOL_COUNT = 5;
 
 export const LeftPanel: React.FC = () => {
 	/* App Store */
@@ -120,6 +124,14 @@ export const LeftPanel: React.FC = () => {
 				action: pickTool('warp'),
 				isActive: activeTool === 'warp',
 			},
+			{
+				id: 'brush',
+				icon: Brush,
+				label: 'Brush',
+				shortcut: 'B',
+				action: pickTool('brush'),
+				isActive: activeTool === 'brush',
+			},
 			/* Every block type comes from the registry, so a new block only
 			   has to be added there */
 			...INSERTABLE_BLOCKS.map((block) => ({
@@ -190,12 +202,12 @@ export const LeftPanel: React.FC = () => {
 		tools.map((tool, index) => ({
 			id: `tools.${tool.id}`,
 			title:
-				index < 4
+				index < TOOL_COUNT
 					? `${tool.label} tool`
 					: tool.id === 'components'
 						? 'Open component gallery'
 						: `Add ${tool.label.toLowerCase()}`,
-			group: index < 4 ? 'Tools' : 'Insert',
+			group: index < TOOL_COUNT ? 'Tools' : 'Insert',
 			icon: tool.icon,
 			shortcut: tool.shortcut,
 			keywords: ['insert', 'add', 'block', tool.id],
@@ -239,7 +251,7 @@ export const LeftPanel: React.FC = () => {
 								<tool.icon size={16} strokeWidth={1.75} />
 							</Button>
 						</Tooltip>
-						{index === 3 && (
+						{index === TOOL_COUNT - 1 && (
 							<Separator
 								orientation='horizontal'
 								className='my-1 h-px w-5 bg-border'

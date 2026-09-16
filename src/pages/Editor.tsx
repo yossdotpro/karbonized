@@ -8,12 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import React, { Suspense, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../AppContext';
-import {
-	useWorkspaceStore,
-	useControlsStore,
-	useUIStore,
-	useDrawingStore,
-} from '../stores';
+import { useWorkspaceStore, useControlsStore, useUIStore } from '../stores';
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
 import { ShapeBar } from '@/components/Panels/ShapeBar';
@@ -91,13 +86,7 @@ export const Editor: React.FC = () => {
 	const deleteControl = useControlsStore((state) => state.deleteControl);
 	const activeTool = useUIStore((state) => state.activeTool);
 	const drag = activeTool === 'pan';
-	const canDraw = useDrawingStore((state) => state.isDrawing);
-	const isErasing = useDrawingStore((state) => state.isErasing);
 	const crop = activeTool === 'crop';
-	const lineWidth = useDrawingStore((state) => state.lineWidth);
-	const strokeColor = useDrawingStore((state) => state.strokeColor);
-	const setStrokeColor = useDrawingStore((state) => state.setStrokeColor);
-	const setLineWidth = useDrawingStore((state) => state.setLineWidth);
 	const aspectRatio = useUIStore((state) => state.lockAspect);
 	const setAspectRatio = useUIStore((state) => state.setLockAspect);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
@@ -409,38 +398,6 @@ export const Editor: React.FC = () => {
 						</div>
 					)}
 
-					{/* Draw Bar */}
-					{(canDraw || isErasing) && (
-						<div className=' absolute flex h-full w-full'>
-							<div className='z-50 mb-12 ml-auto mr-4 mt-auto flex flex-row items-center gap-1 rounded-[10px] border border-border bg-popover px-2 py-1 shadow-lg shadow-black/20'>
-								{/* Stroke Range */}
-								<Brush
-									size={16}
-									className='mx-1 my-auto text-muted-foreground'
-								></Brush>
-								<Slider
-									className='my-auto flex flex-auto p-1'
-									min={0}
-									max={100}
-									step={1}
-									value={[lineWidth]}
-									onValueChange={(value) => {
-										setLineWidth(value[0]);
-									}}
-								/>
-
-								<ColorPicker
-									isGradientEnable={false}
-									color={strokeColor}
-									onColorChange={setStrokeColor}
-									showLabel={false}
-									placement='right-end'
-									label='Color'
-								></ColorPicker>
-							</div>
-						</div>
-					)}
-
 					{/* Workspace */}
 					<div
 						className={`canvas-grid flex flex-auto flex-col ${drag && 'cursor-move'}`}
@@ -487,8 +444,7 @@ export const Editor: React.FC = () => {
 						{!drag &&
 							!crop &&
 							activeTool !== 'draw' &&
-							!canDraw &&
-							!isErasing && (
+							activeTool !== 'brush' && (
 								<Selecto
 									ref={selectoRef}
 									dragContainer='.viewer'

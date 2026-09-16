@@ -35,11 +35,11 @@ import Moveable, {
 	type OnWarp,
 } from 'react-moveable';
 import WorkspaceTexture from './WorkspaceTexture';
-import { Canvas } from './Canvas';
 import { Wallpapers } from '../utils/wallpapers';
 import noiseTexture from '../assets/noisy.png';
 import { addBlock, readProperty } from '@/lib/editor/actions';
 import { boxFromDrag, isDrawn, toCanvasPoint } from '@/lib/canvas/drawing';
+import { smoothPath, strokeFromPoints } from '@/lib/canvas/stroke';
 import { toast } from 'sonner';
 import type { TextSizing } from '@/lib/blocks/catalog';
 import { isTextSizing, sizingAfterResize } from '@/lib/blocks/text-sizing';
@@ -95,13 +95,18 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 
 	const activeTool = useUIStore((state) => state.activeTool);
 	const drawShape = useUIStore((state) => state.drawShape);
+	const brushColor = useUIStore((state) => state.brushColor);
+	const brushSize = useUIStore((state) => state.brushSize);
+	const brushSmoothing = useUIStore((state) => state.brushSmoothing);
 	const setActiveTool = useUIStore((state) => state.setActiveTool);
 	// Panning and drawing hide the handles; cropping and warping replace what
 	// a drag does.
-	const editing = activeTool !== 'pan' && activeTool !== 'draw';
+	const editing =
+		activeTool !== 'pan' && activeTool !== 'draw' && activeTool !== 'brush';
 	const crop = activeTool === 'crop';
 	const warp = activeTool === 'warp';
 	const draw = activeTool === 'draw';
+	const brush = activeTool === 'brush';
 	const lockAspect = useUIStore((state) => state.lockAspect);
 	const snapping = useViewStore((state) => state.snapping);
 	const isExporting = useUIStore((state) => state.isExporting);
@@ -649,6 +654,80 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		setActiveTool('select');
 	};
 
+	/* Brush: the points the pointer goes through become a vector stroke when
+	   the drag ends. The live path is drawn from the same points. */
+	const brushPoints = useRef<DrawPoint[]>([]);
+	const [brushPath, setBrushPath] = useState('');
+
+	const onBrushStart = (event: React.PointerEvent<HTMLDivElement>) => {
+		const rect = canvasRect();
+		if (!rect || event.button !== 0) return;
+
+		try {
+			event.currentTarget.setPointerCapture(event.pointerId);
+		} catch {
+			/* the stroke still works without capture */
+		}
+		brushPoints.current = [toCanvasPoint(event, rect, canvasSize)];
+		setBrushPath(smoothPath(brushPoints.current));
+	};
+
+	const onBrushMove = (event: React.PointerEvent<HTMLDivElement>) => {
+		if (brushPoints.current.length === 0) return;
+
+		const rect = canvasRect();
+		if (!rect) return;
+
+		// Coalesced events keep the curve faithful on a fast stroke; not every
+		// pointer reports them, and then the event itself is the only point.
+		const coalesced =
+			typeof event.nativeEvent.getCoalescedEvents === 'function'
+				? event.nativeEvent.getCoalescedEvents()
+				: [];
+		const moves = coalesced.length > 0 ? coalesced : [event.nativeEvent];
+
+		moves.forEach((move) => {
+			brushPoints.current.push(toCanvasPoint(move, rect, canvasSize));
+		});
+		setBrushPath(smoothPath(brushPoints.current));
+	};
+
+	const onBrushEnd = () => {
+		const points = brushPoints.current;
+		brushPoints.current = [];
+		setBrushPath('');
+		if (points.length === 0) return;
+
+		const stroke = strokeFromPoints(points, {
+			smoothing: brushSmoothing,
+			padding: brushSize / 2 + 1,
+		});
+		if (!stroke) return;
+
+		try {
+			const block = addBlock({
+				type: 'drawing',
+				x: Math.round(stroke.box.x),
+				y: Math.round(stroke.box.y),
+				width: Math.max(4, Math.round(stroke.box.width)),
+				height: Math.max(4, Math.round(stroke.box.height)),
+				properties: {
+					path: stroke.path,
+					viewWidth: Math.max(4, Math.round(stroke.box.width)),
+					viewHeight: Math.max(4, Math.round(stroke.box.height)),
+					strokeColor: brushColor,
+					strokeWidth: brushSize,
+				},
+			});
+			// The brush stays armed, so several strokes can be drawn in a row.
+			useControlsStore.getState().setSelection([block.id]);
+		} catch (error) {
+			toast.error(
+				error instanceof Error ? error.message : 'The stroke was not drawn',
+			);
+		}
+	};
+
 	return (
 		<div ref={reference} id='workspace'>
 			<div
@@ -717,7 +796,32 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						</div>
 					))}
 
-					<Canvas></Canvas>
+					{/* Brush: the layer that follows the stroke, above the blocks */}
+					{brush && !isExporting && (
+						<div
+							className='absolute inset-0 z-50 cursor-crosshair'
+							onPointerDown={onBrushStart}
+							onPointerMove={onBrushMove}
+							onPointerUp={onBrushEnd}
+							onPointerCancel={() => {
+								brushPoints.current = [];
+								setBrushPath('');
+							}}
+						>
+							{brushPath !== '' && (
+								<svg className='pointer-events-none absolute inset-0 h-full w-full overflow-visible'>
+									<path
+										d={brushPath}
+										fill='none'
+										stroke={brushColor}
+										strokeWidth={brushSize}
+										strokeLinecap='round'
+										strokeLinejoin='round'
+									/>
+								</svg>
+							)}
+						</div>
+					)}
 
 					{/* Draw tool: the layer that follows the drag, above the blocks */}
 					{draw && !isExporting && (

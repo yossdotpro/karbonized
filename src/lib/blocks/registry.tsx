@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import {
 	AppWindow,
 	Boxes,
+	Brush,
 	Circle,
 	CodeSquare,
 	Folder,
@@ -59,6 +60,9 @@ const WindowBlock = React.lazy(
 const HTMLBlock = React.lazy(
 	async () => await import('@/components/Blocks/HTMLBlock'),
 );
+const DrawingBlock = React.lazy(
+	async () => await import('@/components/Blocks/DrawingBlock'),
+);
 
 export interface BlockDefinition {
 	type: string;
@@ -85,6 +89,14 @@ export const BLOCKS: readonly BlockDefinition[] = [
 	{ type: 'qr', label: 'QR Code', icon: QrCode, component: QrBlock },
 	{ type: 'window', label: 'Window', icon: AppWindow, component: WindowBlock },
 	{ type: 'html', label: 'HTML', icon: IconBrandHtml5, component: HTMLBlock },
+	{
+		// Strokes are made with the brush tool, not dropped from the toolbar.
+		type: 'drawing',
+		label: 'Drawing',
+		icon: Brush,
+		component: DrawingBlock,
+		insertable: false,
+	},
 	{
 		type: 'avatar',
 		label: 'Avatar',
