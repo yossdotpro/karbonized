@@ -81,9 +81,31 @@ Beedly and the MCP server share the same tools:
 | `align_blocks` / `distribute_blocks`   | Align or space blocks; one block aligns to the canvas                                                                                |
 | `reorder_block`                        | Bring to front, forward, backward, send to back                                                                                      |
 | `get_html_block` / `update_html_block` | Read or replace the HTML, CSS and JavaScript of an HTML block                                                                        |
+| `list_components`                      | The component library: imported `.kcomponent` files and the starter pack                                                             |
+| `import_component`                     | Add a `.kcomponent` file (YAML) to the library                                                                                       |
+| `add_component`                        | Put a component from the library on the canvas, at its manifest size                                                                 |
+| `export_component`                     | The `.kcomponent` file of a library component or of an HTML block                                                                    |
+| `load_starter_pack`                    | Import the components that ship with Karbonized                                                                                      |
 | `get_canvas_snapshot`                  | PNG of the canvas (models with image input)                                                                                          |
 | `export_image`                         | Export PNG, JPEG or SVG through the normal save flow                                                                                 |
 | `list_commands` / `run_command`        | Editor commands: undo, duplicate, zoom, snapping, rulers, and the tools the user draws with (shape, brush, nodes, eraser, crop, pan) |
+
+### What tools cannot do
+
+`run_command` runs the commands that are safe without a person watching:
+`edit.*` and `arrange.*` (undoable document changes), `view.*` (viewport and
+editor chrome), `tools.*` (pick a tool, insert a block) and `file.copy-image`.
+The rest is left out on purpose:
+
+- **Dialogs, saving and leaving the editor** (`file.*`, `help.*`, `block.*`,
+  and the gallery behind `tools.components`) need a person.
+  `export_image`, `export_component` and `list_components` cover what a model
+  needs from them.
+- **Clearing the workspace** has no undo step; `delete_blocks` does.
+
+Picking a tool changes what the *user's* next drag does — a model cannot draw
+by itself. To put something on the canvas, `add_block` and `add_component` are
+the direct route: they take a position, a size and properties.
 
 ## MCP server (desktop app)
 

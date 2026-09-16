@@ -42,7 +42,9 @@ export const useAddKComponentToCanvas = () => {
 				return block.id;
 			} catch (error) {
 				toast.error(
-					error instanceof Error ? error.message : 'The component was not added',
+					error instanceof Error
+						? error.message
+						: 'The component was not added',
 				);
 
 				return null;
