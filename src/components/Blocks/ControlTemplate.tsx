@@ -114,8 +114,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	);
 
 	const setID = useControlsStore((state) => state.setCurrentControlID);
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
+	const setPropertiesOpen = useUIStore((state) => state.setPropertiesOpen);
 
 	// Component States
 	const [zIndex, setzIndex] = useControlState('0', `${id}-zindex`);
@@ -535,12 +534,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 										}
 
 										setWorkspaceTab('control');
-
-										if (workspaceMode !== 'edit') {
-											setWorkspaceMode('edit');
-										} else {
-											setWorkspaceMode('zen');
-										}
+										setPropertiesOpen(true);
 									}}
 								>
 									{/* The exported node carries the mask so per-block exports keep

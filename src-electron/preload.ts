@@ -1,11 +1,12 @@
 import { contextBridge, ipcRenderer, app, shell } from 'electron';
+import type { FilesBridge } from '../src/lib/persistence/desktop-files';
 import type {
-	BeedlyBridge,
+	AgentBridge,
 	HttpBridgeEvent,
 	McpRequest,
 	McpResponse,
 	McpStatus,
-} from '../src/lib/beedly/bridge';
+} from '../src/lib/agent/bridge';
 
 document.addEventListener('click', (event: any) => {
 	if (event.target.tagName === 'A' && event.target.href.startsWith('http')) {
@@ -71,31 +72,35 @@ const subscribe =
 		};
 	};
 
-const beedly: BeedlyBridge = {
+const agent: AgentBridge = {
 	keys: {
 		set: (profileId, key, baseUrl) =>
-			ipcRenderer.invoke('beedly:keys:set', profileId, key, baseUrl),
-		remove: (profileId) => ipcRenderer.invoke('beedly:keys:remove', profileId),
+			ipcRenderer.invoke('agent:keys:set', profileId, key, baseUrl),
+		remove: (profileId) => ipcRenderer.invoke('agent:keys:remove', profileId),
 		has: (profileId, baseUrl) =>
-			ipcRenderer.invoke('beedly:keys:has', profileId, baseUrl),
+			ipcRenderer.invoke('agent:keys:has', profileId, baseUrl),
 	},
 	http: {
 		request: (requestId, profileId, request) =>
-			ipcRenderer.send('beedly:http:request', requestId, profileId, request),
-		abort: (requestId) => ipcRenderer.send('beedly:http:abort', requestId),
-		onEvent: subscribe<HttpBridgeEvent>('beedly:http:event'),
+			ipcRenderer.send('agent:http:request', requestId, profileId, request),
+		abort: (requestId) => ipcRenderer.send('agent:http:abort', requestId),
+		onEvent: subscribe<HttpBridgeEvent>('agent:http:event'),
 	},
 	mcp: {
-		getStatus: () => ipcRenderer.invoke('beedly:mcp:status'),
+		getStatus: () => ipcRenderer.invoke('agent:mcp:status'),
 		setEnabled: (enabled) =>
-			ipcRenderer.invoke('beedly:mcp:set-enabled', enabled),
-		setPort: (port) => ipcRenderer.invoke('beedly:mcp:set-port', port),
-		regenerateToken: () => ipcRenderer.invoke('beedly:mcp:regenerate-token'),
-		onStatus: subscribe<McpStatus>('beedly:mcp:status-changed'),
-		onRequest: subscribe<McpRequest>('beedly:mcp:request'),
+			ipcRenderer.invoke('agent:mcp:set-enabled', enabled),
+		setPort: (port) => ipcRenderer.invoke('agent:mcp:set-port', port),
+		regenerateToken: () => ipcRenderer.invoke('agent:mcp:regenerate-token'),
+		onStatus: subscribe<McpStatus>('agent:mcp:status-changed'),
+		onRequest: subscribe<McpRequest>('agent:mcp:request'),
 		respond: (response: McpResponse) =>
-			ipcRenderer.send('beedly:mcp:response', response),
+			ipcRenderer.send('agent:mcp:response', response),
 	},
 };
 
-contextBridge.exposeInMainWorld('karbonized', { beedly });
+const files: FilesBridge = {
+	saveText: (input) => ipcRenderer.invoke('karbonized:files:save-text', input),
+};
+
+contextBridge.exposeInMainWorld('karbonized', { agent, files });

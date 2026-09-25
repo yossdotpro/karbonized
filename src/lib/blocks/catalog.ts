@@ -1,6 +1,6 @@
 /**
  * Block catalog: the block types that can be created programmatically (by
- * Beedly or MCP clients) and the properties each one stores.
+ * Agent or MCP clients) and the properties each one stores.
  *
  * Blocks declare their properties inside their components with
  * `useControlState(default, \`${id}-<key>\`)`; this file mirrors those keys and

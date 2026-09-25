@@ -44,6 +44,7 @@
 		"@capacitor/status-bar": "^5.0.6",
 		"@capacitor/toast": "^5.0.6",
 		"@floating-ui/react-dom": "^1.0.1",
+		"@fontsource-variable/figtree": "^5.3.0",
 		"@fontsource-variable/geist": "^5.2.8",
 		"@fontsource-variable/geist-mono": "^5.3.0",
 		"@fontsource-variable/noto-sans": "^5.2.10",

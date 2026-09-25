@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@fontsource-variable/figtree';
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
 @import '@fontsource-variable/noto-sans';
@@ -24,8 +25,8 @@
 	--card-foreground: #1b1b1f;
 	--popover: #ffffff;
 	--popover-foreground: #1b1b1f;
-	--primary: #1b1b1f;
-	--primary-foreground: #fbfbfc;
+	--primary: #f43f5e;
+	--primary-foreground: #ffffff;
 	--secondary: #f0f0f2;
 	--secondary-foreground: #1b1b1f;
 	--muted: #f0f0f2;
@@ -35,8 +36,8 @@
 	--destructive: #d93f45;
 	--border: #e4e4e8;
 	--input: #e1e1e6;
-	--ring: #a0a0aa;
-	--brand: #e5484d;
+	--ring: #f43f5e;
+	--brand: #f43f5e;
 	--chart-1: #d4d4d8;
 	--chart-2: #a1a1aa;
 	--chart-3: #71717a;
@@ -44,12 +45,12 @@
 	--chart-5: #3f3f46;
 	--sidebar: #f5f5f7;
 	--sidebar-foreground: #1b1b1f;
-	--sidebar-primary: #1b1b1f;
-	--sidebar-primary-foreground: #fbfbfc;
+	--sidebar-primary: #f43f5e;
+	--sidebar-primary-foreground: #ffffff;
 	--sidebar-accent: #ebebee;
 	--sidebar-accent-foreground: #1b1b1f;
 	--sidebar-border: #e4e4e8;
-	--sidebar-ring: #a0a0aa;
+	--sidebar-ring: #f43f5e;
 	--canvas: #f0f0f2;
 	--canvas-dot: rgb(0 0 0 / 9%);
 	--radius: 0.875rem;
@@ -62,8 +63,8 @@
 	--card-foreground: #e6e6e9;
 	--popover: #18181b;
 	--popover-foreground: #e6e6e9;
-	--primary: #e6e6e9;
-	--primary-foreground: #0f0f11;
+	--primary: #fb7185;
+	--primary-foreground: #1b0a13;
 	--secondary: #1e1e22;
 	--secondary-foreground: #e6e6e9;
 	--muted: #1c1c20;
@@ -73,8 +74,8 @@
 	--destructive: #eb5c62;
 	--border: #242428;
 	--input: #2a2a2f;
-	--ring: #5a5a64;
-	--brand: #e5484d;
+	--ring: #fb7185;
+	--brand: #fb7185;
 	--chart-1: #d4d4d8;
 	--chart-2: #a1a1aa;
 	--chart-3: #71717a;
@@ -82,22 +83,23 @@
 	--chart-5: #3f3f46;
 	--sidebar: #131316;
 	--sidebar-foreground: #e6e6e9;
-	--sidebar-primary: #e6e6e9;
-	--sidebar-primary-foreground: #0f0f11;
+	--sidebar-primary: #fb7185;
+	--sidebar-primary-foreground: #1b0a13;
 	--sidebar-accent: #222226;
 	--sidebar-accent-foreground: #e6e6e9;
 	--sidebar-border: #242428;
-	--sidebar-ring: #5a5a64;
+	--sidebar-ring: #fb7185;
 	--canvas: #0b0b0d;
 	--canvas-dot: rgb(255 255 255 / 9%);
 }
 
 @theme inline {
-	--font-sans: 'Geist Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+	--font-sans:
+		'Figtree Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
 	--font-mono:
 		'Geist Mono Variable', 'JetBrains Mono', 'Cascadia Code', ui-monospace,
 		monospace;
-	--font-heading: 'Geist Variable', 'Inter', ui-sans-serif, sans-serif;
+	--font-heading: 'Figtree Variable', 'Inter', ui-sans-serif, sans-serif;
 	/* Typeface used inside canvas blocks (kept stable for exports) */
 	--font-block: 'Noto Sans Variable', sans-serif;
 

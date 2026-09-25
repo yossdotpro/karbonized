@@ -66,8 +66,8 @@
  * Selectors are doubled to win over the styles Moveable injects at runtime.
  */
 .moveable-control-box.moveable-control-box {
-	--moveable-color: #3b82f6;
-	--bounds-color: #e5484d;
+	--moveable-color: var(--brand);
+	--bounds-color: var(--brand);
 }
 
 .moveable-control-box .moveable-control.moveable-control:not(.moveable-origin) {
@@ -88,11 +88,11 @@
 
 .moveable-control-box
 	.moveable-guideline.moveable-guideline:not(.moveable-bounds) {
-	background: #e5484d;
+	background: var(--brand);
 }
 
 .moveable-control-box .moveable-size-value.moveable-size-value {
-	color: #e5484d;
+	color: var(--brand);
 	font-family: 'Geist Mono Variable', ui-monospace, monospace;
 	font-weight: 500;
 }

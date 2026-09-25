@@ -48,7 +48,6 @@ export interface LayerSnapshot {
 export type LayerMovePosition = 'before' | 'after' | 'inside';
 export type LayerStepDirection = 'forward' | 'backward';
 export type LayerEdgePosition = 'front' | 'back';
-export type WorkspaceMode = 'design' | 'edit' | 'zen' | 'custom';
 export type SelectedTab = 'hierarchy' | 'control' | 'workspace' | 'extensions';
 export type HistorySignal = 'redo' | 'undo' | '';
 

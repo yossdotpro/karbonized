@@ -33,7 +33,7 @@ export const TitleBar: React.FC = () => {
 		>
 			{/* Menu Bar */}
 			<div className='not-draggable flex max-w-[80%] items-center gap-2 overflow-x-hidden pl-3'>
-				<KarbonizedLogoFlat className='size-4 min-w-4' />
+				<KarbonizedLogoFlat className='size-4 min-w-4 text-foreground dark:text-white' />
 
 				<ContextualMenuBar></ContextualMenuBar>
 			</div>

@@ -16,7 +16,7 @@ import { Rulers } from '@/components/Base/Rulers';
 import { BrushBar } from '@/components/Panels/BrushBar';
 import { isEditableTarget } from '@/lib/commands/shortcuts';
 import { redo, undo } from '@/lib/editor/history';
-import { useBeedlyUI } from '@/lib/beedly/ui-store';
+import { useAgentUI } from '@/lib/agent/ui-store';
 import {
 	alignSelection,
 	distributeSelection,
@@ -72,11 +72,11 @@ const RightPanel = React.lazy(
 const InfiniteViewer = React.lazy(
 	async () => await import('react-infinite-viewer'),
 );
-const BeedlyPanel = React.lazy(
-	async () => await import('../components/Beedly/BeedlyPanel'),
+const AgentPanel = React.lazy(
+	async () => await import('../components/Agent/AgentPanel'),
 );
-const BeedlyCommands = React.lazy(
-	async () => await import('../components/Beedly/BeedlyCommands'),
+const AgentCommands = React.lazy(
+	async () => await import('../components/Agent/AgentCommands'),
 );
 
 export const Editor: React.FC = () => {
@@ -93,7 +93,7 @@ export const Editor: React.FC = () => {
 	const aspectRatio = useUIStore((state) => state.lockAspect);
 	const setAspectRatio = useUIStore((state) => state.setLockAspect);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
-	const beedlyOpen = useBeedlyUI((state) => state.panelOpen);
+	const agentOpen = useAgentUI((state) => state.panelOpen);
 
 	/* Copy/Paste System */
 	const controlID = useControlsStore((state) => state.currentControlID);
@@ -410,158 +410,173 @@ export const Editor: React.FC = () => {
 
 	return (
 		<div className='flex h-full w-full flex-col overflow-hidden'>
-			<div
+			<ResizablePanelGroup
+				orientation='horizontal'
 				onContextMenu={(e) => {
 					e.preventDefault();
 				}}
-				className='relative flex flex-auto flex-row overflow-hidden'
+				className='min-h-0 flex-auto overflow-hidden'
 			>
-				{/* Content */}
-				<div className='relative flex flex-auto flex-col overflow-hidden md:flex-row'>
-					{/* Settings of the tool that draws on the canvas */}
-					{(activeTool === 'draw' ||
-						activeTool === 'brush' ||
-						activeTool === 'nodes') && (
-						<div className='pointer-events-none absolute flex h-full w-full'>
-							<div className='pointer-events-auto flex h-full w-full'>
-								{activeTool === 'draw' ? (
-									<ShapeBar></ShapeBar>
-								) : activeTool === 'brush' ? (
-									<BrushBar></BrushBar>
-								) : (
-									<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex flex-row items-center gap-2 rounded-[10px] border border-border bg-popover px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg shadow-black/20'>
-										Pick a stroke, then drag a node to move it · click the
-										stroke to add one · Alt+click to take one out
+				{/* Agent, docked to the left edge so it never covers the canvas */}
+				{agentOpen && (
+					<>
+						<Suspense>
+							<AgentPanel />
+						</Suspense>
+						<ResizableHandle className='w-0 bg-transparent' />
+					</>
+				)}
+
+				{/* Canvas area. The properties panel floats over its right edge. */}
+				<ResizablePanel id='canvas' minSize={320}>
+					<div className='relative flex h-full w-full flex-row overflow-hidden'>
+						{/* Content */}
+						<div className='relative flex flex-auto flex-col overflow-hidden md:flex-row'>
+							{/* Settings of the tool that draws on the canvas */}
+							{(activeTool === 'draw' ||
+								activeTool === 'brush' ||
+								activeTool === 'nodes') && (
+								<div className='pointer-events-none absolute flex h-full w-full'>
+									<div className='pointer-events-auto flex h-full w-full'>
+										{activeTool === 'draw' ? (
+											<ShapeBar></ShapeBar>
+										) : activeTool === 'brush' ? (
+											<BrushBar></BrushBar>
+										) : (
+											<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex flex-row items-center gap-2 rounded-[10px] border border-border bg-popover px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg shadow-black/20'>
+												Pick a stroke, then drag a node to move it · click the
+												stroke to add one · Alt+click to take one out
+											</div>
+										)}
 									</div>
-								)}
-							</div>
-						</div>
-					)}
+								</div>
+							)}
 
-					{/* Workspace */}
-					<div
-						className={`canvas-grid relative flex flex-auto flex-col ${drag && 'cursor-move'}`}
-					>
-						{/* Rulers and the guides dragged out of them */}
-						<Rulers></Rulers>
-
-						<InfiniteViewer
-							ref={viewerRef}
-							className='viewer flex flex-auto'
-							useAutoZoom
-							useMouseDrag={drag}
-							useGesture
-							usePinch={!drag}
-							threshold={0}
-							useResizeObserver
-							useWheelScroll
-							useWheelPinch
-							useTransform
-							wheelScale={0.002}
-							maxPinchWheel={50}
-							onPinch={({ zoom }: { zoom: number }) =>
-								useViewStore.getState().setZoomValue(zoom)
-							}
-						>
+							{/* Workspace */}
 							<div
-								style={{
-									width: currentWorkspace?.workspaceWidth + 'px',
-									height: currentWorkspace?.workspaceHeight + 'px',
-								}}
-								className='viewport'
+								className={`canvas-grid relative flex flex-auto flex-col ${drag && 'cursor-move'}`}
 							>
-								<Suspense
-									fallback={
-										<div className='flex items-center justify-center'>
-											<Spinner className='size-5 text-muted-foreground' />
-										</div>
+								{/* Rulers and the guides dragged out of them */}
+								<Rulers></Rulers>
+
+								<InfiniteViewer
+									ref={viewerRef}
+									className='viewer flex flex-auto'
+									useAutoZoom
+									useMouseDrag={drag}
+									useGesture
+									usePinch={!drag}
+									threshold={0}
+									useResizeObserver
+									useWheelScroll
+									useWheelPinch
+									useTransform
+									wheelScale={0.002}
+									maxPinchWheel={50}
+									onPinch={({ zoom }: { zoom: number }) =>
+										useViewStore.getState().setZoomValue(zoom)
 									}
 								>
-									<Workspace reference={ref}></Workspace>
+									<div
+										style={{
+											width: currentWorkspace?.workspaceWidth + 'px',
+											height: currentWorkspace?.workspaceHeight + 'px',
+										}}
+										className='viewport'
+									>
+										<Suspense
+											fallback={
+												<div className='flex items-center justify-center'>
+													<Spinner className='size-5 text-muted-foreground' />
+												</div>
+											}
+										>
+											<Workspace reference={ref}></Workspace>
+										</Suspense>
+									</div>
+								</InfiniteViewer>
+
+								{/* Marquee selection: drag on an empty part of the canvas */}
+								{!drag &&
+									!crop &&
+									activeTool !== 'draw' &&
+									activeTool !== 'brush' &&
+									activeTool !== 'nodes' && (
+										<Selecto
+											ref={selectoRef}
+											dragContainer='.viewer'
+											selectableTargets={['#workspace [data-block-id]']}
+											hitRate={0}
+											selectByClick
+											selectFromInside={false}
+											toggleContinueSelect='shift'
+											ratio={0}
+											dragCondition={(event) => {
+												const target = event.inputEvent
+													?.target as Element | null;
+												// Blocks, selection handles and panels handle their own drags.
+												return !target?.closest(
+													'[data-block-id], .moveable-control-box, [data-radix-popper-content-wrapper]',
+												);
+											}}
+											onSelectEnd={({ selected, isClick, inputEvent }) => {
+												const ids = selected
+													.map((element) =>
+														element.getAttribute('data-block-id'),
+													)
+													.filter((id): id is string => Boolean(id))
+													.filter((id) => {
+														const control = currentWorkspace?.controls.find(
+															(item) => item.id === id,
+														);
+														return (
+															control &&
+															!control.locked &&
+															control.isVisible !== false
+														);
+													});
+
+												// A plain click on empty canvas clears the selection.
+												if (
+													isClick &&
+													!inputEvent?.shiftKey &&
+													ids.length === 0
+												) {
+													useControlsStore.getState().setSelection([]);
+													return;
+												}
+
+												useControlsStore.getState().setSelection(ids);
+											}}
+										/>
+									)}
+							</div>
+						</div>
+
+						{/* Panels, which float above the canvas and its rulers */}
+						<div className='pointer-events-none absolute z-30 flex h-full w-full'>
+							{/* Left Panel */}
+							<div className='pointer-events-auto flex max-w-xs'>
+								<Suspense>
+									<LeftPanel></LeftPanel>
 								</Suspense>
 							</div>
-						</InfiniteViewer>
 
-						{/* Marquee selection: drag on an empty part of the canvas */}
-						{!drag &&
-							!crop &&
-							activeTool !== 'draw' &&
-							activeTool !== 'brush' &&
-							activeTool !== 'nodes' && (
-								<Selecto
-									ref={selectoRef}
-									dragContainer='.viewer'
-									selectableTargets={['#workspace [data-block-id]']}
-									hitRate={0}
-									selectByClick
-									selectFromInside={false}
-									toggleContinueSelect='shift'
-									ratio={0}
-									dragCondition={(event) => {
-										const target = event.inputEvent?.target as Element | null;
-										// Blocks, selection handles and panels handle their own drags.
-										return !target?.closest(
-											'[data-block-id], .moveable-control-box, [data-radix-popper-content-wrapper]',
-										);
-									}}
-									onSelectEnd={({ selected, isClick, inputEvent }) => {
-										const ids = selected
-											.map((element) => element.getAttribute('data-block-id'))
-											.filter((id): id is string => Boolean(id))
-											.filter((id) => {
-												const control = currentWorkspace?.controls.find(
-													(item) => item.id === id,
-												);
-												return (
-													control &&
-													!control.locked &&
-													control.isVisible !== false
-												);
-											});
-
-										// A plain click on empty canvas clears the selection.
-										if (isClick && !inputEvent?.shiftKey && ids.length === 0) {
-											useControlsStore.getState().setSelection([]);
-											return;
-										}
-
-										useControlsStore.getState().setSelection(ids);
-									}}
-								/>
-							)}
-					</div>
-				</div>
-
-				{/* Panels, which float above the canvas and its rulers */}
-				<div className='pointer-events-none absolute z-30 flex h-full w-full'>
-					{/* Left Panel */}
-					<div className='pointer-events-auto flex max-w-xs'>
-						<Suspense>
-							<LeftPanel></LeftPanel>
-						</Suspense>
-					</div>
-
-					{/* Right Panel */}
-					<ResizablePanelGroup orientation='horizontal'>
-						<ResizablePanel></ResizablePanel>
-						<ResizableHandle className='w-0 bg-transparent' />
-						<Suspense>
-							<RightPanel></RightPanel>
-						</Suspense>
-						{beedlyOpen && (
-							<>
+							{/* Right Panel */}
+							<ResizablePanelGroup orientation='horizontal'>
+								<ResizablePanel></ResizablePanel>
 								<ResizableHandle className='w-0 bg-transparent' />
 								<Suspense>
-									<BeedlyPanel />
+									<RightPanel></RightPanel>
 								</Suspense>
-							</>
-						)}
-					</ResizablePanelGroup>
-				</div>
-			</div>
+							</ResizablePanelGroup>
+						</div>
+					</div>
+				</ResizablePanel>
+			</ResizablePanelGroup>
 
 			<Suspense>
-				<BeedlyCommands />
+				<AgentCommands />
 			</Suspense>
 
 			<StatusBar></StatusBar>

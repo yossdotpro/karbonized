@@ -4,7 +4,8 @@ import * as fs from 'node:fs/promises';
 import { join } from 'path';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
-import { registerBeedlyHttp } from './beedly/http';
+import { registerAgentHttp } from './agent/http';
+import { registerFiles } from './files';
 import { registerMcpServer } from './mcp/server';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,7 +52,8 @@ const loadExtensions = async (event: Electron.IpcMainEvent) => {
 };
 
 app.whenReady().then(() => {
-	registerBeedlyHttp();
+	registerAgentHttp();
+	registerFiles();
 
 	const icon = nativeImage.createFromPath(
 		join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'),

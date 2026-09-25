@@ -47,8 +47,6 @@ const TOOL_COUNT = 7;
 
 export const LeftPanel: React.FC = () => {
 	/* App Store */
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
 	const setWorkspaceTab = useUIStore((state) => state.setSelectedTab);
 	const activeTool = useUIStore((state) => state.activeTool);
 	const setActiveTool = useUIStore((state) => state.setActiveTool);
@@ -228,17 +226,6 @@ export const LeftPanel: React.FC = () => {
 		})),
 	);
 
-	const [syncedMode, setSyncedMode] = useState(workspaceMode);
-	if (workspaceMode !== syncedMode) {
-		setSyncedMode(workspaceMode);
-		if (workspaceMode === 'design') {
-			setShowMenu(true);
-			setTab('hierarchy');
-		} else if (workspaceMode !== 'custom') {
-			setShowMenu(false);
-		}
-	}
-
 	return (
 		<div
 			className='pointer-events-auto z-30 mr-auto flex h-full w-5/6 grow-0 flex-col justify-center gap-1 overflow-hidden p-2 py-4 text-foreground md:w-fit md:max-w-40'
@@ -338,7 +325,6 @@ export const LeftPanel: React.FC = () => {
 							variant={tab === 'hierarchy' && showMenu ? 'default' : 'ghost'}
 							size='icon'
 							onClick={() => {
-								setWorkspaceMode('custom');
 								setTab('hierarchy');
 								setShowMenu(true);
 							}}
@@ -355,7 +341,6 @@ export const LeftPanel: React.FC = () => {
 								variant={tab === 'extensions' && showMenu ? 'default' : 'ghost'}
 								size='icon'
 								onClick={() => {
-									setWorkspaceMode('custom');
 									setTab('extensions');
 
 									/* Load Extension and App Data */
@@ -380,7 +365,6 @@ export const LeftPanel: React.FC = () => {
 								variant='ghost'
 								size='icon'
 								onClick={() => {
-									setWorkspaceMode('custom');
 									setTab('hierarchy');
 									setShowMenu(!showMenu);
 								}}
@@ -403,7 +387,6 @@ export const LeftPanel: React.FC = () => {
 								size='icon'
 								onClick={() => {
 									setTab('control');
-									setWorkspaceMode('custom');
 									setShowMenu(true);
 								}}
 								className='rounded-xl'
@@ -421,7 +404,6 @@ export const LeftPanel: React.FC = () => {
 								size='icon'
 								onClick={() => {
 									setTab('workspace');
-									setWorkspaceMode('custom');
 									setWorkspaceTab('workspace');
 									setShowMenu(true);
 								}}

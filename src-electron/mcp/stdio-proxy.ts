@@ -34,7 +34,7 @@ const readConfig = (): { url: string; token: string } => {
 		try {
 			const settings = JSON.parse(
 				readFileSync(
-					join(appDataDir(), 'karbonized', 'beedly-mcp.json'),
+					join(appDataDir(), 'karbonized', 'beedly-mcp.json' /* legacy name, keeps the MCP token */),
 					'utf-8',
 				),
 			);
@@ -47,7 +47,7 @@ const readConfig = (): { url: string; token: string } => {
 
 	if (!url || !token) {
 		log(
-			'Missing configuration. Copy the client configuration from Karbonized → Beedly settings → MCP server.',
+			'Missing configuration. Copy the client configuration from Karbonized → Agent settings → MCP server.',
 		);
 		process.exit(1);
 	}
@@ -123,7 +123,7 @@ const forward = async (line: string) => {
 			errorReply(
 				message.id,
 				response.status === 401
-					? 'Karbonized rejected the token. Copy the configuration again from Beedly settings.'
+					? 'Karbonized rejected the token. Copy the configuration again from Agent settings.'
 					: (detail ?? `Karbonized answered with HTTP ${response.status}.`),
 			);
 			return;
@@ -138,7 +138,7 @@ const forward = async (line: string) => {
 	} catch {
 		errorReply(
 			message.id,
-			'Could not reach Karbonized. Open the app and turn on the MCP server in Beedly settings.',
+			'Could not reach Karbonized. Open the app and turn on the MCP server in Agent settings.',
 		);
 	}
 };

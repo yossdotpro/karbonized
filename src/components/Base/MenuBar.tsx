@@ -12,18 +12,9 @@ import {
 	MenubarSubTrigger,
 	MenubarTrigger,
 } from '@/components/ui/menubar';
-import CryptoJS from 'crypto-js';
-import FileSaver from 'file-saver';
-import { toPng } from 'html-to-image';
 import React, { Suspense, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { type Project } from '../../types';
-import {
-	useWorkspaceStore,
-	useControlsStore,
-	useUIStore,
-	useProjectStore,
-} from '../../stores';
+import { useWorkspaceStore, useUIStore } from '../../stores';
 import {
 	type ExportFormat,
 	canCopyImage,
@@ -32,12 +23,17 @@ import {
 	renderBlob,
 } from '@/lib/export/exporter';
 import { toast } from 'sonner';
-import { getRandomNumber } from '../../utils/getRandom';
-import { PROJECT_KEY } from '../../utils/secrets';
+import {
+	PROJECT_EXTENSION,
+	ProjectFileError,
+} from '@/lib/persistence/project-file';
+import {
+	openProjectFile,
+	saveCurrentProject,
+} from '@/lib/persistence/project-io';
 import {
 	ClipboardCopy,
 	Eraser,
-	FileJson,
 	FilePlus2,
 	FolderOpen,
 	Heart,
@@ -60,9 +56,12 @@ import {
 import { shortcutLabel } from '@/lib/commands/shortcuts';
 import { useKComponentStore } from '@/stores/kcomponent-store';
 import { useAddKComponentToCanvas } from '@/hooks/useAddKComponentToCanvas';
+import { useFileDrop } from '@/hooks/useFileDrop';
 import TabBar from './TabBar';
-import { BeedlyMenu } from '../Beedly/BeedlyMenu';
+import { AgentMenu } from '../Agent/AgentMenu';
 import { Button } from '@/components/ui/button';
+
+const PROJECT_DROP_EXTENSIONS = [PROJECT_EXTENSION];
 
 const AboutModal = React.lazy(async () => await import('../Modals/AboutModal'));
 const ChangelogModal = React.lazy(
@@ -77,17 +76,6 @@ const PreviewModal = React.lazy(
 const ImportComponentsDialog = React.lazy(
 	async () => await import('../Modals/ImportComponentsDialog'),
 );
-
-const mergeHistoryById = <T extends { id: string }>(
-	current: T[],
-	incoming: T[],
-): T[] => {
-	const byId = new Map(current.map((item) => [item.id, item]));
-	incoming.forEach((item) => {
-		byId.set(item.id, item);
-	});
-	return Array.from(byId.values());
-};
 
 export const MenuBar: React.FC = () => {
 	const navigate = useNavigate();
@@ -113,12 +101,6 @@ export const MenuBar: React.FC = () => {
 	const addKComponentToCanvas = useAddKComponentToCanvas();
 
 	/* App Store */
-	const ControlProperties = useControlsStore(
-		(state) => state.ControlProperties,
-	);
-	const saveProject = useProjectStore((state) => state.saveProject);
-	const loadProject = useProjectStore((state) => state.loadProject);
-
 	const cleanWorkspace = useWorkspaceStore((state) => state.cleanWorkspace);
 	const setCurrentWorkspace = useWorkspaceStore(
 		(state) => state.setCurrentWorkspace,
@@ -176,111 +158,58 @@ export const MenuBar: React.FC = () => {
 		}
 	};
 
-	const handleLoadProject = () => {
+	const handleLoadProject = (): void => {
 		const input = document.createElement('input');
 		input.type = 'file';
-		input.accept = '.kproject';
-		input.addEventListener('change', (ev: any) => {
-			const target = ev.target as HTMLInputElement;
-			if (target.files && target.files.length > 0) {
-				if ((target.files[0].name as string).endsWith('.kproject')) {
-					const reader = new FileReader();
-					reader.addEventListener('load', () => {
-						try {
-							const text = CryptoJS.AES.decrypt(
-								reader.result as string,
-								PROJECT_KEY,
-							).toString(CryptoJS.enc.Utf8);
-							const project = JSON.parse(text) as Project;
+		input.accept = PROJECT_EXTENSION;
 
-							if (project.properties !== null && project.workspace !== null) {
-								const loadedProject = loadProject(project);
-
-								useWorkspaceStore.setState((state) => ({
-									...state,
-									workspaces: [...state.workspaces, loadedProject.newWorkspace],
-									currentWorkspaceID: loadedProject.workspaceId,
-									currentWorkspace: loadedProject.newWorkspace,
-								}));
-
-								useControlsStore.setState((state) => ({
-									...state,
-									ControlProperties: mergeHistoryById(
-										state.ControlProperties,
-										loadedProject.initialProperties,
-									),
-									currentControlID: '',
-								}));
-							} else {
-								toast.error('This is not a valid Karbonized project');
-							}
-						} catch (err) {
-							toast.error('Could not open the project file');
-						}
-					});
-					reader.readAsText(target.files[0]);
-				} else {
-					toast.error('Choose a .kproject file');
-				}
-			}
+		input.addEventListener('change', () => {
+			const file = input.files?.[0];
+			if (file === undefined) return;
+			void handleOpenFile(file);
 		});
+
 		input.click();
 	};
 
-	const handleSaveProject = async () => {
-		const element = document.getElementById('workspace');
-
-		if (element != null) {
-			setIsExporting(true);
-			await new Promise((resolve) => setTimeout(resolve, 100));
-			const data = await toPng(element);
-			setIsExporting(false);
-
-			const project = { ...saveProject, thumb: data };
-
-			const blob = new Blob(
-				[CryptoJS.AES.encrypt(JSON.stringify(project), PROJECT_KEY).toString()],
-				{
-					type: 'text/plain;charset=utf-8',
-				},
-			);
-
-			FileSaver.saveAs(
-				blob,
-				currentWorkspace?.workspaceName ?? 'workspace' + '.kproject',
+	/** Opens a `.kproject` file, from the picker or dropped on the window. */
+	const handleOpenFile = async (file: File): Promise<void> => {
+		try {
+			const { name } = await openProjectFile(file);
+			if (location.pathname !== '/editor') navigate('/editor');
+			toast.success(`Opened ${name}`);
+		} catch (error) {
+			console.error(error);
+			toast.error(
+				error instanceof ProjectFileError
+					? error.message
+					: 'Could not open the project file',
+				{ description: file.name },
 			);
 		}
 	};
 
-	const handleSaveAsJson = async () => {
-		const element = document.getElementById('workspace');
-
-		if (element) {
-			setIsExporting(true);
-			await new Promise((resolve) => setTimeout(resolve, 100));
-			const data = await toPng(element);
-			setIsExporting(false);
-
-			const project = saveProject({
-				currentWorkspace,
-				currentWorkspaceID,
-				controlProperties: ControlProperties,
-			});
-
-			if (project.workspace) {
-				project.workspace.id = getRandomNumber().toString();
-			}
-
-			const blob = new Blob([JSON.stringify(project)], {
-				type: 'text/plain;charset=utf-8',
-			});
-
-			FileSaver.saveAs(
-				blob,
-				currentWorkspace?.workspaceName ?? 'workspace' + '.json',
+	const handleSaveProject = async (): Promise<void> => {
+		setIsExporting(true);
+		try {
+			const fileName = await saveCurrentProject();
+			if (fileName !== null) toast.success(`Saved ${fileName}`);
+		} catch (error) {
+			console.error(error);
+			toast.error(
+				error instanceof ProjectFileError
+					? error.message
+					: 'Could not save the project',
 			);
+		} finally {
+			setIsExporting(false);
 		}
 	};
+
+	/* A `.kproject` dropped anywhere on the window opens it. */
+	useFileDrop(PROJECT_DROP_EXTENSIONS, (files) => {
+		void handleOpenFile(files[0]);
+	});
 
 	const handleNewWorkspace = () => {
 		navigate('/new');
@@ -323,14 +252,6 @@ export const MenuBar: React.FC = () => {
 			allowInInput: true,
 			when: () => isEditor,
 			run: () => void handleSaveProject(),
-		},
-		{
-			id: 'file.save-template',
-			title: 'Save project as template',
-			group: 'File',
-			icon: FileJson,
-			when: () => isEditor,
-			run: () => void handleSaveAsJson(),
 		},
 		{
 			id: 'file.export',
@@ -453,12 +374,8 @@ export const MenuBar: React.FC = () => {
 								</MenubarShortcut>
 							</MenubarItem>
 
-							<MenubarItem
-								onClick={() => {
-									handleLoadProject();
-								}}
-							>
-								Load Project
+							<MenubarItem onClick={handleLoadProject}>
+								Open Project…
 								<MenubarShortcut>{shortcut('file.open')}</MenubarShortcut>
 							</MenubarItem>
 
@@ -470,15 +387,6 @@ export const MenuBar: React.FC = () => {
 							>
 								Save Project
 								<MenubarShortcut>{shortcut('file.save')}</MenubarShortcut>
-							</MenubarItem>
-
-							<MenubarItem
-								disabled={!isEditor}
-								onClick={async () => {
-									if (isEditor) await handleSaveAsJson();
-								}}
-							>
-								Save Project as Template
 							</MenubarItem>
 
 							<MenubarItem
@@ -680,8 +588,8 @@ export const MenuBar: React.FC = () => {
 						</MenubarContent>
 					</MenubarMenu>
 
-					{/* Beedly */}
-					<BeedlyMenu isEditor={isEditor} />
+					{/* AI */}
+					<AgentMenu isEditor={isEditor} />
 
 					{/* About */}
 					<MenubarMenu>

@@ -27,13 +27,11 @@ export const RightPanel: React.FC = () => {
 
 	/* Component State */
 	const panel = usePanelRef();
-	const [showMenu, setShowMenu] = useState(true);
+	const showMenu = useUIStore((state) => state.propertiesOpen);
+	const setShowMenu = useUIStore((state) => state.setPropertiesOpen);
 	const [tab, setTab] = useState<'workspace' | 'control' | 'hierarchy'>(
 		'control',
 	);
-
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
 
 	useCommands([
 		{
@@ -43,10 +41,7 @@ export const RightPanel: React.FC = () => {
 			icon: showMenu ? PanelRightClose : PanelRightOpen,
 			shortcut: 'Mod+B',
 			allowInInput: true,
-			run: () => {
-				setShowMenu((current) => !current);
-				setWorkspaceMode('custom');
-			},
+			run: () => setShowMenu(!useUIStore.getState().propertiesOpen),
 		},
 		...(
 			[
@@ -61,7 +56,6 @@ export const RightPanel: React.FC = () => {
 			icon,
 			run: () => {
 				setTab(id);
-				setWorkspaceMode('custom');
 				setShowMenu(true);
 				if (id === 'workspace') setWorkspaceTab('workspace');
 			},
@@ -86,16 +80,6 @@ export const RightPanel: React.FC = () => {
 		return () => cancelAnimationFrame(frame);
 	}, [showMenu]);
 
-	const [syncedMode, setSyncedMode] = useState(workspaceMode);
-	if (workspaceMode !== syncedMode) {
-		setSyncedMode(workspaceMode);
-		if (workspaceMode === 'edit') {
-			setShowMenu(true);
-		} else if (workspaceMode !== 'custom') {
-			setShowMenu(false);
-		}
-	}
-
 	const [syncedTab, setSyncedTab] = useState(workspaceTab);
 	if (workspaceTab !== syncedTab) {
 		setSyncedTab(workspaceTab);
@@ -107,10 +91,12 @@ export const RightPanel: React.FC = () => {
 			className={'min-w-16'}
 			collapsible
 			collapsedSize={54}
-			defaultSize={500}
+			defaultSize={340}
 			maxSize={600}
 			minSize={120}
 			panelRef={panel}
+			// Keep its width when the agent opens and the canvas area narrows.
+			groupResizeBehavior='preserve-pixel-size'
 		>
 			<div
 				className={`pointer-events-auto mr-auto flex h-full w-full gap-1.5 overflow-hidden border-l border-border bg-sidebar p-1.5 text-foreground`}
@@ -128,7 +114,6 @@ export const RightPanel: React.FC = () => {
 							aria-label={showMenu ? 'Collapse panel' : 'Expand panel'}
 							onClick={() => {
 								setShowMenu(!showMenu);
-								setWorkspaceMode('custom');
 							}}
 							className='mb-1'
 						>
@@ -164,7 +149,6 @@ export const RightPanel: React.FC = () => {
 									aria-pressed={isActive}
 									onClick={() => {
 										setTab(item.id as any);
-										setWorkspaceMode('custom');
 										setShowMenu(true);
 										if (item.id === 'workspace') setWorkspaceTab('workspace');
 									}}

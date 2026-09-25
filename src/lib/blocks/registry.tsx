@@ -23,7 +23,7 @@ import { BlockLoader } from '@/components/Blocks/BlockLoader';
  *
  * Everything that has to know about a block type reads it from here: the
  * toolbar, the canvas, the hierarchy icons. What a block *stores* lives in
- * `catalog.ts`, which Beedly and the MCP server use.
+ * `catalog.ts`, which Agent and the MCP server use.
  */
 
 const CodeBlock = React.lazy(

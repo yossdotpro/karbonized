@@ -3,7 +3,7 @@ import { BLOCK_TYPES } from './catalog';
 import { BLOCKS, INSERTABLE_BLOCKS, blockIcon, getBlock } from './registry';
 
 /**
- * The editor takes the block types from the registry and Beedly and the MCP
+ * The editor takes the block types from the registry and Agent and the MCP
  * server take them from the catalog: a type missing from either side is a
  * block nobody can reach.
  */

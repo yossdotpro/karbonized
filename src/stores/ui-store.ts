@@ -1,6 +1,7 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { ShapeKind } from '../lib/blocks/shapes';
-import type { WorkspaceMode, SelectedTab } from '../types';
+import type { SelectedTab } from '../types';
 
 /**
  * What a drag on the canvas does. One tool is active at a time: the panels,
@@ -27,7 +28,8 @@ interface UIState {
 	/** Leave out the workspace background while exporting. */
 	exportTransparent: boolean;
 	lockAspect: boolean;
-	workspaceMode: WorkspaceMode;
+	/** The properties panel on the right is expanded (not just its icon rail). */
+	propertiesOpen: boolean;
 	selectedTab: SelectedTab;
 }
 
@@ -46,46 +48,55 @@ interface UIActions {
 	setIsExporting: (isExporting: boolean) => void;
 	setExportTransparent: (exportTransparent: boolean) => void;
 	setLockAspect: (lockAspect: boolean) => void;
-	setWorkspaceMode: (mode: WorkspaceMode) => void;
+	setPropertiesOpen: (open: boolean) => void;
 	setSelectedTab: (tab: SelectedTab) => void;
 }
 
 type UIStore = UIState & UIActions;
 
-export const useUIStore = create<UIStore>((set, get) => ({
-	activeTool: 'select',
-	drawShape: 'rectangle',
-	brushColor: '#f3f4f6',
-	brushSize: 6,
-	brushThinning: 50,
-	brushSmoothing: 1.2,
-	previousTool: null,
-	isExporting: false,
-	exportTransparent: false,
-	lockAspect: false,
-	workspaceMode: 'zen',
-	selectedTab: 'hierarchy',
+export const useUIStore = create<UIStore>()(
+	persist(
+		(set, get) => ({
+			activeTool: 'select',
+			drawShape: 'rectangle',
+			brushColor: '#f3f4f6',
+			brushSize: 6,
+			brushThinning: 50,
+			brushSmoothing: 1.2,
+			previousTool: null,
+			isExporting: false,
+			exportTransparent: false,
+			lockAspect: false,
+			propertiesOpen: true,
+			selectedTab: 'hierarchy',
 
-	setActiveTool: (activeTool) => set({ activeTool, previousTool: null }),
-	startDrawing: (drawShape) =>
-		set({ activeTool: 'draw', drawShape, previousTool: null }),
-	setBrushColor: (brushColor) => set({ brushColor }),
-	setBrushSize: (brushSize) => set({ brushSize }),
-	setBrushThinning: (brushThinning) => set({ brushThinning }),
-	setBrushSmoothing: (brushSmoothing) => set({ brushSmoothing }),
-	holdTool: (tool) => {
-		const { activeTool, previousTool } = get();
-		if (activeTool === tool) return;
-		set({ activeTool: tool, previousTool: previousTool ?? activeTool });
-	},
-	releaseTool: () => {
-		const { previousTool } = get();
-		if (previousTool === null) return;
-		set({ activeTool: previousTool, previousTool: null });
-	},
-	setIsExporting: (isExporting) => set({ isExporting }),
-	setExportTransparent: (exportTransparent) => set({ exportTransparent }),
-	setLockAspect: (lockAspect) => set({ lockAspect }),
-	setWorkspaceMode: (workspaceMode) => set({ workspaceMode }),
-	setSelectedTab: (selectedTab) => set({ selectedTab }),
-}));
+			setActiveTool: (activeTool) => set({ activeTool, previousTool: null }),
+			startDrawing: (drawShape) =>
+				set({ activeTool: 'draw', drawShape, previousTool: null }),
+			setBrushColor: (brushColor) => set({ brushColor }),
+			setBrushSize: (brushSize) => set({ brushSize }),
+			setBrushThinning: (brushThinning) => set({ brushThinning }),
+			setBrushSmoothing: (brushSmoothing) => set({ brushSmoothing }),
+			holdTool: (tool) => {
+				const { activeTool, previousTool } = get();
+				if (activeTool === tool) return;
+				set({ activeTool: tool, previousTool: previousTool ?? activeTool });
+			},
+			releaseTool: () => {
+				const { previousTool } = get();
+				if (previousTool === null) return;
+				set({ activeTool: previousTool, previousTool: null });
+			},
+			setIsExporting: (isExporting) => set({ isExporting }),
+			setExportTransparent: (exportTransparent) => set({ exportTransparent }),
+			setLockAspect: (lockAspect) => set({ lockAspect }),
+			setPropertiesOpen: (propertiesOpen) => set({ propertiesOpen }),
+			setSelectedTab: (selectedTab) => set({ selectedTab }),
+		}),
+		{
+			name: 'karbonized:ui',
+			// Only the layout survives a reload; tools and flags start fresh.
+			partialize: ({ propertiesOpen }) => ({ propertiesOpen }),
+		},
+	),
+);

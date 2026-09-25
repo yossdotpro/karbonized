@@ -3,7 +3,6 @@ export { useWorkspaceStore } from './workspace-store';
 export { useControlsStore } from './controls-store';
 export { useHistoryStore } from './history-store';
 export { useUIStore } from './ui-store';
-export { useProjectStore } from './project-store';
 
 // Export types
 export type {
@@ -15,7 +14,6 @@ export type {
 	LayerMovePosition,
 	LayerStepDirection,
 	LayerEdgePosition,
-	WorkspaceMode,
 	SelectedTab,
 	HistorySignal,
 	ControlSize,

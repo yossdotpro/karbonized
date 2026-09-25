@@ -1,25 +1,35 @@
-import {
-	GitBranch,
-	Layers,
-	MousePointer2,
-	PencilRuler,
-	Square,
-	Tag,
-	Box,
-	CircleDashed,
-} from 'lucide-react';
+import { GitBranch, Layers, MousePointer2, Square, Tag } from 'lucide-react';
 import React from 'react';
-import { useCommands } from '@/lib/commands/registry';
-import { useWorkspaceStore, useControlsStore, useUIStore } from '../../stores';
+import { useCommands, useCommandShortcut } from '@/lib/commands/registry';
+import { shortcutLabel } from '@/lib/commands/shortcuts';
+import {
+	PANEL_LAYOUTS,
+	applyLayout,
+	nextLayout,
+	usePanelLayout,
+	type PanelLayout,
+} from '@/lib/editor/layout';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuLabel,
+	DropdownMenuRadioGroup,
+	DropdownMenuRadioItem,
+	DropdownMenuSeparator,
+	DropdownMenuShortcut,
+	DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
+import { Tooltip } from '../CustomControls/Tooltip';
+import { useWorkspaceStore, useControlsStore } from '../../stores';
 import { Button } from '../ui/button';
 import { ViewPanel } from '../Panels/ViewPanel';
 import useMousePosition from '@/hooks/useMousePosition';
 import { Separator } from '../ui/separator';
 import { useAutosaveStatus } from '@/lib/persistence/autosave';
 import {
-	BeedlyStatusButton,
+	AgentStatusButton,
 	McpStatusIndicator,
-} from '../Beedly/BeedlyStatusBarItems';
+} from '../Agent/AgentStatusBarItems';
 
 const AutosaveIndicator: React.FC = () => {
 	const status = useAutosaveStatus((state) => state.status);
@@ -63,71 +73,67 @@ export const StatusBar: React.FC = () => {
 	/* App Store */
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
 	const controlPosition = useControlsStore((state) => state.controlPosition);
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
-
-	const handleChangeMode = (): void => {
-		const modes = ['design', 'edit', 'zen'];
-
-		let i = modes.findIndex((mode) => mode === workspaceMode);
-
-		if (i < modes.length - 1) {
-			i += 1;
-		} else {
-			i = 0;
-		}
-
-		setWorkspaceMode(modes[i] as any);
-	};
+	const layout = usePanelLayout();
+	const cycleShortcut = useCommandShortcut('view.cycle-layout');
 
 	useCommands([
 		{
-			id: 'view.cycle-mode',
-			title: 'Cycle workspace mode',
+			id: 'view.cycle-layout',
+			title: 'Next panel layout',
 			group: 'View',
-			icon: Box,
+			icon: layout.icon,
 			shortcut: 'Mod+Period',
-			keywords: ['design', 'edit', 'zen', 'mode'],
-			run: handleChangeMode,
+			keywords: ['layout', 'panels', 'agent', 'properties', 'zen'],
+			run: () => applyLayout(nextLayout()),
 		},
+		...PANEL_LAYOUTS.map((item) => ({
+			id: `view.layout-${item.id}`,
+			title: `Layout: ${item.label}`,
+			group: 'View' as const,
+			icon: item.icon,
+			keywords: ['layout', 'panels'],
+			run: () => applyLayout(item.id),
+		})),
 	]);
 
 	return (
 		<div className='flex h-7 w-full shrink-0 items-center gap-2 border-t border-border bg-sidebar px-2 text-[11px] text-muted-foreground'>
-			{/* Layout Mode */}
-			<Button
-				className='h-5 gap-1 rounded-[4px] px-1.5 text-[11px] font-normal'
-				onClick={handleChangeMode}
-				variant={'ghost'}
-			>
-				{workspaceMode === 'design' && (
-					<>
-						<Box className='size-3' />
-						<span>Design</span>
-					</>
-				)}
-
-				{workspaceMode === 'zen' && (
-					<>
-						<CircleDashed className='size-3' />
-						<span>Zen</span>
-					</>
-				)}
-
-				{workspaceMode === 'edit' && (
-					<>
-						<PencilRuler className='size-3' />
-						<span>Edit</span>
-					</>
-				)}
-
-				{workspaceMode === 'custom' && (
-					<>
-						<PencilRuler className='size-3' />
-						<span>Custom</span>
-					</>
-				)}
-			</Button>
+			{/* Panel layout */}
+			<DropdownMenu>
+				<Tooltip message='Panel layout' shortcut='Mod+Period' placement='top'>
+					<DropdownMenuTrigger asChild>
+						<Button
+							className='h-5 gap-1 rounded-[4px] px-1.5 text-[11px] font-normal'
+							variant={'ghost'}
+							aria-label={`Panel layout: ${layout.label}`}
+						>
+							<layout.icon className='size-3' />
+							<span>{layout.label}</span>
+						</Button>
+					</DropdownMenuTrigger>
+				</Tooltip>
+				<DropdownMenuContent side='top' align='start' className='w-52'>
+					<DropdownMenuLabel>Panel layout</DropdownMenuLabel>
+					<DropdownMenuRadioGroup
+						value={layout.id}
+						onValueChange={(value) => applyLayout(value as PanelLayout)}
+					>
+						{PANEL_LAYOUTS.map((item) => (
+							<DropdownMenuRadioItem key={item.id} value={item.id}>
+								<item.icon className='size-4 shrink-0' />
+								{item.label}
+							</DropdownMenuRadioItem>
+						))}
+					</DropdownMenuRadioGroup>
+					<DropdownMenuSeparator />
+					<DropdownMenuLabel className='flex items-center font-normal text-muted-foreground'>
+						Next layout
+						<DropdownMenuShortcut>
+							{shortcutLabel(cycleShortcut)}
+						</DropdownMenuShortcut>
+					</DropdownMenuLabel>
+				</DropdownMenuContent>
+			</DropdownMenu>
 
 			<Separator orientation='vertical' className='h-3' />
 
@@ -172,7 +178,7 @@ export const StatusBar: React.FC = () => {
 
 			<McpStatusIndicator />
 
-			<BeedlyStatusButton />
+			<AgentStatusButton />
 
 			<Separator orientation='vertical' className='h-3' />
 

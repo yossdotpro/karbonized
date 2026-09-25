@@ -18,16 +18,16 @@ import type {
 	McpRequestPayload,
 	McpResponse,
 	McpStatus,
-} from '../../src/lib/beedly/bridge';
-import { createRequestBroker } from '../../src/lib/beedly/mcp/broker';
+} from '../../src/lib/agent/bridge';
+import { createRequestBroker } from '../../src/lib/agent/mcp/broker';
 import {
 	checkMcpRequest,
 	createToken,
-} from '../../src/lib/beedly/mcp/security';
+} from '../../src/lib/agent/mcp/security';
 
 /**
  * Local MCP server: lets MCP clients (Claude Desktop, Claude Code, Cursor…)
- * control Karbonized with the same tools Beedly uses.
+ * control Karbonized with the same tools Agent uses.
  *
  * Streamable HTTP on 127.0.0.1, stateless, behind a bearer token. Tool calls
  * are forwarded to the editor window, where the tools run.
@@ -44,7 +44,7 @@ interface McpSettings {
 	token: string;
 }
 
-const settingsFile = () => join(app.getPath('userData'), 'beedly-mcp.json');
+const settingsFile = () => join(app.getPath('userData'), 'beedly-mcp.json' /* legacy name, keeps the MCP token */);
 
 const loadSettings = async (): Promise<McpSettings> => {
 	try {
@@ -147,7 +147,7 @@ export const registerMcpServer = async (options: {
 		lastBroadcast = Date.now();
 		const window = getWindow();
 		if (window && !window.isDestroyed()) {
-			window.webContents.send('beedly:mcp:status-changed', status());
+			window.webContents.send('agent:mcp:status-changed', status());
 		}
 	};
 
@@ -155,7 +155,7 @@ export const registerMcpServer = async (options: {
 		send: (request) => {
 			const window = getWindow();
 			if (!window || window.isDestroyed()) return false;
-			window.webContents.send('beedly:mcp:request', request);
+			window.webContents.send('agent:mcp:request', request);
 			return true;
 		},
 		timeoutMs: TOOL_TIMEOUT_MS,
@@ -164,7 +164,7 @@ export const registerMcpServer = async (options: {
 			'Karbonized did not answer in time. Make sure a project is open in the editor.',
 	});
 
-	ipcMain.on('beedly:mcp:response', (_event, response: McpResponse) => {
+	ipcMain.on('agent:mcp:response', (_event, response: McpResponse) => {
 		if (response && typeof response.requestId === 'string') {
 			broker.resolve(response);
 		}
@@ -304,15 +304,15 @@ export const registerMcpServer = async (options: {
 		return status();
 	};
 
-	ipcMain.handle('beedly:mcp:status', () => status());
+	ipcMain.handle('agent:mcp:status', () => status());
 
-	ipcMain.handle('beedly:mcp:set-enabled', async (_event, enabled: unknown) => {
+	ipcMain.handle('agent:mcp:set-enabled', async (_event, enabled: unknown) => {
 		settings = { ...settings, enabled: enabled === true };
 		await saveSettings(settings);
 		return apply();
 	});
 
-	ipcMain.handle('beedly:mcp:set-port', async (_event, port: unknown) => {
+	ipcMain.handle('agent:mcp:set-port', async (_event, port: unknown) => {
 		if (
 			!Number.isInteger(port) ||
 			(port as number) < 1024 ||
@@ -325,7 +325,7 @@ export const registerMcpServer = async (options: {
 		return apply();
 	});
 
-	ipcMain.handle('beedly:mcp:regenerate-token', async () => {
+	ipcMain.handle('agent:mcp:regenerate-token', async () => {
 		settings = { ...settings, token: createToken(randomBytes(24)) };
 		await saveSettings(settings);
 		broadcast();

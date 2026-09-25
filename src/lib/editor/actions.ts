@@ -14,6 +14,7 @@ import { cascadePosition, viewCenterPlacement } from '@/lib/canvas/placement';
 import { generateNewId } from '@/lib/utils';
 import { useViewStore } from '@/lib/viewer';
 import { getRandomNumber } from '@/utils/getRandom';
+import { navigateTo } from '@/lib/routing';
 import { isTextSizing, sizingForSize } from '@/lib/blocks/text-sizing';
 import {
 	HTML_BLOCK_CODE_KEYS,
@@ -28,7 +29,7 @@ import {
 } from '@/lib/blocks-api/default-content';
 
 /**
- * Editor actions that take arguments: the layer shared by Beedly, the MCP
+ * Editor actions that take arguments: the layer shared by Agent, the MCP
  * server and any UI that needs to change blocks programmatically.
  *
  * Every mutation goes through the history store, so it can be undone. Wrap a
@@ -792,11 +793,8 @@ export const createWorkspace = (input: {
 		height: String(Math.round(input.height)),
 	});
 
-	// The router follows history changes (same as the app's own navigation).
-	if (typeof window !== 'undefined' && window.location.pathname !== '/editor') {
-		window.history.pushState({}, '', '/editor');
-		window.dispatchEvent(new PopStateEvent('popstate'));
-	}
+	// The router follows this the same way it follows the app's own navigation.
+	navigateTo('/editor');
 
 	return requireWorkspace();
 };
