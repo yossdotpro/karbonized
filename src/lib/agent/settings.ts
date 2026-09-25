@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { getAgentBridge } from './bridge';
 import type { ProviderProfile } from './core/client';
 import type { Transport } from './core/types';
+import { ProviderError } from './core/errors';
 import { getKeyStore } from './keys';
 import { type ProviderKind, getPreset } from './providers/presets';
 import { createBrowserTransport } from './transport/browser';
@@ -176,13 +177,42 @@ export const profileProblem = (
 
 let transport: Transport | undefined;
 
+/**
+ * Stops a request that would go out without the key the provider needs.
+ * Sent anyway, it comes back as the provider's own puzzling error — Gemini
+ * answers "Method doesn't allow unregistered callers" with HTTP 403 — which
+ * reads like a broken app rather than a key that was typed but never saved.
+ */
+const requireSavedKey =
+	(inner: Transport): Transport =>
+	async (request, context) => {
+		const profile = useAgentSettings
+			.getState()
+			.profiles.find((item) => item.id === context.profileId);
+		const preset = profile && getPreset(profile.kind);
+
+		if (request.auth && profile !== undefined && preset?.requiresKey) {
+			const baseUrl = profile.baseUrl.trim() || preset.defaultBaseUrl;
+			if (!(await getKeyStore().has(profile.id, baseUrl))) {
+				throw new ProviderError(
+					'auth',
+					`No ${preset.label} API key is saved. Add it in Agent settings and press Save.`,
+				);
+			}
+		}
+
+		return await inner(request, context);
+	};
+
 /** Electron main process when available, the page otherwise. */
 export const getTransport = (): Transport => {
 	if (transport) return transport;
 
 	const bridge = getAgentBridge();
-	transport = bridge
-		? createElectronTransport(bridge)
-		: createBrowserTransport((profileId) => getKeyStore().get(profileId));
+	transport = requireSavedKey(
+		bridge
+			? createElectronTransport(bridge)
+			: createBrowserTransport((profileId) => getKeyStore().get(profileId)),
+	);
 	return transport;
 };
