@@ -8,6 +8,7 @@ import { DESIGN_GUIDE } from '../core/design-guide';
 export const MCP_INSTRUCTIONS = `Karbonized is an editor for social media graphics, code snippets and product mockups. The tools act on the project open in the Karbonized app; the user sees every change live and can undo each tool call.
 
 - Call get_workspace before editing an existing design and use the block ids it returns. Coordinates are canvas pixels from the top-left.
+- Read the user's brand kit with get_brand_kit before a new design and use its colors, fonts and logos (add_brand_logo).
 - For a new design, set the canvas size first (create_workspace or set_canvas_size), then the background, then blocks.
 - Use html blocks (HTML + CSS) for anything native blocks cannot express: cards, stat tiles, badges, icon lists, charts, testimonials, UI screens.
 - Find icon names with search_icons; never guess them. Icon packs (.kcomponent files with type: icon-pack) add icons named <prefix>:<name>.

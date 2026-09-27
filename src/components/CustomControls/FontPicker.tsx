@@ -24,6 +24,14 @@ import {
 	loadGoogleFontPreviews,
 } from '@/lib/fonts/fonts';
 import type { FontSource } from '@/lib/fonts/fonts';
+import type { BrandFont, BrandFontRole } from '@/lib/brand/brand-kit';
+import { useBrandStore } from '@/stores/brand-store';
+
+const ROLE_LABELS: Record<BrandFontRole, string> = {
+	heading: 'headings',
+	body: 'body',
+	code: 'code',
+};
 
 interface Props {
 	family: string;
@@ -62,6 +70,16 @@ export const FontPicker: React.FC<Props> = ({ family, onChange }) => {
 			cancelled = true;
 		};
 	}, [open]);
+
+	const brandFontMap = useBrandStore((state) => state.kit.fonts);
+	const brandFonts = useMemo(() => {
+		const needle = query.trim().toLowerCase();
+		return (
+			Object.entries(brandFontMap) as Array<[BrandFontRole, BrandFont]>
+		).filter(
+			([, font]) => needle === '' || font.family.toLowerCase().includes(needle),
+		);
+	}, [brandFontMap, query]);
 
 	const googleFonts = useMemo(
 		() => filterFonts(catalog, query, category, PAGE),
@@ -172,6 +190,18 @@ export const FontPicker: React.FC<Props> = ({ family, onChange }) => {
 
 						<CommandList className='max-h-80'>
 							<CommandEmpty>No fonts found.</CommandEmpty>
+
+							{brandFonts.length > 0 && (
+								<CommandGroup heading='Brand'>
+									{brandFonts.map(([role, font]) =>
+										item(
+											font.family,
+											`${font.family} · ${ROLE_LABELS[role]}`,
+											font.source,
+										),
+									)}
+								</CommandGroup>
+							)}
 
 							{query.trim() === '' && (
 								<CommandGroup heading='App'>

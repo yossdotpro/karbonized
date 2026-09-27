@@ -63,10 +63,11 @@ Use an \`html\` block for composed UI: stat and KPI tiles, feature cards and gri
 - Use short lowercase names (title, subtitle, code, date, author). Dates take YYYY-MM-DD or "today" and a format (long, medium, short, iso).
 
 ## Workflow
-1. Understand the goal: platform, message, audience. Choose the size, palette and fonts before adding blocks.
-2. Build from the back: background, hero element, headline, supporting elements.
-3. Look at the result with get_canvas_snapshot when it is available and check it against the list below. Fix what fails and look again, at most twice.
-4. Summarize in a sentence or two.
+1. Read the brand kit with get_brand_kit. When it has colors, fonts, logos or guidelines, they come first: use them instead of the palettes and fonts suggested here, and place the logo with add_brand_logo when the design calls for one.
+2. Understand the goal: platform, message, audience. Choose the size, palette and fonts before adding blocks.
+3. Build from the back: background, hero element, headline, supporting elements.
+4. Look at the result with get_canvas_snapshot when it is available and check it against the list below. Fix what fails and look again, at most twice.
+5. Summarize in a sentence or two.
 
 ## Checklist before finishing
 - Nothing touches or crosses the canvas edge by accident; margins are respected.

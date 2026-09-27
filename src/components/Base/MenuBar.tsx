@@ -42,6 +42,7 @@ import {
 	Info,
 	Package,
 	PackagePlus,
+	SwatchBook,
 	Plus,
 	Save,
 	ScrollText,
@@ -74,6 +75,9 @@ const DonationsModal = React.lazy(
 const PreviewModal = React.lazy(
 	async () => await import('../Modals/PreviewModal'),
 );
+const BrandKitDialog = React.lazy(
+	async () => await import('../Modals/BrandKitDialog'),
+);
 const ImportComponentsDialog = React.lazy(
 	async () => await import('../Modals/ImportComponentsDialog'),
 );
@@ -90,6 +94,7 @@ export const MenuBar: React.FC = () => {
 	const [showChangelog, setShowChangelog] = useState(false);
 	const [showDonations, setShowDonations] = useState(false);
 	const [showImportComponents, setShowImportComponents] = useState(false);
+	const [showBrandKit, setShowBrandKit] = useState(false);
 
 	/* KComponent Store */
 	/* The library dialog itself lives in the editor's left panel. */
@@ -318,6 +323,14 @@ export const MenuBar: React.FC = () => {
 			run: () => setShowComponentLibrary(true),
 		},
 		{
+			id: 'file.brand-kit',
+			title: 'Brand kit…',
+			group: 'File',
+			icon: SwatchBook,
+			keywords: ['brand', 'colors', 'fonts', 'logo', 'palette'],
+			run: () => setShowBrandKit(true),
+		},
+		{
 			id: 'workspace.clean',
 			title: 'Clear workspace',
 			group: 'Workspaces',
@@ -452,6 +465,11 @@ export const MenuBar: React.FC = () => {
 								}}
 							>
 								Share
+							</MenubarItem>
+
+							<MenubarSeparator />
+							<MenubarItem onClick={() => setShowBrandKit(true)}>
+								Brand Kit…
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
@@ -671,6 +689,12 @@ export const MenuBar: React.FC = () => {
 						}}
 						open={showDonations}
 					></DonationsModal>
+				</Suspense>
+			)}
+
+			{showBrandKit && (
+				<Suspense>
+					<BrandKitDialog open={showBrandKit} onOpenChange={setShowBrandKit} />
 				</Suspense>
 			)}
 

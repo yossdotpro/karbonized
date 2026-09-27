@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { useControlsStore, useHistoryStore, useWorkspaceStore } from '@/stores';
 import { commandRegistry } from '@/lib/commands/registry';
 import { undo } from '@/lib/editor/history';
+import { EMPTY_BRAND_KIT } from '@/lib/brand/brand-kit';
+import { useBrandStore } from '@/stores/brand-store';
 import { compactValue } from './blocks';
 import { isAllowedCommand } from './commands';
 import { snapshotScale, splitDataUrl } from './export';
@@ -307,6 +309,38 @@ describe('executeTool', () => {
 
 		const missing = await run('set_variables', { remove: ['nope'] });
 		expect(missing.result.isError).toBe(true);
+	});
+
+	it('reads the brand kit and places its logo', async () => {
+		useBrandStore.setState({ hydrated: true, kit: EMPTY_BRAND_KIT });
+		expect(JSON.parse(text(await run('get_brand_kit', {})))).toMatchObject({
+			empty: true,
+		});
+		expect((await run('add_brand_logo', {})).result.isError).toBe(true);
+
+		useBrandStore.getState().setKit({
+			...EMPTY_BRAND_KIT,
+			name: 'Acme',
+			colors: [{ name: 'Ink', value: '#111318' }],
+			logos: [
+				{
+					id: 'logo-1',
+					name: 'Acme logo',
+					variant: 'primary',
+					src: 'data:image/png;base64,AAAA',
+					width: 400,
+					height: 100,
+				},
+			],
+		});
+		const kit = JSON.parse(text(await run('get_brand_kit', {})));
+		expect(kit).toMatchObject({ name: 'Acme', colors: [{ name: 'Ink' }] });
+		expect(JSON.stringify(kit)).not.toContain('data:image');
+
+		const placed = JSON.parse(
+			text(await run('add_brand_logo', { width: 200, x: 10, y: 20 })),
+		);
+		expect(placed).toMatchObject({ type: 'image', width: 200, height: 50 });
 	});
 
 	it('reads the workspace with long values shortened', async () => {

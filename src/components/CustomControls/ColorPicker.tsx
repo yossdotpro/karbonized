@@ -18,6 +18,7 @@ import {
 	PopoverTrigger,
 } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
+import { useBrandStore } from '@/stores/brand-store';
 
 /** Floating UI style placements, kept for backwards compatibility. */
 type Placement =
@@ -261,6 +262,7 @@ const PickerBody: React.FC<BodyProps> = ({
 }) => {
 	const [stop, setStop] = useState<0 | 1>(0);
 	const [recent] = useState<string[]>(() => readJSON(RECENT_KEY, []));
+	const brandColors = useBrandStore((state) => state.kit.colors);
 	const [customGradients, setCustomGradients] = useState<
 		Array<{ color1: string; color2: string }>
 	>(() => readJSON(GRADIENTS_KEY, []));
@@ -377,6 +379,35 @@ const PickerBody: React.FC<BodyProps> = ({
 					<span className='w-9 text-right font-mono text-[11px] tabular-nums text-muted-foreground'>
 						{Math.round(gradientDeg)}°
 					</span>
+				</div>
+			)}
+
+			{/* Brand kit colors, for a solid color or the selected stop */}
+			{brandColors.length > 0 && (
+				<div className='flex flex-col gap-1.5'>
+					<SectionLabel>Brand</SectionLabel>
+					<div className='grid grid-cols-8 gap-1.5'>
+						{brandColors.map((swatch, index) => (
+							<SwatchButton
+								key={`${swatch.value}-${index}`}
+								title={
+									swatch.name
+										? `${swatch.name} · ${swatch.value}`
+										: swatch.value
+								}
+								background={swatch.value}
+								active={
+									swatch.value ===
+									(isGradient ? stopColor : color)?.toLowerCase()
+								}
+								onClick={() =>
+									isGradient
+										? setStopColor(swatch.value)
+										: onColorChange(swatch.value)
+								}
+							/>
+						))}
+					</div>
 				</div>
 			)}
 

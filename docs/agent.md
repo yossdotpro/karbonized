@@ -70,6 +70,8 @@ Agent and the MCP server share the same tools:
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `get_design_guide`                     | The design standards (sizes per platform, layout, type, color, HTML block rules, final checklist)                                    |
 | `search_icons`                         | Icon names (Font Awesome and installed icon packs) for icon blocks and `@type:icon` variables                                        |
+| `get_brand_kit`                        | The brand kit: named colors, fonts, logos (without the images) and guidelines                                                        |
+| `add_brand_logo`                       | Place a logo of the brand kit as an image block, by id or variant, keeping its proportions                                           |
 | `get_workspace`                        | Canvas size, background, selection and every block with its position, size and properties                                            |
 | `create_workspace`                     | New project with a canvas size, opened in the editor                                                                                 |
 | `set_canvas_background`                | Color, gradient, texture, wallpaper or dynamic background, blur and noise                                                            |
@@ -103,6 +105,17 @@ checklist to run against `get_canvas_snapshot` before finishing. It is part of
 the Agent system prompt and of the MCP server instructions, and
 `get_design_guide` returns it for clients that ignore server instructions.
 Change the guide there; the prompt, the instructions and the tool follow.
+
+### Brand kit
+
+File → **Brand kit…** (or the command palette) holds the colors, fonts,
+logos and guidelines of the user's brand. The color picker shows the brand
+colors first and the font picker the brand fonts. Agent and MCP clients are
+told to call `get_brand_kit` before a new design and to follow it over the
+palettes of the design guide; `add_brand_logo` places a logo without sending
+the image through the model. A kit can be exported and imported as a
+`.kbrand` file (JSON). It is stored in IndexedDB (`src/stores/brand-store.ts`,
+model in `src/lib/brand/brand-kit.ts`).
 
 ### Templates and project variables
 
