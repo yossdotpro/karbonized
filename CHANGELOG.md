@@ -38,6 +38,12 @@
 - Block "Export layer" uses the same scale and transparency settings
 - Notifications for export, copy and project errors instead of browser alerts
 - **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
+- **Agent designs to a standard**: a shared design guide for social media (sizes per platform and story safe zones, margins and grid, a type scale for phones, contrast, palettes, HTML block rules and a final checklist) in Agent's prompt and in the MCP server instructions, plus `get_design_guide` and `search_icons` tools
+- **New icon picker** with search, shared by the Icon block and components
+- **Icons in components**: `.kcomponent` files and HTML blocks take `/* @type:icon */` variables with an icon picker, drawn with the `.k-icon` helper; Feature Card joins the starter pack. See `docs/icon-libraries.md` to build icon libraries
+- **HTML blocks load their fonts**: Google fonts named in the block CSS now render (a shadow root cannot load them by itself)
+- **Realistic browser mockup**: Chrome-style tab strip, toolbar and omnibox with macOS or Windows controls, Light/Dark/Midnight themes and a soft shadow; the chrome scales with the block and screenshots cover the page instead of stretching
+- **Phones can be resized**: device mockups scale to any size and keep their proportions
 - **Templates** on the start screen: code snippet, launch post, app showcase, browser mockup and quote card, built from regular blocks you can edit (one undo removes them)
 - **Rename a tab** by double clicking it, or with **Rename** in its context menu
 - **New start screen**: one-click canvas sizes, open a file, what's new, and **recent projects** with thumbnails that stay available after their tab is closed. The full list of sizes and the custom size moved to a **New project** dialog

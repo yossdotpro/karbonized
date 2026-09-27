@@ -25,6 +25,9 @@ const changelog = `
 * Tools use single keys: V select, H pan, C crop, W warp
 * New start screen with templates, quick canvas sizes and your recent projects
 * Double click a tab to rename it
+* Agent follows design standards made for social media, and uses HTML blocks
+* Icon variables in components, with the same icon picker as the Icon block
+* Realistic browser mockup and resizable phones
 * New color picker with eyedropper, recent colors and gradient angle
 * Cleaner property panels and a clearer brush bar
 * feat: Create Dynamic Background from Image, Phone, and Window block context menus

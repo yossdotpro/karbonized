@@ -77,25 +77,27 @@ export const IconPickerDialog: React.FC<{
 					</DialogDescription>
 				</DialogHeader>
 
-				<div className='flex gap-0.5 rounded-control bg-muted p-0.5'>
-					{ICON_SETS.map((item) => (
-						<button
-							key={item.id}
-							type='button'
-							onClick={() => {
-								setSetId(item.id);
-								setLimit(PAGE);
-							}}
-							className={cn(
-								'h-7 flex-1 rounded-[5px] text-xs font-medium text-muted-foreground transition-colors hover:text-foreground',
-								item.id === setId &&
-									'bg-background text-foreground shadow-sm dark:bg-accent',
-							)}
-						>
-							{item.name}
-						</button>
-					))}
-				</div>
+				{ICON_SETS.length > 1 && (
+					<div className='flex gap-0.5 rounded-control bg-muted p-0.5'>
+						{ICON_SETS.map((item) => (
+							<button
+								key={item.id}
+								type='button'
+								onClick={() => {
+									setSetId(item.id);
+									setLimit(PAGE);
+								}}
+								className={cn(
+									'h-7 flex-1 rounded-[5px] text-xs font-medium text-muted-foreground transition-colors hover:text-foreground',
+									item.id === setId &&
+										'bg-background text-foreground shadow-sm dark:bg-accent',
+								)}
+							>
+								{item.name}
+							</button>
+						))}
+					</div>
+				)}
 
 				<div className='relative'>
 					<Search className='pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground' />

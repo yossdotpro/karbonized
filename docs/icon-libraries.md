@@ -8,21 +8,19 @@ shows an icon reads it:
 - **Agent and the MCP server** (`search_icons`, and the `icon` property of
   icon blocks).
 
-An icon is saved by **name only**, for example `LuRocket`, `SiGithub`,
-`PiHeart` or `FaReact`. Each set has its own prefix, so a name says which set it
-comes from and projects never store the set separately.
+An icon is saved by **name only**, for example `FaRocket` or `FaGithub`. Each
+set has its own prefix, so a name says which set it comes from and projects
+never store the set separately.
 
-## Sets that ship with the app
+## The set that ships with the app
 
-| Set | Prefix | Good for | License |
-|---|---|---|---|
-| Lucide | `Lu` | UI and feature icons, clean 2 px strokes | ISC |
-| Brands (Simple Icons) | `Si` | Company, product and platform logos | CC0 1.0 (logos stay trademarks of their owners) |
-| Phosphor | `Pi` | Friendly UI icons in several weights (`PiHeart`, `PiHeartBold`, `PiHeartFill`…) | MIT |
-| Font Awesome | `Fa` | The original Icon block set; older projects use it | CC BY 4.0 |
+| Set | Prefix | License |
+|---|---|---|
+| Font Awesome | `Fa` | CC BY 4.0 |
 
-Each set is a separate chunk that loads the first time it is opened in the
-picker or asked for by name.
+It loads as its own chunk the first time an icon is shown or the picker opens.
+The registry is built for more sets (see the last section), but the app ships
+only this one.
 
 ## Using icons in your own components
 
@@ -31,7 +29,7 @@ Declare the icon as a variable and draw it with the `.k-icon` helper:
 ```css
 :root {
   /* @type:icon */
-  --feature-icon: LuRocket;
+  --feature-icon: FaRocket;
   /* @type:color */
   --accent: #f43f5e;
 }
@@ -55,7 +53,7 @@ Declare the icon as a variable and draw it with the `.k-icon` helper:
 - You can also use it directly:
   `mask: var(--feature-icon) center / contain no-repeat; background: currentColor;`
 - It works without scripts and exports like the rest of the block.
-- Quote the name or not: `--icon: LuRocket;` and `--icon: "LuRocket";` are the
+- Quote the name or not: `--icon: FaRocket;` and `--icon: "FaRocket";` are the
   same.
 
 The **Feature Card** in the starter pack (`src/assets/kcomponents/feature-card.kcomponent`)
@@ -118,10 +116,9 @@ For a set every user should have (a new family for the Icon block and for
 
 1. **Pick a source.** The easiest is a pack of
    [`react-icons`](https://react-icons.github.io/react-icons/), already a
-   dependency: `react-icons/lu`, `react-icons/tb` (Tabler), `react-icons/hi2`
-   (Heroicons), `react-icons/ri` (Remix), `react-icons/md` (Material)… Any
-   module whose exports are React components named with a common prefix works
-   the same way.
+   dependency (`react-icons/tb` for Tabler, `react-icons/hi2` for Heroicons…).
+   Any module whose exports are React components named with a common prefix
+   works the same way.
 
 2. **Add an entry to `ICON_SETS`** in `src/lib/icons/icons.ts`:
 

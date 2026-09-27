@@ -7,7 +7,7 @@ import {
 	IconSignal4g,
 	IconWifi,
 } from '@tabler/icons-react';
-import React, { useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import { Button } from '../ui/button';
 import {
 	Dialog,
@@ -90,6 +90,56 @@ type models =
 	| 'Samsung Galaxy S20'
 	| 'Samsung Galaxy Note 10';
 
+/** Size the device frames and their screen insets are drawn at. */
+const DEVICE_SIZE = { width: 320, height: 620 };
+
+/**
+ * Draws a device at its design size and scales it to fit the block, keeping
+ * its proportions, so a phone can be any size (the frames are high
+ * resolution, so it stays sharp).
+ */
+const DeviceStage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const ref = useRef<HTMLDivElement>(null);
+	const [scale, setScale] = useState(1);
+
+	useLayoutEffect(() => {
+		const element = ref.current;
+		if (!element) return;
+
+		const update = () => {
+			const next = Math.min(
+				element.clientWidth / DEVICE_SIZE.width,
+				element.clientHeight / DEVICE_SIZE.height,
+			);
+			if (Number.isFinite(next) && next > 0) setScale(next);
+		};
+
+		update();
+		const observer = new ResizeObserver(update);
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, []);
+
+	return (
+		<div
+			ref={ref}
+			className='relative flex h-full w-full flex-auto items-center justify-center'
+		>
+			<div
+				className='relative flex shrink-0 flex-col'
+				style={{
+					width: DEVICE_SIZE.width,
+					height: DEVICE_SIZE.height,
+					transform: `scale(${scale})`,
+					transformOrigin: 'center',
+				}}
+			>
+				{children}
+			</div>
+		</div>
+	);
+};
+
 export const PhoneBlock: React.FC<Props> = ({ id }) => {
 	/* Component States */
 	const [showModal, setShowModal] = useState(false);
@@ -160,10 +210,10 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 				id={id}
 				border={0}
 				borderEditable={false}
-				minHeight={'618px'}
-				minWidth={'318px'}
-				maxWidth={template === 'adaptive' ? '1000px' : '318px'}
-				maxHeight={template === 'adaptive' ? '2000px' : '618px'}
+				minHeight={'310px'}
+				minWidth={'160px'}
+				maxWidth={'1600px'}
+				maxHeight={'3100px'}
 				defaultHeight={'620px'}
 				defaultWidth={'320px'}
 				onCreateDynamicBackground={handleCreateDynamicBackground}
@@ -412,148 +462,167 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 						</>
 					)}
 
-					{/* iPhone X */}
-					{template === 'iPhone X' && (
-						<>
-							<div className='absolute flex h-full w-full px-7 pb-6 pt-10'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
+					{template !== 'adaptive' && (
+						<DeviceStage>
+							{/* iPhone X */}
+							{template === 'iPhone X' && (
+								<>
+									<div className='absolute flex h-full w-full px-7 pb-6 pt-10'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
+											<img
+												ref={contentImageRef}
+												className='mx-auto my-auto h-full w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
+
+									<img className='absolute' src={iphoneX}></img>
+								</>
+							)}
+
+							{/* iPhone 14 Pro */}
+							{template === 'iPhone 14 Pro' && (
+								<>
+									<div className='absolute flex h-full w-full px-8 pb-11 pt-8'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
+											<img
+												ref={contentImageRef}
+												className='mask mx-auto my-auto h-full w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
+
+									<img className='mask absolute' src={iphone14pro}></img>
+								</>
+							)}
+
+							{/* iPhone 14  */}
+							{template === 'iPhone 14' && (
+								<>
+									<div className='h-full w-full px-8 pb-28 pt-8'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
+											<img
+												ref={contentImageRef}
+												className='mx-auto my-auto flex h-134 max-h-full w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
+
+									<img className='absolute flex flex-auto' src={iphone14}></img>
+								</>
+							)}
+
+							{/* Google Pixel 5  */}
+							{template === 'Google Pixel 5' && (
+								<>
+									<div className='h-full w-full px-10 pb-16 pt-8'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
+											<img
+												ref={contentImageRef}
+												className='mask mx-auto my-auto flex h-126 w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
+
 									<img
-										ref={contentImageRef}
-										className='mx-auto my-auto h-full w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
+										className='mask absolute flex flex-auto'
+										src={pixel5}
 									></img>
-								</div>
-							</div>
+								</>
+							)}
 
-							<img className='absolute' src={iphoneX}></img>
-						</>
-					)}
+							{/* Google Pixel 4 */}
+							{template === 'Google Pixel 4' && (
+								<>
+									<div className='h-full w-full px-4 pb-0 pt-12'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
+											<img
+												ref={contentImageRef}
+												className='mask mx-auto my-auto flex h-144 w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
 
-					{/* iPhone 14 Pro */}
-					{template === 'iPhone 14 Pro' && (
-						<>
-							<div className='absolute flex h-full w-full px-8 pb-11 pt-8'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
 									<img
-										ref={contentImageRef}
-										className='mask mx-auto my-auto h-full w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
+										className='mask absolute flex flex-auto'
+										src={pixel4}
 									></img>
-								</div>
-							</div>
+								</>
+							)}
 
-							<img className='mask absolute' src={iphone14pro}></img>
-						</>
-					)}
+							{/* Samsung Galaxy S10 */}
+							{template === 'Samsung Galaxy S10' && (
+								<>
+									<div className='h-full w-full px-4 pb-0 pt-7'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[1rem]'>
+											<img
+												ref={contentImageRef}
+												className='mask mx-auto my-auto flex h-148 w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
 
-					{/* iPhone 14  */}
-					{template === 'iPhone 14' && (
-						<>
-							<div className='h-full w-full px-8 pb-28 pt-8'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
 									<img
-										ref={contentImageRef}
-										className='mx-auto my-auto flex h-134 max-h-full w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
+										className=' absolute flex flex-auto'
+										src={galaxyS10}
 									></img>
-								</div>
-							</div>
+								</>
+							)}
 
-							<img className='absolute flex flex-auto' src={iphone14}></img>
-						</>
-					)}
+							{/* Samsung Galaxy S20 */}
+							{template === 'Samsung Galaxy S20' && (
+								<>
+									<div className='h-full w-full px-9 pb-7 pt-8'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[1rem]'>
+											<img
+												ref={contentImageRef}
+												className='mask mx-auto my-auto flex h-140 w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
 
-					{/* Google Pixel 5  */}
-					{template === 'Google Pixel 5' && (
-						<>
-							<div className='h-full w-full px-10 pb-16 pt-8'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
 									<img
-										ref={contentImageRef}
-										className='mask mx-auto my-auto flex h-126 w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
+										className='absolute flex flex-auto'
+										src={galaxyS20}
 									></img>
-								</div>
-							</div>
+								</>
+							)}
 
-							<img className='mask absolute flex flex-auto' src={pixel5}></img>
-						</>
-					)}
+							{/* Samsung Galaxy Note 10 */}
+							{template === 'Samsung Galaxy Note 10' && (
+								<>
+									<div className='h-full w-full px-5 pb-6 pt-6'>
+										<div className='mx-auto flex h-full w-full overflow-hidden rounded-[1rem]'>
+											<img
+												ref={contentImageRef}
+												className='mask mx-auto my-auto flex h-142 w-full bg-white'
+												src={src}
+												crossOrigin='anonymous'
+											></img>
+										</div>
+									</div>
 
-					{/* Google Pixel 4 */}
-					{template === 'Google Pixel 4' && (
-						<>
-							<div className='h-full w-full px-4 pb-0 pt-12'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[2rem]'>
 									<img
-										ref={contentImageRef}
-										className='mask mx-auto my-auto flex h-144 w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
+										className='absolute flex flex-auto'
+										src={galaxyNote10}
 									></img>
-								</div>
-							</div>
-
-							<img className='mask absolute flex flex-auto' src={pixel4}></img>
-						</>
-					)}
-
-					{/* Samsung Galaxy S10 */}
-					{template === 'Samsung Galaxy S10' && (
-						<>
-							<div className='h-full w-full px-4 pb-0 pt-7'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[1rem]'>
-									<img
-										ref={contentImageRef}
-										className='mask mx-auto my-auto flex h-148 w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
-									></img>
-								</div>
-							</div>
-
-							<img className=' absolute flex flex-auto' src={galaxyS10}></img>
-						</>
-					)}
-
-					{/* Samsung Galaxy S20 */}
-					{template === 'Samsung Galaxy S20' && (
-						<>
-							<div className='h-full w-full px-9 pb-7 pt-8'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[1rem]'>
-									<img
-										ref={contentImageRef}
-										className='mask mx-auto my-auto flex h-140 w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
-									></img>
-								</div>
-							</div>
-
-							<img className='absolute flex flex-auto' src={galaxyS20}></img>
-						</>
-					)}
-
-					{/* Samsung Galaxy Note 10 */}
-					{template === 'Samsung Galaxy Note 10' && (
-						<>
-							<div className='h-full w-full px-5 pb-6 pt-6'>
-								<div className='mx-auto flex h-full w-full overflow-hidden rounded-[1rem]'>
-									<img
-										ref={contentImageRef}
-										className='mask mx-auto my-auto flex h-142 w-full bg-white'
-										src={src}
-										crossOrigin='anonymous'
-									></img>
-								</div>
-							</div>
-
-							<img className='absolute flex flex-auto' src={galaxyNote10}></img>
-						</>
+								</>
+							)}
+						</DeviceStage>
 					)}
 				</div>
 			</ControlTemplate>

@@ -97,6 +97,12 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 		return currentControls.find((item) => item.id === controlID);
 	}, [currentControls, controlID]);
 
+	// Phone mockups drawn from a device frame only look right at the frame's
+	// proportions, so they resize proportionally (the adaptive model is free).
+	const keepsDeviceRatio =
+		currentControl?.type === 'phone_mockup' &&
+		readProperty(`${controlID}-device_model`).value !== 'adaptive';
+
 	const controlsClass = useMemo(() => {
 		const controlsClass: string[] = [];
 		currentControls.forEach((item) => {
@@ -1324,7 +1330,7 @@ export const Workspace: React.FC<Props> = ({ reference }) => {
 						}
 					}}
 					/* When resize or scale, keeps a ratio of the width, height. */
-					keepRatio={lockAspect}
+					keepRatio={lockAspect || keepsDeviceRatio}
 					/* resizable */
 					/* Only one of resizable, scalable, warpable can be used. */
 					resizable={!warp}

@@ -123,11 +123,11 @@ Generates a toggle switch in the properties panel.
 
 ```css
 /* @type:icon */
---feature-icon: LuRocket;
+--feature-icon: FaRocket;
 ```
 
-Generates an icon picker in the properties panel (Lucide, Brands, Phosphor and
-Font Awesome sets). When the block renders, the name becomes the image of the
+Generates an icon picker in the properties panel (the same icons as the Icon
+block). When the block renders, the name becomes the image of the
 icon, meant for a mask. Draw it with the built-in `.k-icon` helper, which takes
 the text color and is `1em` square:
 

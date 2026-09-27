@@ -27,14 +27,9 @@ describe('design guidance', () => {
 });
 
 describe('search_icons', () => {
-	it('returns icon names from the requested sets', async () => {
-		const result = JSON.parse(
-			await text('search_icons', { query: 'rocket', sets: ['lucide'] }),
-		);
-		expect(result.icons).toContain('LuRocket');
-		expect(result.icons.every((name: string) => name.startsWith('Lu'))).toBe(
-			true,
-		);
+	it('returns icon names', async () => {
+		const result = JSON.parse(await text('search_icons', { query: 'rocket' }));
+		expect(result.icons).toContain('FaRocket');
 	});
 
 	it('rejects unknown sets', async () => {

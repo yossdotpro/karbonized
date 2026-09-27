@@ -618,10 +618,11 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 	{
 		type: 'phone_mockup',
 		label: 'Phone',
-		description: 'A phone mockup showing an image.',
+		description:
+			'A phone mockup showing an image. Device models keep their proportions (about 1:1.94) at any size; the adaptive model can take any size.',
 		defaultSize: size(320, 620),
-		minSize: size(318, 618),
-		maxSize: size(1000, 2000),
+		minSize: size(160, 310),
+		maxSize: size(1600, 3100),
 		properties: [
 			{
 				key: 'device_model',
@@ -795,8 +796,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 	{
 		type: 'icon',
 		label: 'Icon',
-		description:
-			'An icon from the Lucide, Brands (Simple Icons), Phosphor or Font Awesome sets.',
+		description: 'A Font Awesome icon.',
 		defaultSize: size(120, 120),
 		minSize: size(20, 20),
 		maxSize: size(800, 800),
@@ -806,7 +806,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				kind: 'string',
 				default: 'FaFontAwesome',
 				description:
-					'Icon name, e.g. LuRocket, SiGithub, PiHeart or FaReact. Find names with search_icons.',
+					'Icon name, e.g. FaRocket, FaGithub or FaHeart. Find names with search_icons.',
 			},
 			{
 				key: 'iconColor',

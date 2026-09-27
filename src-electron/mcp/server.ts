@@ -20,6 +20,7 @@ import type {
 	McpStatus,
 } from '../../src/lib/agent/bridge';
 import { createRequestBroker } from '../../src/lib/agent/mcp/broker';
+import { MCP_INSTRUCTIONS } from '../../src/lib/agent/mcp/instructions';
 import {
 	checkMcpRequest,
 	createToken,
@@ -175,8 +176,7 @@ export const registerMcpServer = async (options: {
 			{ name: 'karbonized', version: app.getVersion() },
 			{
 				capabilities: { tools: {} },
-				instructions:
-					'Karbonized is an editor for images of code snippets and mockups. Tools act on the project open in the editor: call get_workspace first and use the block ids it returns. Every tool call can be undone in the app.',
+				instructions: MCP_INSTRUCTIONS,
 			},
 		);
 

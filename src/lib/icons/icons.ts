@@ -5,10 +5,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
  * Icon sets available in the app: the Icon block, the `icon` variables of
  * HTML blocks / `.kcomponent` files and Agent all read this registry.
  *
- * An icon is identified by its name alone (`FaRocket`, `LuSparkles`,
- * `SiGithub`): every set has its own prefix, so names never collide and a
- * saved project does not need to store the set. Each set is a separate chunk
- * that loads the first time it is needed.
+ * An icon is identified by its name alone (`FaRocket`): every set has its
+ * own prefix, so names never collide and a saved project does not need to
+ * store the set. Each set is a separate chunk that loads the first time it
+ * is needed.
  *
  * To add a set, see `docs/icon-libraries.md`.
  */
@@ -38,31 +38,6 @@ export interface IconEntry {
 
 export const ICON_SETS: readonly IconSet[] = [
 	{
-		id: 'lucide',
-		name: 'Lucide',
-		prefix: 'Lu',
-		license: 'ISC',
-		url: 'https://lucide.dev',
-		load: () => import('react-icons/lu'),
-	},
-	{
-		id: 'brands',
-		name: 'Brands',
-		prefix: 'Si',
-		license: 'CC0 1.0',
-		url: 'https://simpleicons.org',
-		load: () => import('react-icons/si'),
-	},
-	{
-		id: 'phosphor',
-		name: 'Phosphor',
-		prefix: 'Pi',
-		license: 'MIT',
-		url: 'https://phosphoricons.com',
-		load: () => import('react-icons/pi'),
-	},
-	{
-		// The set the Icon block has always used; older projects name its icons.
 		id: 'font-awesome',
 		name: 'Font Awesome',
 		prefix: 'Fa',
@@ -158,7 +133,7 @@ export const iconMaskUrl = async (name: string): Promise<string | null> => {
 		: null;
 };
 
-/** Split `LuArrowUpRight` into `lu arrow up right` for matching. */
+/** Split `FaArrowRight` into `fa arrow right` for matching. */
 const words = (name: string) =>
 	name
 		.replace(/([a-z0-9])([A-Z])/g, '$1 $2')

@@ -24,7 +24,6 @@ export const searchIconsTool = defineTool({
 	description: [
 		'Find icon names for the `icon` property of icon blocks and for `/* @type:icon */` variables of HTML blocks.',
 		`Sets: ${ICON_SETS.map((set) => `${set.id} (${set.name}, names start with ${set.prefix})`).join('; ')}.`,
-		'Use lucide for UI and feature icons, brands for company and product logos.',
 	].join(' '),
 	input: z.object({
 		query: z

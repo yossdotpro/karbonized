@@ -17,38 +17,31 @@ describe('icon registry', () => {
 
 	it('finds the set of a name by its prefix', () => {
 		expect(iconSetOf('FaRocket')?.id).toBe('font-awesome');
-		expect(iconSetOf('LuSparkles')?.id).toBe('lucide');
-		expect(iconSetOf('SiGithub')?.id).toBe('brands');
+		expect(iconSetOf('FaRegHeart')?.id).toBe('font-awesome');
 		expect(iconSetOf('Rocket')).toBeUndefined();
 	});
 
 	it('normalizes quoted names', () => {
-		expect(normalizeIconName(' "LuRocket" ')).toBe('LuRocket');
+		expect(normalizeIconName(' "FaRocket" ')).toBe('FaRocket');
 	});
 
 	it('renders a standalone SVG with one namespace', async () => {
-		const svg = await iconSvg('LuRocket');
+		const svg = await iconSvg('FaRocket');
 		expect(svg).toMatch(/^<svg /);
 		expect(svg?.match(/xmlns=/g)).toHaveLength(1);
-		expect(await iconMaskUrl('LuRocket')).toMatch(
+		expect(await iconMaskUrl('FaRocket')).toMatch(
 			/^url\("data:image\/svg\+xml;utf8,/,
 		);
 	});
 
 	it('returns null for unknown icons', async () => {
-		expect(await resolveIcon('LuNotAnIconAtAll')).toBeNull();
+		expect(await resolveIcon('FaNotAnIconAtAll')).toBeNull();
 		expect(await iconSvg('Nope')).toBeNull();
 	});
 
-	it('searches across sets, exact words first', async () => {
-		const results = await searchIcons('rocket', {
-			sets: ['lucide', 'font-awesome'],
-		});
-		expect(results).toContain('LuRocket');
-		expect(results).toContain('FaRocket');
-		expect(results.indexOf('LuRocket')).toBeLessThan(results.length);
-		expect(await searchIcons('github', { sets: ['brands'] })).toContain(
-			'SiGithub',
-		);
+	it('searches icon names, exact words first', async () => {
+		const results = await searchIcons('rocket');
+		expect(results[0]).toBe('FaRocket');
+		expect(await searchIcons('github')).toContain('FaGithub');
 	});
 });
