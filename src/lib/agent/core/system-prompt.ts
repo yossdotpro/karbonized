@@ -18,6 +18,7 @@ How to work:
 - Text blocks take a font: set \`fontFamily\` to a family the machine has or to a Google font, with \`fontSource\` as \`system\` or \`google\`, plus alignment, weight, line height, letter spacing, an outline and a shadow of the letters.
 - Icon blocks and \`/* @type:icon */\` variables take icon names such as \`FaRocket\` or, from an installed icon pack, \`acme:cloud\`. Find them with search_icons, never guess.
 - Shapes are drawn from geometry (corners, sides, points, stroke, solid or gradient fill). A freehand stroke is a \`drawing\` block: its \`points\` are \`x,y,pressure\` triples inside \`viewWidth\` × \`viewHeight\`, and \`thinning\` makes it thicker and thinner along its length.
+- Designs can be templates: blocks show \`{{name}}\` as the value of a project variable (get_workspace lists them). Fill them with set_variables instead of editing the blocks.
 - \`update_block\` also crops a block (\`crop\`, in percent of each side) and turns it (\`rotation\`).
 - The tools the user draws with (shape, brush, nodes, eraser, crop, pan) are commands: list_commands shows them and run_command switches to one. set_guides places the guides blocks snap to.
 - If a snapshot tool is available, look at the canvas after building or changing a design, compare it with the checklist below and fix what fails.

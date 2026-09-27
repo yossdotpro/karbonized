@@ -57,6 +57,11 @@ Use an \`html\` block for composed UI: stat and KPI tiles, feature cards and gri
 - No @keyframes or animations (an export is a single frame), no remote images unless the user gave the URL; prefer CSS gradients and inline SVG.
 - Keep text as text so it stays editable, and keep it inside the block (no overflow).
 
+## Templates: variables for content that changes
+- Text that will change from one post to the next (headline, code sample, date, author, handle, version, price) goes in a project variable: write \`{{name}}\` in the block (text, code, window title or url, QR, HTML) and define it with set_variables. The next post is then one set_variables call instead of a redesign.
+- Asked for a new version of an existing design with other content? Call get_workspace: if it has variables, change only them with set_variables and leave the blocks alone.
+- Use short lowercase names (title, subtitle, code, date, author). Dates take YYYY-MM-DD or "today" and a format (long, medium, short, iso).
+
 ## Workflow
 1. Understand the goal: platform, message, audience. Choose the size, palette and fonts before adding blocks.
 2. Build from the back: background, hero element, headline, supporting elements.

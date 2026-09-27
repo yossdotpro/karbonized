@@ -12,6 +12,7 @@ import { Switch } from '../ui/switch';
 import { IconAppWindow } from '@tabler/icons-react';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { useWorkspaceStore, useControlsStore } from '../../stores';
@@ -33,6 +34,8 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 	const contentImageRef = useRef<HTMLImageElement>(null);
 	const [title, setTitle] = useControlState('Karbonized', `${id}-title`);
 	const [url, setUrl] = useControlState('karbonized.onrender.com', `${id}-url`);
+	const shownTitle = useResolvedText(title);
+	const shownUrl = useResolvedText(url);
 	const [color, setColor] = useControlState('#ffffff', `${id}-color`);
 	const [controlsColor, setControlsColor] = useControlState(
 		'#0e111b',
@@ -240,8 +243,8 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 				<BrowserFrame
 					style={windowStyle === 'window' ? 'window' : 'mac'}
 					type={windowType === 'normal' ? 'normal' : 'browser'}
-					title={title}
-					url={url}
+					title={shownTitle}
+					url={shownUrl}
 					chrome={color}
 					ink={controlsColor}
 					shadow={windowShadow}

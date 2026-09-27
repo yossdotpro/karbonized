@@ -10,6 +10,7 @@ import { Input } from '../ui/input';
 import { HexAlphaColorPicker, HexColorPicker } from 'react-colorful';
 import { QRCodeSVG } from 'qrcode.react';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
 
 interface Props {
 	id: string;
@@ -18,6 +19,7 @@ interface Props {
 export const QrControl: React.FC<Props> = ({ id }) => {
 	/* Component States */
 	const [text, setText] = useControlState('karbonized', `${id}-text`);
+	const shownText = useResolvedText(text);
 	const [backgroundColor, setBackgroundColor] = useControlState(
 		'#1e408400',
 		`${id}-backgroundColor`,
@@ -93,7 +95,7 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 					size={512}
 					style={{ width: '100%', height: '100%' }}
 					className='flex flex-auto'
-					value={text}
+					value={shownText}
 				></QRCodeSVG>
 			</ControlTemplate>
 		</>

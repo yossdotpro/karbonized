@@ -23,6 +23,7 @@ import {
 } from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import {
@@ -124,6 +125,9 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 			void loadGoogleFont(fontFamily);
 		}
 	}, [fontFamily, fontSource]);
+
+	/* What the canvas shows: project variables filled in */
+	const shownText = useResolvedText(text);
 
 	/* Editing the text on the canvas */
 	const [editing, setEditing] = useState(false);
@@ -455,7 +459,7 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 							'cursor-text select-text outline outline-1 outline-blue-500',
 					)}
 				>
-					{editing ? undefined : text}
+					{editing ? undefined : shownText}
 				</p>
 			</ControlTemplate>
 		</>

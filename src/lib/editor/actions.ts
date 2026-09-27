@@ -15,6 +15,12 @@ import { generateNewId } from '@/lib/utils';
 import { useViewStore } from '@/lib/viewer';
 import { getRandomNumber } from '@/utils/getRandom';
 import { navigateTo } from '@/lib/routing';
+import {
+	type ProjectVariable,
+	VARIABLE_PROPERTY_KEYS,
+	normalizeVariables,
+	variableReferences,
+} from '@/lib/variables/variables';
 import { isTextSizing, sizingForSize } from '@/lib/blocks/text-sizing';
 import {
 	HTML_BLOCK_CODE_KEYS,
@@ -101,7 +107,9 @@ export interface WorkspaceSummary {
 	name: string;
 	width: number;
 	height: number;
-	background: WorkspaceSettings;
+	background: Omit<WorkspaceSettings, 'variables'>;
+	/** Template slots; blocks show `{{name}}` as their value. */
+	variables: ProjectVariable[];
 	selection: string[];
 	/** Guides dragged out of the rulers, in canvas pixels. */
 	guides: { vertical: number[]; horizontal: number[] };
@@ -294,7 +302,10 @@ export const getWorkspaceSummary = (): WorkspaceSummary => {
 		name: workspace.workspaceName,
 		width: parseFloat(workspace.workspaceWidth),
 		height: parseFloat(workspace.workspaceHeight),
-		background: pickWorkspaceSettings(workspace),
+		background: (({ variables: _variables, ...background }) => background)(
+			pickWorkspaceSettings(workspace),
+		),
+		variables: workspace.variables ?? [],
 		selection: useControlsStore.getState().selectedControlIDs,
 		guides: useViewStore.getState().guides,
 		blocks: liveControls(workspace).map(summarizeBlock),
@@ -772,6 +783,40 @@ export const setCanvasSettings = (
 		.getState()
 		.commitWorkspaceSettings(workspace.id, previous, next);
 	useWorkspaceStore.getState().setWorkspaceSettings(next);
+};
+
+/**
+ * Which variables the blocks of the canvas refer to: `used` lists the ones
+ * that exist, `missing` the `{{name}}` references with no variable.
+ */
+export const getVariableUsage = (): {
+	used: string[];
+	unused: string[];
+	missing: string[];
+} => {
+	const workspace = requireWorkspace();
+	const names = new Set((workspace.variables ?? []).map((item) => item.name));
+	const referenced = new Set<string>();
+
+	liveControls(workspace).forEach((block) => {
+		VARIABLE_PROPERTY_KEYS.forEach((key) => {
+			const { found, value } = readProperty(propertyId(block.id, key));
+			if (found && typeof value === 'string') {
+				variableReferences(value).forEach((name) => referenced.add(name));
+			}
+		});
+	});
+
+	return {
+		used: [...names].filter((name) => referenced.has(name)),
+		unused: [...names].filter((name) => !referenced.has(name)),
+		missing: [...referenced].filter((name) => !names.has(name)),
+	};
+};
+
+/** Replace the project variables of the canvas as one undoable step. */
+export const setProjectVariables = (variables: ProjectVariable[]): void => {
+	setCanvasSettings({ variables: normalizeVariables(variables) });
 };
 
 /**

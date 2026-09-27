@@ -12,6 +12,7 @@ export const MCP_INSTRUCTIONS = `Karbonized is an editor for social media graphi
 - Use html blocks (HTML + CSS) for anything native blocks cannot express: cards, stat tiles, badges, icon lists, charts, testimonials, UI screens.
 - Find icon names with search_icons; never guess them. Icon packs (.kcomponent files with type: icon-pack) add icons named <prefix>:<name>.
 - Check the result with get_canvas_snapshot and fix what fails the checklist below.
+- Designs can be templates: get_workspace lists project variables, and blocks show {{name}} as their value. To make a new version, change the values with set_variables instead of editing blocks.
 - Only export an image when the user asks. export_image saves to the user's export folder without a dialog and returns the path; destination "return" gives you the image instead of saving it.
 
 ${DESIGN_GUIDE}`;

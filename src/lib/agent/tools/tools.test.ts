@@ -262,6 +262,53 @@ describe('executeTool', () => {
 		expect(workspace().workspaceColorMode).toBe('Single');
 	});
 
+	it('fills project variables as one undo step', async () => {
+		await run('add_block', {
+			type: 'text',
+			properties: { text: '{{title}} · {{author}}' },
+		});
+
+		const result = JSON.parse(
+			text(
+				await run('set_variables', {
+					variables: [
+						{ name: 'title', value: 'Launch day' },
+						{ name: 'day', kind: 'date', value: '2026-09-27' },
+					],
+				}),
+			),
+		);
+		expect(result).toMatchObject({
+			variables: [
+				{ name: 'title', kind: 'text', value: 'Launch day' },
+				{ name: 'day', kind: 'date', value: '2026-09-27', format: 'long' },
+			],
+			used: ['title'],
+			unused: ['day'],
+			missing: ['author'],
+		});
+
+		await run('set_variables', {
+			variables: [{ name: 'title', value: 'Launch week' }],
+			remove: ['day'],
+		});
+		expect(workspace().variables).toEqual([
+			{ name: 'title', kind: 'text', value: 'Launch week' },
+		]);
+		expect(
+			JSON.parse(text(await run('get_workspace', {}))).variables,
+		).toHaveLength(1);
+
+		undo();
+		expect(workspace().variables?.map((item) => item.value)).toEqual([
+			'Launch day',
+			'2026-09-27',
+		]);
+
+		const missing = await run('set_variables', { remove: ['nope'] });
+		expect(missing.result.isError).toBe(true);
+	});
+
 	it('reads the workspace with long values shortened', async () => {
 		const image = `data:image/png;base64,${'A'.repeat(4096)}`;
 		await run('add_block', { type: 'image', properties: { src: image } });

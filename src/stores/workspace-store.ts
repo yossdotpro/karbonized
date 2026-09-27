@@ -42,7 +42,10 @@ interface WorkspaceActions {
 	cleanWorkspace: () => void;
 }
 
-/** Canvas settings (background and size), without the layers or the name. */
+/**
+ * Canvas settings (background, size and project variables), without the
+ * layers or the name.
+ */
 export type WorkspaceSettings = Pick<
 	Workspace,
 	| 'workspaceColor'
@@ -57,6 +60,7 @@ export type WorkspaceSettings = Pick<
 	| 'workspaceNoise'
 	| 'textureName'
 	| 'textureColors'
+	| 'variables'
 >;
 
 export const pickWorkspaceSettings = (
@@ -77,6 +81,7 @@ export const pickWorkspaceSettings = (
 	workspaceNoise: workspace.workspaceNoise,
 	textureName: workspace.textureName,
 	textureColors: { ...workspace.textureColors },
+	variables: (workspace.variables ?? []).map((variable) => ({ ...variable })),
 });
 
 const createDefaultWorkspace = (id: string, name: string): Workspace => ({

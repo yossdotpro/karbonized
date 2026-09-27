@@ -25,6 +25,7 @@ import { ColorPicker } from '../CustomControls/ColorPicker';
 import { CloseSvg, MinimizeSvg } from '../Misc/Icons';
 import { LanguajeTabIcon } from './LanguajeTabIcon';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
 import { themes } from '../../utils/PrismThemes';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -56,6 +57,8 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 	);
 	const [showTabs, setShowTabs] = useControlState(true, `${id}-tabs`);
 	const [title, setTitle] = useControlState('Code.jsx', `${id}-wintitle`);
+	const shownTitle = useResolvedText(title);
+	const shownCode = useResolvedText(code);
 	const [showLineNumbers, setShowLineNumbers] = useControlState(
 		false,
 		`${id}-linenumbers`,
@@ -346,7 +349,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 										style={{ color: controlsColor }}
 										className='text-[13px] font-block font-medium text-gray-300 tracking-tight'
 									>
-										{title || 'zsh'}
+										{shownTitle || 'zsh'}
 									</p>
 								) : (
 									<div className='flex items-center gap-2 bg-[#3c3d3d] px-6 py-1 rounded-md border border-white/5 shadow-sm'>
@@ -355,7 +358,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 											style={{ color: controlsColor }}
 											className='text-[12px] font-block text-gray-200'
 										>
-											{title}
+											{shownTitle}
 										</span>
 										<IconX
 											size={12}
@@ -386,7 +389,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 												style={{ color: controlsColor }}
 												className='text-xs font-block text-gray-200'
 											>
-												{title}
+												{shownTitle}
 											</span>
 											<IconX
 												style={{ color: controlsColor }}
@@ -406,7 +409,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 										style={{ color: controlsColor }}
 										className='flex-1 text-xs font-block text-gray-400 pl-4'
 									>
-										{title}
+										{shownTitle}
 									</p>
 								)}
 							</div>
@@ -432,13 +435,15 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 									style={{ color: controlsColor }}
 									className='flex-1 font-bold text-sm uppercase tracking-wider'
 								>
-									{title}
+									{shownTitle}
 								</p>
 							)}
 							{showTabs && (
 								<div className='flex-1 flex items-center gap-2 border-2 border-black px-2 py-1 bg-white text-black'>
 									<LanguajeTabIcon languaje={language} />
-									<span className='font-bold text-sm uppercase'>{title}</span>
+									<span className='font-bold text-sm uppercase'>
+										{shownTitle}
+									</span>
 									<IconX className='ml-auto cursor-pointer' size={14} />
 								</div>
 							)}
@@ -465,7 +470,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 										style={{ color: controlsColor }}
 										className='flex-1 text-center text-sm font-serif italic text-amber-900'
 									>
-										{title}
+										{shownTitle}
 									</p>
 								)}
 								{showTabs && (
@@ -475,7 +480,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 											style={{ color: controlsColor }}
 											className='text-sm font-serif text-amber-900'
 										>
-											{title}
+											{shownTitle}
 										</span>
 										<IconX
 											style={{ color: controlsColor }}
@@ -504,7 +509,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 										style={{ color: controlsColor }}
 										className='text-xs font-bold text-[#eeeeee] font-block drop-shadow-sm'
 									>
-										{title || 'Terminal'}
+										{shownTitle || 'Terminal'}
 									</p>
 								)}
 								{showTabs && (
@@ -514,7 +519,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 											style={{ color: controlsColor }}
 											className='text-xs font-semibold text-[#eeeeee] font-block'
 										>
-											{title}
+											{shownTitle}
 										</span>
 										<IconX
 											style={{ color: controlsColor }}
@@ -555,7 +560,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 								style={{ color: controlsColor }}
 								className='text-xs font-bold text-black uppercase tracking-widest'
 							>
-								{title || 'GENERATED LOCALES'}
+								{shownTitle || 'GENERATED LOCALES'}
 							</p>
 						</div>
 					)}
@@ -578,7 +583,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 									style={{ color: controlsColor }}
 									className='text-xs font-bold text-gray-200 font-block tracking-wide mb-1'
 								>
-									{title || 'Terminal'}
+									{shownTitle || 'Terminal'}
 								</p>
 							</div>
 
@@ -607,7 +612,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 										style={{ color: controlsColor }}
 										className='text-[13px] font-block font-medium text-[#eff0f1]'
 									>
-										{title || 'Konsole'}
+										{shownTitle || 'Konsole'}
 									</span>
 								</div>
 
@@ -629,7 +634,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 									<div className='flex items-center gap-2 px-3 h-7 bg-[#232629] border-t-2 border-t-[#3daee9] rounded-t-sm shadow-sm'>
 										<LanguajeTabIcon languaje={language} />
 										<span className='text-xs font-block text-[#eff0f1]'>
-											{title}
+											{shownTitle}
 										</span>
 										<button className='ml-1 p-0.5 hover:bg-white/10 rounded-full text-gray-400'>
 											<IconX size={10} />
@@ -674,7 +679,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 							language={language}
 							style={handleChangeTheme(theme)}
 						>
-							{code}
+							{shownCode}
 						</SyntaxHighlighter>
 					</div>
 

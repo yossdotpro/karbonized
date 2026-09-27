@@ -5,8 +5,16 @@ import {
 	setGuides,
 	requireWorkspace,
 	setCanvasSettings,
+	setProjectVariables,
+	getVariableUsage,
 	waitForElement,
 } from '@/lib/editor/actions';
+import {
+	type ProjectVariable,
+	MAX_VARIABLES,
+	MAX_VARIABLE_VALUE,
+	VARIABLE_NAME_PATTERN,
+} from '@/lib/variables/variables';
 import type { WorkspaceSettings } from '@/stores/workspace-store';
 import { textures } from '@/constants/textures';
 import Wallpapers from '@/utils/wallpapers';
@@ -30,7 +38,7 @@ export const getWorkspaceTool = defineTool({
 	name: 'get_workspace',
 	title: 'Read workspace',
 	description:
-		'Read the open canvas: size, background, selection and every block (id, type, name, position, size, rotation, visibility, lock and properties that differ from their defaults). Coordinates are canvas pixels from the top-left corner.',
+		'Read the open canvas: size, background, project variables (template slots, shown by blocks as {{name}}), selection and every block (id, type, name, position, size, rotation, visibility, lock and properties that differ from their defaults). Coordinates are canvas pixels from the top-left corner.',
 	input: z.object({}),
 	mutates: false,
 	execute: () => {
@@ -222,10 +230,83 @@ export const setCanvasSizeTool = defineTool({
 	},
 });
 
+export const setVariablesTool = defineTool({
+	name: 'set_variables',
+	title: 'Set project variables',
+	description: [
+		'Fill or define the template slots of the project. A block that contains {{name}} in its text, code, window title or url, QR text or HTML shows the value of the variable, so changing a value updates the design without editing blocks.',
+		'Listed variables are created when missing and updated otherwise; the rest are kept. `remove` deletes variables.',
+		'Dates take YYYY-MM-DD or "today" and show in `format` (long, medium, short or iso).',
+		'The result lists variables no block uses and {{name}} references that have no variable.',
+	].join(' '),
+	input: z.object({
+		variables: z
+			.array(
+				z.object({
+					name: z
+						.string()
+						.regex(VARIABLE_NAME_PATTERN, 'Letters, numbers, - and _.'),
+					value: z.string().max(MAX_VARIABLE_VALUE).optional(),
+					kind: z.enum(['text', 'multiline', 'date']).optional(),
+					label: z.string().max(60).optional(),
+					format: z.enum(['long', 'medium', 'short', 'iso']).optional(),
+				}),
+			)
+			.optional(),
+		remove: z.array(z.string()).optional(),
+	}),
+	mutates: true,
+	execute: ({ variables = [], remove = [] }) => {
+		const workspace = requireWorkspace();
+		const removed = new Set(remove);
+		const unknown = remove.filter(
+			(name) => !(workspace.variables ?? []).some((item) => item.name === name),
+		);
+		if (unknown.length > 0) {
+			throw new ToolError(`No variable named ${unknown.join(', ')}.`);
+		}
+
+		const next: ProjectVariable[] = (workspace.variables ?? []).filter(
+			(item) => !removed.has(item.name),
+		);
+		for (const input of variables) {
+			const index = next.findIndex((item) => item.name === input.name);
+			const current = index >= 0 ? next[index] : undefined;
+			const kind = input.kind ?? current?.kind ?? 'text';
+			const updated: ProjectVariable = {
+				name: input.name,
+				kind,
+				value:
+					input.value ?? current?.value ?? (kind === 'date' ? 'today' : ''),
+				...((input.label ?? current?.label) && {
+					label: input.label ?? current?.label,
+				}),
+				...(kind === 'date' && {
+					format: input.format ?? current?.format ?? 'long',
+				}),
+			};
+			if (index >= 0) next[index] = updated;
+			else next.push(updated);
+		}
+		if (next.length > MAX_VARIABLES) {
+			throw new ToolError(
+				`A project holds at most ${MAX_VARIABLES} variables.`,
+			);
+		}
+
+		setProjectVariables(next);
+		return {
+			variables: requireWorkspace().variables ?? [],
+			...getVariableUsage(),
+		};
+	},
+});
+
 export const workspaceTools = [
 	getWorkspaceTool,
 	createWorkspaceTool,
 	setCanvasBackgroundTool,
 	setCanvasSizeTool,
 	setGuidesTool,
+	setVariablesTool,
 ];

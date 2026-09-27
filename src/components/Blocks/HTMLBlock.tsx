@@ -2,6 +2,8 @@ import { IconCode, IconWorld } from '@tabler/icons-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
+import { escapeHtml } from '@/lib/variables/variables';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { Label } from '../ui/label';
@@ -59,6 +61,8 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 		defaultHTMLContent,
 		`${id}-html`,
 	);
+	// Project variables are filled in; their values are escaped as text.
+	const shownHtml = useResolvedText(htmlContent, escapeHtml);
 	const [cssContent, setCSSContent] = useControlState(
 		defaultCSSContent,
 		`${id}-css`,
@@ -205,7 +209,7 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 			container.style.display = 'flex';
 			container.style.width = '100%';
 			container.style.height = '100%';
-			container.innerHTML = htmlContent;
+			container.innerHTML = shownHtml;
 			shadowRoot.appendChild(container);
 
 			// Execute JavaScript only if allowed
@@ -318,7 +322,7 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 			return () => clearTimeout(timeoutId);
 		}
 	}, [
-		htmlContent,
+		shownHtml,
 		cssContent,
 		jsContent,
 		autoRefresh,

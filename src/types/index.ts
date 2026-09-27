@@ -1,3 +1,4 @@
+import type { ProjectVariable } from '../lib/variables/variables';
 export interface Item {
 	id: string;
 	type: string;
@@ -38,6 +39,8 @@ export interface Workspace {
 	workspaceNoise: number;
 	textureName: string;
 	textureColors: { color1: string; color2: string };
+	/** Template slots: blocks show `{{name}}` as the value (see `lib/variables`). */
+	variables?: ProjectVariable[];
 }
 
 export interface LayerSnapshot {

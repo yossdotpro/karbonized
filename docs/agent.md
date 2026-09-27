@@ -75,6 +75,7 @@ Agent and the MCP server share the same tools:
 | `set_canvas_background`                | Color, gradient, texture, wallpaper or dynamic background, blur and noise                                                            |
 | `set_canvas_size`                      | Resize the canvas                                                                                                                    |
 | `set_guides`                           | Place the guides blocks snap to, in canvas pixels                                                                                    |
+| `set_variables`                        | Create, fill or remove project variables (template slots that blocks show as `{{name}}`)                                             |
 | `list_block_types`                     | Block types, their properties and size limits, code themes                                                                           |
 | `add_block`                            | Add a block (code, text, image, window, phone, shape, icon, QR, freehand stroke, HTML)                                               |
 | `update_block`                         | Name, position, size, rotation, crop, visibility, lock and properties                                                                |
@@ -102,6 +103,20 @@ checklist to run against `get_canvas_snapshot` before finishing. It is part of
 the Agent system prompt and of the MCP server instructions, and
 `get_design_guide` returns it for clients that ignore server instructions.
 Change the guide there; the prompt, the instructions and the tool follow.
+
+### Templates and project variables
+
+A project can hold variables (Canvas panel → **Variables**): named texts,
+long texts and dates. Any text, code, window, QR or HTML block that contains
+`{{name}}` shows the value instead; the block keeps the placeholder, so the
+same design becomes a template. Changing a value is one undo step.
+
+That is how a model makes the next post without redesigning: `get_workspace`
+lists the variables, `set_variables` fills them, `export_image` saves the
+result. Unknown names stay visible as `{{name}}`; `set_variables` reports
+variables no block uses and references with no variable. Values in HTML
+blocks are escaped, and a date can be `today`. The code lives in
+`src/lib/variables/variables.ts`; blocks read it through `useResolvedText`.
 
 ### What tools cannot do
 
