@@ -30,7 +30,9 @@
 		"icon": "./src-electron/assets/icon.ico"
 	},
 	"linux": {
-		"target": ["AppImage", "snap", "deb", "rpm", "pacman"]
+		"target": ["AppImage", "snap", "deb", "rpm", "pacman"],
+		"icon": "./src-electron/assets/icon.png",
+		"category": "Graphics"
 	},
 	"nsis": {
 		"oneClick": false,

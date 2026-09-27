@@ -1,12 +1,68 @@
 name: Release Electron App
 
+# A `v*` tag drafts the GitHub release with its section of CHANGELOG.md, builds
+# the desktop app on the three systems into that draft, and publishes it once
+# every build has passed. A failed build leaves the draft unpublished.
+#
+# Pull requests that touch the desktop build run the same builds without
+# publishing anything, so a release tag does not find a broken build.
 on:
   push:
     tags:
       - 'v*'
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - 'electron-builder.json'
+      - 'package.json'
+      - 'scripts/release-notes.mjs'
+      - 'src-electron/**'
+      - 'vite.electron.config.ts'
+
+permissions:
+  contents: read
 
 jobs:
-  release:
+  draft:
+    name: Draft the release
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v7
+        with:
+          # The notes link to the changes since the previous tag.
+          fetch-depth: 0
+
+      - name: Install Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "The release for $TAG already exists."
+            exit 0
+          fi
+          title=$(node scripts/release-notes.mjs "$TAG" "$RUNNER_TEMP/notes.md")
+          prerelease=""
+          if [[ "$TAG" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "$TAG" --draft --verify-tag $prerelease \
+            --title "$title" --notes-file "$RUNNER_TEMP/notes.md"
+
+  build:
+    name: Build (${{ matrix.os }})
+    needs: draft
+    # On pull requests `draft` is skipped; build anyway.
+    if: ${{ !failure() && !cancelled() }}
     runs-on: ${{ matrix.os }}
 
     permissions:
@@ -16,6 +72,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Upload to the draft on tags, keep the installers local on pull requests.
+      PUBLISH: ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
 
     steps:
       - name: Check out Git repository
@@ -46,19 +107,30 @@ jobs:
           sudo snap install snapcraft --classic
 
       - name: build-linux
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: matrix.os == 'ubuntu-latest'
-        run: yarn build:linux
+        run: yarn build:linux --publish ${{ env.PUBLISH }}
 
       - name: build-mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: matrix.os == 'macos-latest'
-        run: yarn build:mac
+        run: yarn build:mac --publish ${{ env.PUBLISH }}
 
       - name: build-win
+        if: matrix.os == 'windows-latest'
+        run: yarn build:win --publish ${{ env.PUBLISH }}
+
+  publish:
+    name: Publish the release
+    needs: [draft, build]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Publish the draft
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: matrix.os == 'windows-latest'
-        run: yarn build:win
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: gh release edit "$TAG" --draft=false
