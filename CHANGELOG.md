@@ -4,7 +4,7 @@
 
 ### 🚀 Features
 
-- **New look**: a new logo, the Figtree typeface across the interface and the rose accent of v1 back on primary controls, focus rings, the canvas selection and snapping guides. Canvas blocks keep their typefaces, so exported images do not change
+- **New look**: a new logo (a solid rounded diamond with the flame cut out of it, the same shape as Agent's mark), the app name set in Fredoka, the Figtree typeface across the interface and the rose accent of v1 back on primary controls, focus rings, the canvas selection and snapping guides. Canvas blocks keep their typefaces, so exported images do not change
 - **Agent, the design assistant** (`Ctrl+L`): a panel docked on the left that edits the canvas from a description, with streaming answers, visible tool calls, stop, retry and chat history. It lives in the **AI** menu
 - Agent works with Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible server; providers, models and keys are set in **Agent settings**
 - API keys stay on the device: encrypted with the system keychain on desktop (and only sent to the base URL they were saved for), stored in the browser on the web

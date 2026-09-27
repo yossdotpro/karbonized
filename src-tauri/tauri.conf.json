@@ -53,7 +53,7 @@
 				"icons/icon.ico"
 			],
 			"identifier": "com.yossthedev.karbonized",
-			"longDescription": "Awesome Image Generator for Code Snippets and Screenshots",
+			"longDescription": "The programmable image editor: design code shots, mockups and social images with blocks, with code or with your AI agent",
 			"macOS": {
 				"entitlements": null,
 				"exceptionDomain": "",
@@ -62,7 +62,7 @@
 				"signingIdentity": null
 			},
 			"resources": [],
-			"shortDescription": "Awesome Image Generator",
+			"shortDescription": "The programmable image editor",
 			"targets": "all",
 			"windows": {
 				"certificateThumbprint": null,

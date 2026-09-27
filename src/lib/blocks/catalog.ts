@@ -570,7 +570,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 			{
 				key: 'url',
 				kind: 'string',
-				default: 'karbonized.onrender.com',
+				default: 'karbonized.yoss.pro',
 				description: 'Address bar text (browser windows).',
 			},
 			{

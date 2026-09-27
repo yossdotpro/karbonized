@@ -33,7 +33,7 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 	/* Component States */
 	const contentImageRef = useRef<HTMLImageElement>(null);
 	const [title, setTitle] = useControlState('Karbonized', `${id}-title`);
-	const [url, setUrl] = useControlState('karbonized.onrender.com', `${id}-url`);
+	const [url, setUrl] = useControlState('karbonized.yoss.pro', `${id}-url`);
 	const shownTitle = useResolvedText(title);
 	const shownUrl = useResolvedText(url);
 	const [color, setColor] = useControlState('#ffffff', `${id}-color`);

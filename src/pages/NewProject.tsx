@@ -328,7 +328,7 @@ export const NewProject: React.FC = () => {
 								<KarbonizedLogoFlat className='size-6' />
 							</span>
 							<div>
-								<h1 className='text-2xl font-semibold tracking-tight text-foreground'>
+								<h1 className='font-brand text-2xl font-semibold tracking-tight text-foreground'>
 									Karbonized
 								</h1>
 								<p className='text-[13px] text-muted-foreground'>

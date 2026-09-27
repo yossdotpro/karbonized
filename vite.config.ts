@@ -33,7 +33,7 @@ export default defineConfig({
 			manifest: {
 				name: 'Karbonized',
 				display: 'standalone',
-				description: 'Image Generator for Code Snippets & Mockups',
+				description: 'The programmable image editor',
 				theme_color: '#141414',
 				background_color: '#141414',
 				icons: [

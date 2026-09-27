@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/figtree';
+@import '@fontsource-variable/fredoka';
 @import '@fontsource-variable/geist';
 @import '@fontsource-variable/geist-mono';
 @import '@fontsource-variable/noto-sans';
@@ -100,6 +101,8 @@
 		'Geist Mono Variable', 'JetBrains Mono', 'Cascadia Code', ui-monospace,
 		monospace;
 	--font-heading: 'Figtree Variable', 'Inter', ui-sans-serif, sans-serif;
+	/* The Karbonized wordmark: only the app name, never running UI text */
+	--font-brand: 'Fredoka Variable', 'Figtree Variable', ui-rounded, sans-serif;
 	/* Typeface used inside canvas blocks (kept stable for exports) */
 	--font-block: 'Noto Sans Variable', sans-serif;
 
