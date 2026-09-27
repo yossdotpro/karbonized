@@ -110,6 +110,7 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 							</Label>
 							<div className='flex'>
 								<IconPickerField
+									packsOnly
 									value={variable.value as string}
 									onChange={(name) => onUpdateVariable(variable.name, name)}
 								/>

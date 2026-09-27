@@ -806,7 +806,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				kind: 'string',
 				default: 'FaFontAwesome',
 				description:
-					'Icon name, e.g. FaRocket, FaGithub or FaHeart. Find names with search_icons.',
+					'Icon name: Font Awesome (FaRocket, FaGithub) or an installed icon pack (acme:bolt). Find names with search_icons.',
 			},
 			{
 				key: 'iconColor',

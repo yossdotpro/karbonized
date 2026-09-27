@@ -14,10 +14,13 @@ import {
 	KComponent,
 	UNCATEGORIZED,
 	getComponentCategory,
+	isIconPack,
 } from '@/models/KComponent';
+import { IconPackBrowser, PackPreview } from './IconPackBrowser';
 import {
 	ArrowDownWideNarrow,
 	Download,
+	Grid3X3,
 	PackageOpen,
 	Plus,
 	Puzzle,
@@ -34,6 +37,8 @@ import { Tooltip } from '../CustomControls/Tooltip';
 
 interface ComponentsGalleryProps {
 	onAddToCanvas: (component: KComponent, importedId?: string) => void;
+	/** An icon of an icon pack was picked (name `prefix:icon`). */
+	onAddIcon?: (name: string, importedId: string) => void;
 }
 
 type SortMode = 'recent' | 'name' | 'used';
@@ -56,7 +61,9 @@ const matchesQuery = (item: ImportedComponent, query: string): boolean => {
 
 export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 	onAddToCanvas,
+	onAddIcon,
 }) => {
+	const [browsingPackId, setBrowsingPackId] = useState<string | null>(null);
 	const [searchQuery, setSearchQuery] = useState('');
 	const [filter, setFilter] = useState<string>('');
 	const [sort, setSort] = useState<SortMode>('recent');
@@ -124,6 +131,26 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 			setIsLoadingPack(false);
 		}
 	};
+
+	const browsingPack = browsingPackId
+		? importedComponents.find((item) => item.id === browsingPackId)
+		: undefined;
+
+	/* Components go to the canvas; icon packs open their icons. */
+	const openEntry = (entry: ImportedComponent) => {
+		if (isIconPack(entry.component)) setBrowsingPackId(entry.id);
+		else onAddToCanvas(entry.component, entry.id);
+	};
+
+	if (browsingPack) {
+		return (
+			<IconPackBrowser
+				pack={browsingPack}
+				onBack={() => setBrowsingPackId(null)}
+				onPick={(name) => onAddIcon?.(name, browsingPack.id)}
+			/>
+		);
+	}
 
 	const handleDelete = (id: string) => {
 		if (pendingDelete !== id) {
@@ -235,6 +262,7 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 						{filteredComponents.map((imported) => {
 							const { manifest } = imported.component;
 							const isPendingDelete = pendingDelete === imported.id;
+							const isPack = isIconPack(imported.component);
 
 							return (
 								<li
@@ -244,13 +272,17 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 									{/* Preview */}
 									<button
 										type='button'
-										onClick={() =>
-											onAddToCanvas(imported.component, imported.id)
+										onClick={() => openEntry(imported)}
+										title={
+											isPack
+												? `Browse the icons of ${manifest.name}`
+												: `Add ${manifest.name} to the canvas`
 										}
-										title={`Add ${manifest.name} to the canvas`}
 										className='flex aspect-[16/9] w-full items-center justify-center overflow-hidden border-b border-border bg-muted/40 transition-colors hover:bg-accent/60'
 									>
-										{manifest.thumbnail ? (
+										{isPack && !manifest.thumbnail ? (
+											<PackPreview pack={imported} />
+										) : manifest.thumbnail ? (
 											<img
 												src={manifest.thumbnail}
 												alt=''
@@ -272,6 +304,12 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 												<span className='shrink-0 text-xs text-muted-foreground'>
 													v{manifest.version.replace(/^v/i, '')}
 												</span>
+											)}
+											{isPack && (
+												<Badge variant='secondary' className='ml-auto shrink-0'>
+													{Object.keys(imported.component.icons ?? {}).length}{' '}
+													icons
+												</Badge>
 											)}
 										</div>
 
@@ -302,12 +340,19 @@ export const ComponentsGallery: React.FC<ComponentsGalleryProps> = ({
 											<Button
 												size='xs'
 												variant='outline'
-												onClick={() =>
-													onAddToCanvas(imported.component, imported.id)
-												}
+												onClick={() => openEntry(imported)}
 											>
-												<Plus className='size-3' />
-												Add
+												{isPack ? (
+													<>
+														<Grid3X3 className='size-3' />
+														Browse
+													</>
+												) : (
+													<>
+														<Plus className='size-3' />
+														Add
+													</>
+												)}
 											</Button>
 
 											<div className='ml-auto flex items-center gap-0.5'>

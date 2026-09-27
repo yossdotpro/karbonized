@@ -39,8 +39,8 @@
 - Notifications for export, copy and project errors instead of browser alerts
 - **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
 - **Agent designs to a standard**: a shared design guide for social media (sizes per platform and story safe zones, margins and grid, a type scale for phones, contrast, palettes, HTML block rules and a final checklist) in Agent's prompt and in the MCP server instructions, plus `get_design_guide` and `search_icons` tools
-- **New icon picker** with search, shared by the Icon block and components
-- **Icons in components**: `.kcomponent` files and HTML blocks take `/* @type:icon */` variables with an icon picker, drawn with the `.k-icon` helper; Feature Card joins the starter pack. See `docs/icon-libraries.md` to build icon libraries
+- **Icon packs**: creators can publish icon sets as `.kcomponent` files (`type: icon-pack`, SVG icons, sanitized on import). Installed packs show up in the component library (browse and add), in the Icon block picker and in components through `/* @type:icon */` variables drawn with the `.k-icon` helper. `yarn icon-pack` builds a pack from a folder of SVGs; see `docs/icon-packs.md`
+- **New icon picker** with search for the Icon block
 - **HTML blocks load their fonts**: Google fonts named in the block CSS now render (a shadow root cannot load them by itself)
 - **Realistic browser mockup**: Chrome-style tab strip, toolbar and omnibox with macOS or Windows controls, Light/Dark/Midnight themes and a soft shadow; the chrome scales with the block and screenshots cover the page instead of stretching
 - **Phones can be resized**: device mockups scale to any size and keep their proportions

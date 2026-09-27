@@ -5,12 +5,19 @@ import {
 	KComponent,
 	KComponentManifest,
 	getComponentKey,
+	isIconPack,
 } from '@/models/KComponent';
 
 /** Imports are capped so the persisted library cannot fill up localStorage. */
 export const MAX_IMPORTED_COMPONENTS = 200;
 
-export type ImportOutcome = 'added' | 'replaced' | 'duplicate' | 'limit';
+export type ImportOutcome =
+	| 'added'
+	| 'replaced'
+	| 'duplicate'
+	| 'limit'
+	/** Another icon pack already names its icons with this prefix. */
+	| 'prefix-taken';
 
 export interface ImportResult {
 	name: string;
@@ -81,6 +88,7 @@ const normalizeEntry = (entry: unknown): ImportedComponent | null => {
 			html: legacy.component.html ?? '',
 			css: legacy.component.css ?? '',
 			js: legacy.component.js ?? '',
+			...(legacy.component.icons ? { icons: legacy.component.icons } : {}),
 		},
 		preview: legacy.preview,
 		importedAt,
@@ -124,6 +132,25 @@ export const useKComponentStore = create<KComponentStore>()(
 						const index = library.findIndex(
 							(item) => getComponentKey(item.component.manifest) === key,
 						);
+
+						// Icon names are `prefix:name`, so two packs cannot share a prefix.
+						if (isIconPack(component)) {
+							const owner = library.find(
+								(item) =>
+									isIconPack(item.component) &&
+									item.component.manifest.prefix ===
+										component.manifest.prefix &&
+									getComponentKey(item.component.manifest) !== key,
+							);
+							if (owner) {
+								results.push({
+									name: component.manifest.name,
+									outcome: 'prefix-taken',
+									id: owner.id,
+								});
+								continue;
+							}
+						}
 
 						if (index >= 0) {
 							if (!options?.replace) {

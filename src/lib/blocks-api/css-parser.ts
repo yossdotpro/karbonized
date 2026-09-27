@@ -112,7 +112,7 @@ export const parseCSSVariables = (css: string): CSSVariable[] => {
 						parsedValue = value;
 						break;
 					case 'icon':
-						// An icon name such as FaRocket, quoted or not.
+						// An icon name such as acme:bolt, quoted or not.
 						parsedValue = value.replace(/^["']|["']$/g, '').trim();
 						break;
 					default:

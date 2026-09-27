@@ -123,20 +123,29 @@ Generates a toggle switch in the properties panel.
 
 ```css
 /* @type:icon */
---feature-icon: FaRocket;
+--feature-icon: acme:bolt;
 ```
 
-Generates an icon picker in the properties panel (the same icons as the Icon
-block). When the block renders, the name becomes the image of the
-icon, meant for a mask. Draw it with the built-in `.k-icon` helper, which takes
-the text color and is `1em` square:
+Generates an icon picker in the properties panel with the icons of the
+installed icon packs (names are `<prefix>:<icon>`). When the block renders, the
+name becomes the image of the icon, meant for a mask. Draw it with the built-in
+`.k-icon` helper, which takes the text color and is `1em` square:
 
 ```html
 <span class="k-icon" style="--k-icon: var(--feature-icon)"></span>
 ```
 
-See [`icon-libraries.md`](icon-libraries.md) for the icon names, custom icon
-sets and more examples.
+A component should still look right when the pack is not installed: an unknown
+name draws nothing, so keep icons decorative or ship them as inline SVG.
+
+### Icon packs
+
+A `.kcomponent` with `manifest.type: icon-pack` holds icons instead of HTML:
+an `icons` map of names to SVG markup, plus a `prefix` that names the pack's
+icons (`acme:bolt`). Importing one adds its icons to the Icon block, to
+`@type:icon` variables and to the component library. See
+[`icon-packs.md`](icon-packs.md) for the full format, the SVG rules and the
+`yarn icon-pack` script that builds a pack from a folder of SVG files.
 
 ### Fonts
 

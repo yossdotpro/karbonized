@@ -10,7 +10,7 @@ export const MCP_INSTRUCTIONS = `Karbonized is an editor for social media graphi
 - Call get_workspace before editing an existing design and use the block ids it returns. Coordinates are canvas pixels from the top-left.
 - For a new design, set the canvas size first (create_workspace or set_canvas_size), then the background, then blocks.
 - Use html blocks (HTML + CSS) for anything native blocks cannot express: cards, stat tiles, badges, icon lists, charts, testimonials, UI screens.
-- Find icon names with search_icons; never guess them.
+- Find icon names with search_icons; never guess them. Icon packs (.kcomponent files with type: icon-pack) add icons named <prefix>:<name>.
 - Check the result with get_canvas_snapshot and fix what fails the checklist below.
 - Only export an image when the user asks.
 

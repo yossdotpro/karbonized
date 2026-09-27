@@ -2,7 +2,7 @@ import React, { createElement, useEffect, useState } from 'react';
 import { type IconComponent, resolveIcon } from '@/lib/icons/icons';
 
 interface IconProps {
-	/** Icon name from any registered set, e.g. `FaRocket` or `LuSparkles`. */
+	/** Icon name from any registered set, e.g. `FaRocket` or `acme:bolt`. */
 	icon: string;
 	style?: React.CSSProperties;
 	className?: string;

@@ -1,24 +1,42 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { useKComponentStore } from '@/stores/kcomponent-store';
+import { parseKComponent } from '@/utils/kcomponentParser';
 import {
-	ICON_SETS,
+	BUILT_IN_ICON_SETS,
 	iconMaskUrl,
 	iconSetOf,
 	iconSvg,
+	listIconSets,
+	loadIconSet,
 	normalizeIconName,
 	resolveIcon,
 	searchIcons,
 } from './icons';
 
-describe('icon registry', () => {
-	it('gives every set a distinct prefix', () => {
-		const prefixes = ICON_SETS.map((set) => set.prefix);
-		expect(new Set(prefixes).size).toBe(prefixes.length);
-	});
+const PACK = `
+manifest:
+  name: "Test Shapes"
+  author: "Karbonized tests"
+  type: icon-pack
+  prefix: shapes
+  license: MIT
+icons:
+  square: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>'
+  arrow-right: '<svg viewBox="0 0 24 24"><path d="M4 12h14M12 6l6 6-6 6"/></svg>'
+`;
 
+beforeEach(() => {
+	useKComponentStore.setState({ importedComponents: [] });
+});
+
+const installPack = () =>
+	useKComponentStore.getState().importComponents([parseKComponent(PACK)]);
+
+describe('built-in icons', () => {
 	it('finds the set of a name by its prefix', () => {
 		expect(iconSetOf('FaRocket')?.id).toBe('font-awesome');
-		expect(iconSetOf('FaRegHeart')?.id).toBe('font-awesome');
 		expect(iconSetOf('Rocket')).toBeUndefined();
+		expect(BUILT_IN_ICON_SETS.map((set) => set.id)).toEqual(['font-awesome']);
 	});
 
 	it('normalizes quoted names', () => {
@@ -38,10 +56,42 @@ describe('icon registry', () => {
 		expect(await resolveIcon('FaNotAnIconAtAll')).toBeNull();
 		expect(await iconSvg('Nope')).toBeNull();
 	});
+});
 
-	it('searches icon names, exact words first', async () => {
-		const results = await searchIcons('rocket');
-		expect(results[0]).toBe('FaRocket');
-		expect(await searchIcons('github')).toContain('FaGithub');
+describe('icon packs', () => {
+	it('lists installed packs as sets, alone or after the built-in ones', () => {
+		expect(listIconSets({ packsOnly: true })).toEqual([]);
+		installPack();
+		expect(listIconSets({ packsOnly: true }).map((set) => set.id)).toEqual([
+			'pack:shapes',
+		]);
+		expect(listIconSets().map((set) => set.id)).toEqual([
+			'font-awesome',
+			'pack:shapes',
+		]);
+		expect(iconSetOf('shapes:square')?.name).toBe('Test Shapes');
+	});
+
+	it('names pack icons prefix:name and serves their SVG', async () => {
+		installPack();
+		const names = (await loadIconSet('pack:shapes')).map((entry) => entry.name);
+		expect(names).toEqual(['shapes:square', 'shapes:arrow-right']);
+		expect(await iconSvg('shapes:square')).toContain('<rect');
+		expect(await iconMaskUrl('"shapes:square"')).toMatch(/^url\("data:/);
+		expect(await resolveIcon('shapes:nope')).toBeNull();
+		expect(await resolveIcon('other:square')).toBeNull();
+	});
+
+	it('searches pack icons by the words of their names', async () => {
+		installPack();
+		expect(await searchIcons('arrow', { sets: ['pack:shapes'] })).toEqual([
+			'shapes:arrow-right',
+		]);
+	});
+
+	it('forgets icons when the pack is removed', async () => {
+		const [result] = installPack();
+		useKComponentStore.getState().removeImportedComponent(result.id!);
+		expect(await iconSvg('shapes:square')).toBeNull();
 	});
 });

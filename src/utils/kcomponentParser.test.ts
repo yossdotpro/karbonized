@@ -159,3 +159,69 @@ describe('kcomponent files', () => {
 		expect(slugifyComponentName('***')).toBe('component');
 	});
 });
+
+describe('icon packs', () => {
+	const pack = (icons: string, extra = '') => `
+manifest:
+  name: "Acme Icons"
+  author: "Acme"
+  type: icon-pack
+${extra}
+icons:
+${icons}`;
+
+	it('reads the icons, a prefix from the name and the license', () => {
+		const result = parseKComponentDocument(
+			pack(
+				`  cloud: '<svg viewBox="0 0 24 24"><path d="M1 1"/></svg>'`,
+				'  license: MIT',
+			),
+		);
+		expect(result.errors).toEqual([]);
+		expect(result.component?.manifest).toMatchObject({
+			type: 'icon-pack',
+			prefix: 'acme-icons',
+			license: 'MIT',
+		});
+		expect(Object.keys(result.component?.icons ?? {})).toEqual(['cloud']);
+		expect(result.component?.html).toBe('');
+	});
+
+	it('skips bad icons with warnings and fails without any good one', () => {
+		const mixed = parseKComponentDocument(
+			pack(`  Bad Name: '<svg viewBox="0 0 1 1"><path d="M0 0"/></svg>'
+  ok: '<svg viewBox="0 0 1 1"><path d="M0 0"/></svg>'
+  broken: '<div/>'`),
+		);
+		expect(Object.keys(mixed.component?.icons ?? {})).toEqual(['ok']);
+		expect(mixed.warnings.join(' ')).toMatch(/Bad Name.*skipped/);
+		expect(mixed.warnings.join(' ')).toMatch(/broken.*skipped/);
+
+		const none = parseKComponentDocument(pack(`  broken: '<div/>'`));
+		expect(none.component).toBeNull();
+	});
+
+	it('checks the prefix', () => {
+		const result = parseKComponentDocument(
+			pack(
+				`  a: '<svg viewBox="0 0 1 1"><path d="M0 0"/></svg>'`,
+				'  prefix: "9 bad"',
+			),
+		);
+		expect(result.component).toBeNull();
+		expect(result.errors.join(' ')).toMatch(/prefix/);
+	});
+
+	it('round-trips through stringify', () => {
+		const component = parseKComponentDocument(
+			pack(
+				`  cloud: '<svg viewBox="0 0 24 24"><path d="M1 1"/></svg>'`,
+				'  prefix: acme',
+			),
+		).component!;
+		const again = parseKComponentDocument(stringifyKComponent(component));
+		expect(again.component?.manifest.prefix).toBe('acme');
+		expect(again.component?.icons).toEqual(component.icons);
+		expect(stringifyKComponent(component)).not.toMatch(/^html:/m);
+	});
+});

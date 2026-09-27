@@ -1,16 +1,20 @@
 import { createElement, type ComponentType } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
+import { useKComponentStore } from '@/stores/kcomponent-store';
+import { isIconPack } from '@/models/KComponent';
+
 /**
- * Icon sets available in the app: the Icon block, the `icon` variables of
- * HTML blocks / `.kcomponent` files and Agent all read this registry.
+ * Icons available in the app, from two kinds of sets:
  *
- * An icon is identified by its name alone (`FaRocket`): every set has its
- * own prefix, so names never collide and a saved project does not need to
- * store the set. Each set is a separate chunk that loads the first time it
- * is needed.
+ * - **Built-in**: Font Awesome, the set the Icon block has always used. Names
+ *   carry the set prefix: `FaRocket`.
+ * - **Icon packs**: `.kcomponent` files made by creators and imported into
+ *   the component library (`docs/icon-packs.md`). Names are
+ *   `<pack prefix>:<icon>`, e.g. `acme:cloud`.
  *
- * To add a set, see `docs/icon-libraries.md`.
+ * A saved design stores the name only. The Icon block offers every set;
+ * `@type:icon` variables of components offer icon packs only.
  */
 
 export type IconComponent = ComponentType<{
@@ -20,15 +24,14 @@ export type IconComponent = ComponentType<{
 }>;
 
 export interface IconSet {
-	/** Stable id, used by the picker tabs. */
+	/** Stable id, used by the picker tabs and search_icons. */
 	id: string;
 	name: string;
-	/** Prefix every icon name of the set starts with, e.g. `Lu`. */
+	/** What every icon name of the set starts with (`Fa`, `acme:`). */
 	prefix: string;
-	license: string;
-	url: string;
-	/** A module whose exports are the icons, keyed by name. */
-	load: () => Promise<Record<string, unknown>>;
+	license?: string;
+	url?: string;
+	kind: 'built-in' | 'pack';
 }
 
 export interface IconEntry {
@@ -36,32 +39,107 @@ export interface IconEntry {
 	icon: IconComponent;
 }
 
-export const ICON_SETS: readonly IconSet[] = [
+interface BuiltInSet extends IconSet {
+	kind: 'built-in';
+	/** A module whose exports are the icons, keyed by name. */
+	load: () => Promise<Record<string, unknown>>;
+}
+
+export const BUILT_IN_ICON_SETS: readonly BuiltInSet[] = [
 	{
 		id: 'font-awesome',
 		name: 'Font Awesome',
 		prefix: 'Fa',
 		license: 'CC BY 4.0',
 		url: 'https://fontawesome.com',
+		kind: 'built-in',
 		load: () => import('react-icons/fa'),
 	},
 ];
 
-/** The set an icon name belongs to, by prefix. */
-export const iconSetOf = (name: string): IconSet | undefined =>
-	ICON_SETS.find(
+const PACK_ID_PREFIX = 'pack:';
+
+/** Icon packs installed in the component library. */
+const installedPacks = () =>
+	useKComponentStore
+		.getState()
+		.importedComponents.map((entry) => entry.component)
+		.filter(isIconPack);
+
+const packSet = (
+	component: ReturnType<typeof installedPacks>[number],
+): IconSet => ({
+	id: `${PACK_ID_PREFIX}${component.manifest.prefix}`,
+	name: component.manifest.name,
+	prefix: `${component.manifest.prefix}:`,
+	license: component.manifest.license,
+	kind: 'pack',
+});
+
+/** Sets to offer: built-in sets and installed packs, or packs only. */
+export const listIconSets = ({
+	packsOnly = false,
+}: { packsOnly?: boolean } = {}): IconSet[] => [
+	...(packsOnly ? [] : BUILT_IN_ICON_SETS),
+	...installedPacks().map(packSet),
+];
+
+const packByPrefix = (prefix: string) =>
+	installedPacks().find((pack) => pack.manifest.prefix === prefix);
+
+/** The set an icon name belongs to. */
+export const iconSetOf = (name: string): IconSet | undefined => {
+	const colon = name.indexOf(':');
+	if (colon > 0) {
+		const pack = packByPrefix(name.slice(0, colon));
+		return pack ? packSet(pack) : undefined;
+	}
+	return BUILT_IN_ICON_SETS.find(
 		(set) =>
 			name.startsWith(set.prefix) &&
 			// `Fa` must not claim a name such as `Far…` from another set.
 			/[A-Z0-9]/.test(name.charAt(set.prefix.length)),
 	);
+};
+
+/** Pack SVGs have no size (sanitizing drops it); fill the element they sit in. */
+export const sizedSvg = (svg: string) =>
+	svg.replace('<svg ', '<svg width="100%" height="100%" ');
+
+const packIconCache = new Map<string, IconComponent>();
+
+/** A component that renders a pack icon's (sanitized) SVG. */
+const packIcon = (svg: string): IconComponent => {
+	const cached = packIconCache.get(svg);
+	if (cached) return cached;
+
+	const PackIcon: IconComponent = ({ className, style }) =>
+		createElement('span', {
+			className,
+			style: className
+				? { display: 'inline-flex', ...style }
+				: { display: 'inline-flex', width: '1em', height: '1em', ...style },
+			dangerouslySetInnerHTML: { __html: sizedSvg(svg) },
+		});
+	packIconCache.set(svg, PackIcon);
+	return PackIcon;
+};
 
 const loaded = new Map<string, Promise<IconEntry[]>>();
 
-/** Every icon of a set, in the order the set exports them. */
-export const loadIconSet = (id: string): Promise<IconEntry[]> => {
-	const set = ICON_SETS.find((item) => item.id === id);
-	if (!set) return Promise.resolve([]);
+/** Every icon of a set, in the order the set lists them. */
+export const loadIconSet = async (id: string): Promise<IconEntry[]> => {
+	if (id.startsWith(PACK_ID_PREFIX)) {
+		// Packs can be updated or removed at any time: read them every time.
+		const pack = packByPrefix(id.slice(PACK_ID_PREFIX.length));
+		return Object.entries(pack?.icons ?? {}).map(([name, svg]) => ({
+			name: `${pack?.manifest.prefix}:${name}`,
+			icon: packIcon(svg),
+		}));
+	}
+
+	const set = BUILT_IN_ICON_SETS.find((item) => item.id === id);
+	if (!set) return [];
 
 	let entries = loaded.get(id);
 	if (!entries) {
@@ -91,11 +169,22 @@ export const normalizeIconName = (value: unknown): string =>
 		.replace(/^["']|["']$/g, '')
 		.trim();
 
+/** The stored SVG of a pack icon (`prefix:name`), or null. */
+const packSvg = (name: string): string | null => {
+	const colon = name.indexOf(':');
+	if (colon <= 0) return null;
+	const pack = packByPrefix(name.slice(0, colon));
+	return pack?.icons?.[name.slice(colon + 1)] ?? null;
+};
+
 /** The component of an icon, or null when no set has it. */
 export const resolveIcon = async (
 	name: string,
 ): Promise<IconComponent | null> => {
 	const key = normalizeIconName(name);
+	const pack = packSvg(key);
+	if (pack) return packIcon(pack);
+
 	const set = iconSetOf(key);
 	if (!set) return null;
 	const entries = await loadIconSet(set.id);
@@ -107,6 +196,9 @@ const svgCache = new Map<string, string>();
 /** SVG markup of an icon (painted with `currentColor`), or null. */
 export const iconSvg = async (name: string): Promise<string | null> => {
 	const key = normalizeIconName(name);
+	const pack = packSvg(key);
+	if (pack) return pack;
+
 	const cached = svgCache.get(key);
 	if (cached) return cached;
 
@@ -133,16 +225,22 @@ export const iconMaskUrl = async (name: string): Promise<string | null> => {
 		: null;
 };
 
-/** Split `FaArrowRight` into `fa arrow right` for matching. */
-const words = (name: string) =>
-	name
-		.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-		.toLowerCase()
-		.split(' ');
+/** `FaArrowRight` → `arrow right`; `acme:arrow-right` → `arrow right`. */
+const words = (name: string) => {
+	const colon = name.indexOf(':');
+	return colon > 0
+		? name.slice(colon + 1).split('-')
+		: name
+				.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+				.toLowerCase()
+				.split(' ')
+				.slice(1);
+};
 
 /**
  * Icon names whose words contain every word of `query`, from the given sets
- * (all by default). Exact word matches rank first.
+ * (built-in sets and installed packs by default). Exact word matches rank
+ * first.
  */
 export const searchIcons = async (
 	query: string,
@@ -152,7 +250,7 @@ export const searchIcons = async (
 		.toLowerCase()
 		.split(/[\s,_-]+/)
 		.filter(Boolean);
-	const ids = sets?.length ? sets : ICON_SETS.map((set) => set.id);
+	const ids = sets?.length ? sets : listIconSets().map((set) => set.id);
 	const names = (
 		await Promise.all(ids.map((id) => loadIconSet(id).catch(() => [])))
 	)
@@ -163,7 +261,7 @@ export const searchIcons = async (
 
 	const scored = names
 		.map((name) => {
-			const parts = words(name).slice(1);
+			const parts = words(name);
 			const lower = name.toLowerCase();
 			if (!terms.every((term) => lower.includes(term))) return null;
 			const exact = terms.filter((term) => parts.includes(term)).length;

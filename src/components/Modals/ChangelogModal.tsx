@@ -26,7 +26,7 @@ const changelog = `
 * New start screen with templates, quick canvas sizes and your recent projects
 * Double click a tab to rename it
 * Agent follows design standards made for social media, and uses HTML blocks
-* Icon variables in components, with the same icon picker as the Icon block
+* Icon packs: creators can share icon sets as .kcomponent files, usable in the Icon block and in components
 * Realistic browser mockup and resizable phones
 * New color picker with eyedropper, recent colors and gradient angle
 * Cleaner property panels and a clearer brush bar

@@ -1,5 +1,6 @@
 import * as yaml from 'js-yaml';
 import { KComponent, KComponentManifest } from '@/models/KComponent';
+import { sanitizeIconSvg } from '@/lib/icons/sanitize-svg';
 
 /** Guard rails: the library lives in localStorage, so sources cannot be unbounded. */
 export const KCOMPONENT_LIMITS = {
@@ -13,7 +14,17 @@ export const KCOMPONENT_LIMITS = {
 	tagLength: 32,
 	minSize: 16,
 	maxSize: 4096,
+	/** Icon packs */
+	icons: 2000,
+	iconName: 64,
+	iconBytes: 16 * 1024,
+	prefix: 32,
+	license: 80,
 } as const;
+
+/** Icon names and pack prefixes: lowercase words joined by dashes. */
+export const ICON_NAME_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const PACK_PREFIX_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 export interface KComponentParseResult {
 	component: KComponent | null;
@@ -35,7 +46,7 @@ export class KComponentParseError extends Error {
 	}
 }
 
-const KNOWN_ROOT_KEYS = ['manifest', 'html', 'css', 'js'];
+const KNOWN_ROOT_KEYS = ['manifest', 'html', 'css', 'js', 'icons'];
 const KNOWN_MANIFEST_KEYS = [
 	'name',
 	'author',
@@ -46,6 +57,9 @@ const KNOWN_MANIFEST_KEYS = [
 	'tags',
 	'width',
 	'height',
+	'type',
+	'prefix',
+	'license',
 ];
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -202,6 +216,67 @@ const readSource = (
 };
 
 /**
+ * Reads the `icons` section of an icon pack: a map of names to SVG markup.
+ * Invalid icons are skipped with a warning; a pack needs at least one.
+ */
+const readIcons = (
+	value: unknown,
+	errors: string[],
+	warnings: string[],
+): Record<string, string> => {
+	if (!isPlainObject(value)) {
+		errors.push(
+			'An icon pack needs an "icons" section: names mapped to <svg> markup.',
+		);
+		return {};
+	}
+
+	const entries = Object.entries(value);
+	if (entries.length > KCOMPONENT_LIMITS.icons) {
+		errors.push(
+			`An icon pack can hold up to ${KCOMPONENT_LIMITS.icons} icons.`,
+		);
+		return {};
+	}
+
+	const icons: Record<string, string> = {};
+	for (const [rawName, markup] of entries) {
+		const name = rawName.trim().toLowerCase();
+		if (
+			!ICON_NAME_PATTERN.test(name) ||
+			name.length > KCOMPONENT_LIMITS.iconName
+		) {
+			warnings.push(
+				`Icon "${rawName}" was skipped: names use lowercase letters, digits and dashes (e.g. arrow-right).`,
+			);
+			continue;
+		}
+		if (
+			typeof markup !== 'string' ||
+			byteLength(markup) > KCOMPONENT_LIMITS.iconBytes
+		) {
+			warnings.push(
+				`Icon "${name}" was skipped: it must be <svg> markup under ${KCOMPONENT_LIMITS.iconBytes / 1024} KB.`,
+			);
+			continue;
+		}
+		const result = sanitizeIconSvg(markup);
+		if (!result.ok) {
+			warnings.push(`Icon "${name}" was skipped: it ${result.error}.`);
+			continue;
+		}
+		icons[name] = result.svg;
+	}
+
+	if (Object.keys(icons).length === 0 && entries.length > 0) {
+		errors.push('None of the icons could be read.');
+	} else if (entries.length === 0) {
+		errors.push('The "icons" section is empty.');
+	}
+	return icons;
+};
+
+/**
  * Parses a `.kcomponent` document without throwing.
  * `manifest.name` and `html` are the only required fields; `css` and `js`
  * default to empty so markup-only components import cleanly.
@@ -288,18 +363,59 @@ export function parseKComponentDocument(
 	if (version && !/^v?\d+(\.\d+){0,2}([-+][0-9a-z.-]+)?$/i.test(version))
 		warnings.push(`"${version}" is not a standard version number.`);
 
-	const html = readSource(parsed.html, 'html', errors);
-	if (parsed.html === undefined) errors.push('Missing "html" field.');
-	else if (!html && typeof parsed.html === 'string')
-		errors.push('"html" cannot be empty.');
+	const rawType = manifestSource.type;
+	const isPack = rawType === 'icon-pack';
+	if (rawType !== undefined && rawType !== 'component' && !isPack) {
+		warnings.push(
+			`Unknown "manifest.type" "${String(rawType)}": read as a component.`,
+		);
+	}
 
-	const css = readSource(parsed.css, 'css', errors);
-	const js = readSource(parsed.js, 'js', errors);
+	let html = '';
+	let css = '';
+	let js = '';
+	let icons: Record<string, string> | undefined;
+	let prefix: string | undefined;
 
-	if (parsed.css === undefined)
-		warnings.push('No "css" field: the component will have no styles.');
-	if (parsed.js === undefined)
-		warnings.push('No "js" field: the component will have no actions.');
+	if (isPack) {
+		icons = readIcons(parsed.icons, errors, warnings);
+		const rawPrefix = readString(
+			manifestSource.prefix,
+			'manifest.prefix',
+			KCOMPONENT_LIMITS.prefix,
+			warnings,
+		)?.toLowerCase();
+		prefix = rawPrefix || slugifyComponentName(name ?? '');
+		if (!PACK_PREFIX_PATTERN.test(prefix)) {
+			errors.push(
+				`"manifest.prefix" must start with a letter and use lowercase letters, digits and dashes (got "${prefix}").`,
+			);
+		}
+		if (
+			parsed.html !== undefined ||
+			parsed.css !== undefined ||
+			parsed.js !== undefined
+		) {
+			warnings.push('Icon packs ignore "html", "css" and "js".');
+		}
+	} else {
+		html = readSource(parsed.html, 'html', errors);
+		if (parsed.html === undefined) errors.push('Missing "html" field.');
+		else if (!html && typeof parsed.html === 'string')
+			errors.push('"html" cannot be empty.');
+
+		css = readSource(parsed.css, 'css', errors);
+		js = readSource(parsed.js, 'js', errors);
+
+		if (parsed.css === undefined)
+			warnings.push('No "css" field: the component will have no styles.');
+		if (parsed.js === undefined)
+			warnings.push('No "js" field: the component will have no actions.');
+		if (parsed.icons !== undefined)
+			warnings.push(
+				'"icons" is only read in icon packs (manifest.type: icon-pack).',
+			);
+	}
 
 	if (errors.length || !name) return { component: null, errors, warnings };
 
@@ -330,6 +446,18 @@ export function parseKComponentDocument(
 		height: readSize(manifestSource.height, 'manifest.height', warnings),
 	};
 
+	if (isPack) {
+		manifest.type = 'icon-pack';
+		manifest.prefix = prefix;
+		manifest.license = readString(
+			manifestSource.license,
+			'manifest.license',
+			KCOMPONENT_LIMITS.license,
+			warnings,
+		);
+		return { component: { manifest, html, css, js, icons }, errors, warnings };
+	}
+
 	return { component: { manifest, html, css, js }, errors, warnings };
 }
 
@@ -357,6 +485,9 @@ export function stringifyKComponent(component: KComponent): string {
 
 	const cleanManifest: Record<string, unknown> = { name: manifest.name };
 	const optional: Array<[string, unknown]> = [
+		['type', manifest.type === 'icon-pack' ? 'icon-pack' : undefined],
+		['prefix', manifest.prefix],
+		['license', manifest.license],
 		['author', manifest.author],
 		['description', manifest.description],
 		['version', manifest.version],
@@ -372,12 +503,14 @@ export function stringifyKComponent(component: KComponent): string {
 			cleanManifest[key] = value;
 	}
 
-	const document: Record<string, unknown> = {
-		manifest: cleanManifest,
-		html: component.html,
-	};
-	if (component.css.trim()) document.css = component.css;
-	if (component.js.trim()) document.js = component.js;
+	const document: Record<string, unknown> = { manifest: cleanManifest };
+	if (manifest.type === 'icon-pack') {
+		document.icons = component.icons ?? {};
+	} else {
+		document.html = component.html;
+		if (component.css.trim()) document.css = component.css;
+		if (component.js.trim()) document.js = component.js;
+	}
 
 	return yaml.dump(document, {
 		lineWidth: -1,

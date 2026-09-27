@@ -39,7 +39,7 @@ The app includes **Agent**, an in-app AI assistant, and a local **MCP server** i
 - `src/lib/persistence/project-file.ts` / `project-io.ts`: the `.kproject` file (plain JSON, `version: 2`, with a thumbnail) and the save/open side that talks to the stores. Opening rewrites block, group and workspace ids so a project can be opened next to the ones already open, and its values land in `initialProperties`. Legacy AES-encrypted files and bare `{ workspace, properties }` JSON still open
 - `src/lib/persistence/projects.ts`: create a project, snapshot one workspace, reopen a recent project (values through `initialProperties`)
 - `src/lib/persistence/recents.ts`: recent projects and their thumbnails (IndexedDB), recorded while editing and shown on the start screen (`/new`)
-- `src/lib/icons/icons.ts`: the icon registry (Font Awesome today). Icons are saved by prefixed name (`FaRocket`); the Icon block, `@type:icon` variables of HTML blocks and `search_icons` read it. Adding a set: `docs/icon-libraries.md`
+- `src/lib/icons/icons.ts`: the icon registry: the built-in Font Awesome set (`FaRocket`) plus the icon packs installed in the component library (`acme:cloud`). The Icon block offers both; `@type:icon` variables of components offer packs only; `search_icons` reads it. `sanitize-svg.ts` cleans pack icons on import
 - `src/lib/agent/core/design-guide.ts`: the design standards Agent and MCP clients follow (in the system prompt, the MCP instructions and `get_design_guide`)
 - `src/lib/templates/starters.ts`: built-in templates on the start screen; each one is a size, a background and `addBlock` inputs (keys from `catalog.ts`)
 - `src/components/CustomControls/PropertyControls.tsx`: `PropertyRow`, `FieldInput`, `SliderField`, `ToggleGroup` / `ToggleButton` — use them for block property menus so rows line up
@@ -55,7 +55,7 @@ The app includes **Agent**, an in-app AI assistant, and a local **MCP server** i
 - `src/utils/`: exporting, platform utilities, helper lists, and static data
 - `src/models/Extension.ts`: TypeScript contract for extensions
 - `docs/plugin_system.md`: functional documentation for the plugin system
-- `docs/icon-libraries.md`: using icons in components, icon libraries as `.kcomponent` files, and adding an icon set to the app
+- `docs/icon-packs.md`: icon packs (`.kcomponent` files with `type: icon-pack`): format, SVG rules, `yarn icon-pack` (build one from a folder of SVGs) and using pack icons in components
 - `src-electron/`: main process/preload for the Vite-based Electron variant, including `agent/` (API keys, provider requests), `mcp/` (MCP server and stdio bridge) and `files.ts` (native "Save as", exposed as `window.karbonized.files`; the renderer would otherwise download a `blob:` URL and Electron's dialog would suggest the blob id as the file name)
 - `scripts/install-electron.cjs`: postinstall that downloads the Electron binary (Yarn 4 skips dependency install scripts)
 - `scripts/update-google-fonts.mjs`: regenerates `src/lib/fonts/google-fonts.ts` from the public Google Fonts catalog (no key). Run it to refresh the families the text block offers

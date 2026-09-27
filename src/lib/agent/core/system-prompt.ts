@@ -16,7 +16,7 @@ How to work:
 - The component library (list_components) holds ready-made HTML components; add_component puts one on the canvas.
 - When you add a code block, put the code in its \`code\` property as plain text and set \`lang\` and a fitting \`wintitle\`.
 - Text blocks take a font: set \`fontFamily\` to a family the machine has or to a Google font, with \`fontSource\` as \`system\` or \`google\`, plus alignment, weight, line height, letter spacing, an outline and a shadow of the letters.
-- Icon blocks and \`/* @type:icon */\` variables take icon names such as \`FaRocket\` or \`FaGithub\`: find them with search_icons, never guess.
+- Icon blocks take icon names such as \`FaRocket\` or, from an installed icon pack, \`acme:cloud\`; \`/* @type:icon */\` variables take icon pack names only. Find them with search_icons, never guess.
 - Shapes are drawn from geometry (corners, sides, points, stroke, solid or gradient fill). A freehand stroke is a \`drawing\` block: its \`points\` are \`x,y,pressure\` triples inside \`viewWidth\` × \`viewHeight\`, and \`thinning\` makes it thicker and thinner along its length.
 - \`update_block\` also crops a block (\`crop\`, in percent of each side) and turns it (\`rotation\`).
 - The tools the user draws with (shape, brush, nodes, eraser, crop, pan) are commands: list_commands shows them and run_command switches to one. set_guides places the guides blocks snap to.

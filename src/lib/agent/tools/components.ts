@@ -6,7 +6,7 @@ import {
 	waitForBlock,
 } from '@/lib/editor/actions';
 import { kcomponentBlockInput } from '@/hooks/useAddKComponentToCanvas';
-import { getComponentKey } from '@/models/KComponent';
+import { getComponentKey, isIconPack } from '@/models/KComponent';
 import { useKComponentStore } from '@/stores/kcomponent-store';
 import {
 	parseKComponentDocument,
@@ -28,9 +28,24 @@ const summarize = (id: string) => {
 	const entry = library().getImportedComponent(id);
 	if (!entry) return null;
 
-	const { manifest, js } = entry.component;
+	const { manifest, js, icons } = entry.component;
+	if (isIconPack(entry.component)) {
+		return {
+			id: entry.id,
+			type: 'icon-pack' as const,
+			name: manifest.name,
+			author: manifest.author,
+			version: manifest.version,
+			description: manifest.description,
+			license: manifest.license,
+			/** Icons are named `<prefix>:<name>`. */
+			prefix: manifest.prefix,
+			iconCount: Object.keys(icons ?? {}).length,
+		};
+	}
 	return {
 		id: entry.id,
+		type: 'component' as const,
 		name: manifest.name,
 		author: manifest.author,
 		version: manifest.version,
@@ -123,6 +138,11 @@ export const importComponentTool = defineTool({
 				'The library is full. Remove a component before importing another.',
 			);
 		}
+		if (result.outcome === 'prefix-taken') {
+			throw new ToolError(
+				`Another icon pack already uses the prefix "${component.manifest.prefix}". Change manifest.prefix and import again.`,
+			);
+		}
 		if (result.outcome === 'duplicate') {
 			throw new ToolError(
 				`"${result.name}" is already in the library. Pass replace: true to update it.`,
@@ -154,6 +174,11 @@ export const addComponentTool = defineTool({
 	mutates: true,
 	execute: ({ id, name, ...box }) => {
 		const entry = requireComponent(id);
+		if (isIconPack(entry.component)) {
+			throw new ToolError(
+				`"${entry.component.manifest.name}" is an icon pack, not a component. Add one of its icons with add_block (type icon, icon "${entry.component.manifest.prefix}:<name>"); search_icons lists them.`,
+			);
+		}
 		const input = kcomponentBlockInput(entry.component);
 
 		const block = addBlock({

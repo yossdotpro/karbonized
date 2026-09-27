@@ -113,6 +113,13 @@ export const ImportComponentsDialog: React.FC<ImportComponentsDialogProps> = ({
 							tone: 'warning',
 							message: 'already in the library, use Replace to update it',
 						};
+					case 'prefix-taken':
+						return {
+							name: result.name,
+							tone: 'error',
+							message:
+								'another icon pack already uses this prefix, change manifest.prefix',
+						};
 					case 'limit':
 					default:
 						return {
@@ -353,6 +360,11 @@ export const ImportComponentsDialog: React.FC<ImportComponentsDialogProps> = ({
 										<span className='shrink-0 text-xs text-muted-foreground'>
 											v{manifest.version.replace(/^v/i, '')}
 										</span>
+									)}
+									{manifest.type === 'icon-pack' && (
+										<Badge variant='secondary'>
+											Icon pack · <code>{manifest.prefix}:</code>
+										</Badge>
 									)}
 									{manifest.category && (
 										<Badge variant='secondary'>{manifest.category}</Badge>
