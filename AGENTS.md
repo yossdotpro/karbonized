@@ -182,6 +182,7 @@ Before refactoring platform integration, verify which runtime path is actually u
 - `yarn test`: run the Vitest unit tests
 - `yarn lint`: lint `src` (should report 0 errors)
 - `yarn format`: run Prettier on `src`
+- Releases: push a `vX.Y.Z` tag (or `vX.Y.Z-beta1`) matching `package.json`. `.github/workflows/release.yml` drafts the GitHub release with the `## v X.Y.Z - …` section of `CHANGELOG.md` (`scripts/release-notes.mjs`, which fails if the section is missing), builds the Electron app for Linux, macOS and Windows into it and publishes it when all three pass. Pull requests that touch the desktop build run the same builds without publishing. The Tauri workflow (`build.yml`, `karbonized-v*` tags) is legacy
 
 ## Practical Editing Conventions
 
