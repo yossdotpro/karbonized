@@ -85,7 +85,7 @@ export const ExtensionPanel: React.FC = () => {
 				<label className='my-auto text-xs'>Need extensions?</label>
 				<a
 					className='text-xs hover:text-blue-400'
-					href='https://github.com/yossTheDev/karbonized'
+					href='https://github.com/yossdotpro/karbonized'
 				>
 					See the docs
 				</a>
