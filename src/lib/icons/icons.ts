@@ -13,8 +13,8 @@ import { isIconPack } from '@/models/KComponent';
  *   the component library (`docs/icon-packs.md`). Names are
  *   `<pack prefix>:<icon>`, e.g. `acme:cloud`.
  *
- * A saved design stores the name only. The Icon block offers every set;
- * `@type:icon` variables of components offer icon packs only.
+ * A saved design stores the name only. The Icon block and `@type:icon`
+ * variables of components offer every set.
  */
 
 export type IconComponent = ComponentType<{
@@ -76,11 +76,9 @@ const packSet = (
 	kind: 'pack',
 });
 
-/** Sets to offer: built-in sets and installed packs, or packs only. */
-export const listIconSets = ({
-	packsOnly = false,
-}: { packsOnly?: boolean } = {}): IconSet[] => [
-	...(packsOnly ? [] : BUILT_IN_ICON_SETS),
+/** Sets to offer: the built-in sets, then the installed packs. */
+export const listIconSets = (): IconSet[] => [
+	...BUILT_IN_ICON_SETS,
 	...installedPacks().map(packSet),
 ];
 

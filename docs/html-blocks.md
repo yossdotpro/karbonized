@@ -38,7 +38,7 @@ The HTML Block automatically detects CSS variables and creates corresponding con
 Annotated variables (`/* @type:color */`, `number`, `shadow`, `boolean` and
 `icon`) take precedence over these naming rules; see
 [`kcomponent-format.md`](kcomponent-format.md). `@type:icon` variables show a
-picker with the icons of the installed icon packs and are drawn with
+picker with Font Awesome and the installed icon packs and are drawn with
 `<span class="k-icon" style="--k-icon: var(--my-icon)"></span>` (see
 [`icon-packs.md`](icon-packs.md)). Google fonts named in `font-family` are
 loaded automatically.

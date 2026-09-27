@@ -123,11 +123,11 @@ Generates a toggle switch in the properties panel.
 
 ```css
 /* @type:icon */
---feature-icon: acme:bolt;
+--feature-icon: FaRocket;
 ```
 
-Generates an icon picker in the properties panel with the icons of the
-installed icon packs (names are `<prefix>:<icon>`). When the block renders, the
+Generates an icon picker in the properties panel with the built-in Font Awesome
+icons (`FaRocket`) and the icons of the installed icon packs (`acme:bolt`). When the block renders, the
 name becomes the image of the icon, meant for a mask. Draw it with the built-in
 `.k-icon` helper, which takes the text color and is `1em` square:
 
@@ -135,8 +135,9 @@ name becomes the image of the icon, meant for a mask. Draw it with the built-in
 <span class="k-icon" style="--k-icon: var(--feature-icon)"></span>
 ```
 
-A component should still look right when the pack is not installed: an unknown
-name draws nothing, so keep icons decorative or ship them as inline SVG.
+Font Awesome icons are always there. An icon from a pack the user has not
+installed draws nothing, so a shared component should default to a Font Awesome
+icon or say which pack it needs.
 
 ### Icon packs
 

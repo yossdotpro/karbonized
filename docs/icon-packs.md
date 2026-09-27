@@ -8,7 +8,7 @@ imports it gets its icons everywhere in Karbonized:
   puts one on the canvas as an Icon block,
 - in the **Icon block**, whose picker has a tab per installed pack,
 - in **components** (`.kcomponent` and HTML blocks), through
-  `/* @type:icon */` variables, which only offer icons from packs,
+  `/* @type:icon */` variables, next to Font Awesome,
 - for **Agent and MCP clients**, through `search_icons`.
 
 Karbonized does not ship icon packs of its own: they come from creators.
@@ -135,7 +135,7 @@ A component can let people pick an icon from their packs:
 </span>
 ```
 
-- The panel shows an icon picker with the installed packs.
+- The panel shows an icon picker with Font Awesome and the installed packs.
 - When the block renders, the name becomes the image of the icon.
   `.k-icon` (built into every HTML block) uses it as a mask: `1em` square,
   painted with the text color. You can also write

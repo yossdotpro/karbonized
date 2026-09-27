@@ -59,12 +59,9 @@ describe('built-in icons', () => {
 });
 
 describe('icon packs', () => {
-	it('lists installed packs as sets, alone or after the built-in ones', () => {
-		expect(listIconSets({ packsOnly: true })).toEqual([]);
+	it('lists installed packs as sets after the built-in ones', () => {
+		expect(listIconSets().map((set) => set.id)).toEqual(['font-awesome']);
 		installPack();
-		expect(listIconSets({ packsOnly: true }).map((set) => set.id)).toEqual([
-			'pack:shapes',
-		]);
 		expect(listIconSets().map((set) => set.id)).toEqual([
 			'font-awesome',
 			'pack:shapes',

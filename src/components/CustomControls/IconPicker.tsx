@@ -22,21 +22,19 @@ import { useKComponentStore } from '@/stores/kcomponent-store';
 /** How many icons the grid renders at once; scrolling shows more. */
 const PAGE = 240;
 
-/** Dialog to pick an icon from the built-in sets and the installed packs. */
+/** Dialog to pick an icon from Font Awesome and the installed icon packs. */
 export const IconPickerDialog: React.FC<{
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	value?: string;
 	onPick: (name: string) => void;
-	/** Offer icon packs only (for `@type:icon` variables of components). */
-	packsOnly?: boolean;
-}> = ({ open, onOpenChange, value, onPick, packsOnly = false }) => {
+}> = ({ open, onOpenChange, value, onPick }) => {
 	// Re-read the sets when packs are imported or removed.
 	const library = useKComponentStore((state) => state.importedComponents);
 	const sets = useMemo(
-		() => listIconSets({ packsOnly }),
+		() => listIconSets(),
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[packsOnly, library],
+		[library],
 	);
 	const [chosenSet, setSetId] = useState(() => iconSetOf(value ?? '')?.id);
 	const set = sets.find((item) => item.id === chosenSet) ?? sets[0];
@@ -73,7 +71,7 @@ export const IconPickerDialog: React.FC<{
 				<DialogHeader>
 					<DialogTitle>Choose an icon</DialogTitle>
 					<DialogDescription>
-						{set ? (
+						{set && (
 							<>
 								{set.name}
 								{set.kind === 'pack' && ' · icon pack'}
@@ -92,24 +90,9 @@ export const IconPickerDialog: React.FC<{
 								)}
 								{set.license && ` · ${set.license}`}
 							</>
-						) : (
-							'No icon packs installed'
 						)}
 					</DialogDescription>
 				</DialogHeader>
-
-				{!set && (
-					<div className='flex flex-col items-center gap-1 rounded-surface border border-dashed border-border px-6 py-10 text-center'>
-						<p className='text-[13px] font-medium text-foreground'>
-							No icon packs yet
-						</p>
-						<p className='max-w-sm text-xs text-muted-foreground'>
-							Icon packs are <code>.kcomponent</code> files with{' '}
-							<code>type: icon-pack</code>. Import one from the component
-							library to use its icons here.
-						</p>
-					</div>
-				)}
 
 				{sets.length > 1 && (
 					<div className='flex gap-0.5 overflow-x-auto rounded-control bg-muted p-0.5'>
@@ -207,8 +190,7 @@ export const IconPickerField: React.FC<{
 	value: string;
 	onChange: (name: string) => void;
 	className?: string;
-	packsOnly?: boolean;
-}> = ({ value, onChange, className, packsOnly }) => {
+}> = ({ value, onChange, className }) => {
 	const [open, setOpen] = useState(false);
 	const name = normalizeIconName(value);
 
@@ -234,7 +216,6 @@ export const IconPickerField: React.FC<{
 				onOpenChange={setOpen}
 				value={name}
 				onPick={onChange}
-				packsOnly={packsOnly}
 			/>
 		</>
 	);

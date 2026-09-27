@@ -69,7 +69,7 @@ Agent and the MCP server share the same tools:
 | Tool                                   | What it does                                                                                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `get_design_guide`                     | The design standards (sizes per platform, layout, type, color, HTML block rules, final checklist)                                     |
-| `search_icons`                         | Icon names: Font Awesome and installed icon packs for icon blocks, icon packs for `@type:icon` variables                             |
+| `search_icons`                         | Icon names (Font Awesome and installed icon packs) for icon blocks and `@type:icon` variables                             |
 | `get_workspace`                        | Canvas size, background, selection and every block with its position, size and properties                                            |
 | `create_workspace`                     | New project with a canvas size, opened in the editor                                                                                 |
 | `set_canvas_background`                | Color, gradient, texture, wallpaper or dynamic background, blur and noise                                                            |

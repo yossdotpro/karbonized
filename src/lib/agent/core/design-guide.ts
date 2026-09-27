@@ -52,7 +52,7 @@ Use an \`html\` block for composed UI: stat and KPI tiles, feature cards and gri
 - Put every value a user may tweak in one \`:root { }\` block, annotated so the properties panel shows controls:
   \`/* @type:color */ --accent: #f43f5e;\` · \`/* @type:number min:0 max:64 step:1 unit:px */ --radius: 24px;\` · \`/* @type:shadow */ --shadow: #00000040 0px 24px 48px 0px;\` · \`/* @type:boolean */ --show-badge: true;\`
   Colors in hex, shadows with 8-digit hex, numbers with px, %, em or rem. No nested braces inside \`:root\`.
-- Icons: write them as inline SVG in the HTML (\`fill="currentColor"\` so they follow the text color). When the user has icon packs installed, a \`/* @type:icon */ --my-icon: <prefix>:<name>;\` variable lets them swap the icon from the panel; draw it with \`<span class="k-icon" style="--k-icon: var(--my-icon)"></span>\` and find names with search_icons (packsOnly).
+- Icons: put the icon in a \`/* @type:icon */ --my-icon: FaRocket;\` variable so the user can swap it from the panel (Font Awesome names, or \`<prefix>:<name>\` from an installed icon pack; find them with search_icons) and draw it with \`<span class="k-icon" style="--k-icon: var(--my-icon)"></span>\`, which takes the text color. Shapes no icon set has: inline SVG with \`fill="currentColor"\`.
 - Fonts: write the Google font name in font-family; the app loads it.
 - No @keyframes or animations (an export is a single frame), no remote images unless the user gave the URL; prefer CSS gradients and inline SVG.
 - Keep text as text so it stays editable, and keep it inside the block (no overflow).

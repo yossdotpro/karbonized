@@ -22,8 +22,7 @@ export const searchIconsTool = defineTool({
 	name: 'search_icons',
 	title: 'Search icons',
 	description: [
-		'Find icon names. Icon blocks (`icon` property) take any of them: the built-in font-awesome set (names like FaRocket) or an installed icon pack (names like acme:cloud).',
-		'`/* @type:icon */` variables of HTML blocks take icon pack names only.',
+		'Find icon names for icon blocks (`icon` property) and `/* @type:icon */` variables of HTML blocks: the built-in font-awesome set (names like FaRocket) or an installed icon pack (names like acme:cloud).',
 		'Icon packs are .kcomponent files imported into the component library; list_components shows them.',
 	].join(' '),
 	input: z.object({
@@ -37,15 +36,11 @@ export const searchIconsTool = defineTool({
 			.describe(
 				'Limit the search to these set ids: font-awesome, or pack:<prefix> for an icon pack (default: all).',
 			),
-		packsOnly: z
-			.boolean()
-			.optional()
-			.describe('Search installed icon packs only (for @type:icon variables).'),
 		limit: z.number().int().min(1).max(100).optional(),
 	}),
 	mutates: false,
-	execute: async ({ query, sets, packsOnly, limit }) => {
-		const available = listIconSets({ packsOnly });
+	execute: async ({ query, sets, limit }) => {
+		const available = listIconSets();
 		const unknown = (sets ?? []).filter(
 			(id) => !available.some((set) => set.id === id),
 		);
@@ -60,13 +55,7 @@ export const searchIconsTool = defineTool({
 			limit: limit ?? 30,
 		});
 		if (icons.length > 0) return { icons };
-		return {
-			icons,
-			hint:
-				available.length === 0
-					? 'No icon packs are installed. Icon packs are .kcomponent files with type: icon-pack.'
-					: 'No match. Try a simpler or more generic word.',
-		};
+		return { icons, hint: 'No match. Try a simpler or more generic word.' };
 	},
 });
 
