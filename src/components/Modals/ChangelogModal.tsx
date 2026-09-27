@@ -26,6 +26,10 @@ const changelog = `
 * New start screen with templates, quick canvas sizes and your recent projects
 * Double click a tab to rename it
 * Agent follows design standards made for social media, and uses HTML blocks
+* Templates with variables: {{title}}, {{date}}… filled from the Workspace panel or by Agent
+* Brand kit with your colors, fonts and logos, used by the pickers and by Agent
+* Agent and MCP export images without asking where to save
+* MCP clients can start Karbonized in the background; closing the window keeps it in the tray
 * Icon packs: creators can share icon sets as .kcomponent files, usable in the Icon block and in components
 * Realistic browser mockup and resizable phones
 * New color picker with eyedropper, recent colors and gradient angle

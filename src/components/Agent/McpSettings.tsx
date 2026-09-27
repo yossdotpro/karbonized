@@ -156,6 +156,51 @@ export const McpSettings: React.FC = () => {
 				open project. Their changes can be undone like yours.
 			</p>
 
+			<div className='flex flex-col gap-3 rounded-control border border-border p-3'>
+				<label className='flex items-center justify-between gap-3'>
+					<span className='flex min-w-0 flex-col gap-0.5'>
+						<span className='text-[13px] text-foreground'>
+							Keep running when the window is closed
+						</span>
+						<span className='text-[11px] text-muted-foreground'>
+							Closing the window hides Karbonized in the tray so clients can
+							keep working. Quit from the tray icon.
+						</span>
+					</span>
+					<Switch
+						checked={status.background}
+						disabled={busy}
+						onCheckedChange={(checked) =>
+							void run(() => bridge.mcp.setBackground(checked))
+						}
+					/>
+				</label>
+				{status.canOpenAtLogin && (
+					<label className='flex items-center justify-between gap-3'>
+						<span className='flex min-w-0 flex-col gap-0.5'>
+							<span className='text-[13px] text-foreground'>
+								Start in the background when you log in
+							</span>
+							<span className='text-[11px] text-muted-foreground'>
+								The server is ready before any client asks, without opening a
+								window.
+							</span>
+						</span>
+						<Switch
+							checked={status.openAtLogin}
+							disabled={busy || !status.enabled}
+							onCheckedChange={(checked) =>
+								void run(() => bridge.mcp.setOpenAtLogin(checked))
+							}
+						/>
+					</label>
+				)}
+				<p className='text-[11px] text-muted-foreground'>
+					Clients connected with the configuration below start Karbonized in the
+					background when it is not running.
+				</p>
+			</div>
+
 			<div className='grid grid-cols-[96px_1fr] gap-3'>
 				<div className='flex flex-col gap-1.5'>
 					<Label

@@ -92,6 +92,11 @@ const agent: AgentBridge = {
 			ipcRenderer.invoke('agent:mcp:set-enabled', enabled),
 		setPort: (port) => ipcRenderer.invoke('agent:mcp:set-port', port),
 		regenerateToken: () => ipcRenderer.invoke('agent:mcp:regenerate-token'),
+		setBackground: (background) =>
+			ipcRenderer.invoke('agent:mcp:set-background', background),
+		setOpenAtLogin: (openAtLogin) =>
+			ipcRenderer.invoke('agent:mcp:set-open-at-login', openAtLogin),
+		setReady: (ready) => ipcRenderer.send('agent:mcp:ready', ready),
 		onStatus: subscribe<McpStatus>('agent:mcp:status-changed'),
 		onRequest: subscribe<McpRequest>('agent:mcp:request'),
 		respond: (response: McpResponse) =>

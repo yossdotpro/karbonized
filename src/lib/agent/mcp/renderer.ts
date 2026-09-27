@@ -65,7 +65,7 @@ export const startMcpBridge = (
 		});
 	};
 
-	const unsubscribe = bridge.mcp.onRequest((request) => {
+	const unsubscribeRequests = bridge.mcp.onRequest((request) => {
 		// Listing tools never waits behind a running call.
 		if (request.type === 'list-tools') {
 			void handle(request);
@@ -76,5 +76,11 @@ export const startMcpBridge = (
 		queue = queue.then(() => handle(request));
 	});
 
-	return unsubscribe;
+	// Tool calls that arrived while the window was loading are sent now.
+	bridge.mcp.setReady?.(true);
+
+	return () => {
+		bridge.mcp.setReady?.(false);
+		unsubscribeRequests();
+	};
 };

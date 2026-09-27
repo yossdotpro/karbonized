@@ -27,6 +27,12 @@ export interface McpStatus {
 	/** Last time a client called the server (ms since epoch). */
 	lastClientAt: number | null;
 	error: string | null;
+	/** Closing the window keeps Karbonized running in the tray. */
+	background: boolean;
+	/** Karbonized starts hidden when the user logs in. */
+	openAtLogin: boolean;
+	/** The system supports login items (not on Linux). */
+	canOpenAtLogin: boolean;
 }
 
 export interface McpToolCall {
@@ -69,6 +75,10 @@ export interface AgentBridge {
 		setEnabled: (enabled: boolean) => Promise<McpStatus>;
 		setPort: (port: number) => Promise<McpStatus>;
 		regenerateToken: () => Promise<McpStatus>;
+		setBackground: (background: boolean) => Promise<McpStatus>;
+		setOpenAtLogin: (openAtLogin: boolean) => Promise<McpStatus>;
+		/** The editor can run tool calls (or no longer can). */
+		setReady?: (ready: boolean) => void;
 		onStatus: (listener: (status: McpStatus) => void) => () => void;
 		onRequest: (listener: (request: McpRequest) => void) => () => void;
 		respond: (response: McpResponse) => void;

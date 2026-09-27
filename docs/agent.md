@@ -152,11 +152,15 @@ the direct route: they take a position, a size and properties.
 
 1. Turn on **AI → MCP server** in the menu bar, or open **Agent settings → MCP server** and turn on **Allow other apps to control Karbonized**. While it is on, the **MCP** indicator in the status bar shows its state and opens these settings.
 2. Pick your client and copy its configuration. It already contains the URL and your token.
-3. Keep Karbonized open while the client works. Karbonized can stay in the background.
+3. That's it: Karbonized does not have to be open. The bridge in the configuration starts it in the background (no window, a tray icon) when a client needs it; the app has to have run once with the server turned on, which is when it records how to start itself.
+
+**Running without a window.** While the server is on, closing the window hides Karbonized in the tray instead of quitting, so clients keep working (**Keep running when the window is closed**, on by default). The tray icon opens the window again or quits. **Start in the background when you log in** (Windows and macOS) starts it hidden at login. Launching Karbonized again shows the running instance: only one runs at a time. Tool calls that arrive while the hidden window is still loading wait for it instead of failing.
+
+**Exports.** `export_image` saves to the export folder (`Pictures/Karbonized` unless you pick another one in these settings or in the export dialog) under a free name and returns the path, without a dialog. `destination: "return"` sends the image back to the client instead, and `"ask"` opens a save dialog.
 
 ### Claude Desktop
 
-Claude Desktop starts MCP servers as local processes, so Karbonized ships a small bridge (`mcp-stdio.cjs`) that runs with the Karbonized executable itself; Node.js is not needed. Paste the configuration in **Settings → Developer → Edit Config** and restart Claude Desktop. It looks like this:
+Claude Desktop starts MCP servers as local processes, so Karbonized ships a small bridge (`mcp-stdio.cjs`) that runs with the Karbonized executable itself; Node.js is not needed. The same bridge serves Claude Code and Cursor, and starts Karbonized when it is not running. Paste the configuration in **Settings → Developer → Edit Config** and restart Claude Desktop. It looks like this:
 
 ```json
 {
@@ -179,23 +183,16 @@ Claude Desktop starts MCP servers as local processes, so Karbonized ships a smal
 ### Claude Code
 
 ```bash
-claude mcp add --transport http karbonized http://127.0.0.1:7824/mcp --header "Authorization: Bearer <your token>"
+claude mcp add karbonized -e ELECTRON_RUN_AS_NODE=1 -e KARBONIZED_MCP_URL=http://127.0.0.1:7824/mcp -e KARBONIZED_MCP_TOKEN=<your token> -- <Karbonized executable> <path to mcp-stdio.cjs>
 ```
+
+Copy the exact command from the settings, which fills in both paths. Clients that only speak HTTP can still use `http://127.0.0.1:7824/mcp` with the header `Authorization: Bearer <your token>`, but then Karbonized has to be running (turn on **Start in the background when you log in**).
 
 ### Cursor
 
 Add to `~/.cursor/mcp.json` (or `.cursor/mcp.json` in a project):
 
-```json
-{
-	"mcpServers": {
-		"karbonized": {
-			"url": "http://127.0.0.1:7824/mcp",
-			"headers": { "Authorization": "Bearer <your token>" }
-		}
-	}
-}
-```
+The same `command`, `args` and `env` as for Claude Desktop (copy them from the settings).
 
 ### Security
 

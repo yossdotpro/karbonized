@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, Tray } from 'electron';
 import { existsSync, mkdirSync } from 'fs';
 import * as fs from 'node:fs/promises';
 import { join } from 'path';
@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import { registerAgentHttp } from './agent/http';
 import { registerFiles } from './files';
-import { registerMcpServer } from './mcp/server';
+import { type McpServerHandle, registerMcpServer } from './mcp/server';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -51,7 +51,29 @@ const loadExtensions = async (event: Electron.IpcMainEvent) => {
 	event.reply('loading_extensions', false);
 };
 
-app.whenReady().then(() => {
+/**
+ * `--background`: start without showing the window (the MCP stdio bridge
+ * and the login item start the app this way). The editor still loads, so
+ * MCP clients can use it; the tray icon opens it.
+ */
+const shouldStartInBackground = () =>
+	process.argv.includes('--background') ||
+	(process.platform === 'darwin' &&
+		app.getLoginItemSettings().wasOpenedAsHidden);
+
+// One Karbonized at a time: a second launch shows the running one (and a
+// second MCP server would find its port taken anyway).
+const isPrimaryInstance = app.requestSingleInstanceLock();
+if (!isPrimaryInstance) app.quit();
+
+let quitting = false;
+app.on('before-quit', () => {
+	quitting = true;
+});
+
+app.whenReady().then(async () => {
+	if (!isPrimaryInstance) return;
+	const startsInBackground = shouldStartInBackground();
 	registerAgentHttp();
 	registerFiles();
 
@@ -60,6 +82,7 @@ app.whenReady().then(() => {
 	);
 
 	const win = new BrowserWindow({
+		show: !startsInBackground,
 		title: 'Karbonized',
 		icon: icon,
 		width: 800,
@@ -79,10 +102,75 @@ app.whenReady().then(() => {
 		},
 	});
 
-	void registerMcpServer({
+	const showWindow = () => {
+		if (win.isDestroyed()) return;
+		if (win.isMinimized()) win.restore();
+		if (!win.isVisible()) {
+			win.show();
+			if (startsInBackground) updateTray();
+			else win.maximize();
+		}
+		win.focus();
+	};
+
+	/* Tray icon while the window is hidden and the MCP server keeps running */
+	let tray: Tray | null = null;
+	let mcp: McpServerHandle | null = null;
+
+	const trayMenu = () =>
+		Menu.buildFromTemplate([
+			{ label: 'Open Karbonized', click: showWindow },
+			{ type: 'separator' },
+			{
+				label: mcp?.status().running
+					? `MCP server on port ${mcp.status().port}`
+					: 'MCP server off',
+				enabled: false,
+			},
+			{ type: 'separator' },
+			{ label: 'Quit Karbonized', click: () => app.quit() },
+		]);
+
+	const updateTray = () => {
+		const needed = !win.isDestroyed() && !win.isVisible();
+		if (!needed) {
+			tray?.destroy();
+			tray = null;
+			return;
+		}
+		if (!tray) {
+			const trayIcon = icon.isEmpty()
+				? icon
+				: icon.resize({ width: 16, height: 16 });
+			tray = new Tray(trayIcon);
+			tray.setToolTip('Karbonized — running in the background for MCP clients');
+			tray.on('click', showWindow);
+		}
+		tray.setContextMenu(trayMenu());
+	};
+
+	mcp = await registerMcpServer({
 		getWindow: () => (win.isDestroyed() ? null : win),
 		buildDir: __dirname,
 	});
+	mcp.onStatus(() => {
+		if (tray) tray.setContextMenu(trayMenu());
+	});
+
+	// Closing the window hides it while MCP clients may still need the editor.
+	win.on('close', (event) => {
+		if (quitting || !mcp?.keepsRunningInBackground()) return;
+		event.preventDefault();
+		win.hide();
+	});
+	win.on('hide', updateTray);
+	win.on('show', updateTray);
+
+	app.on('second-instance', (_event, argv) => {
+		if (!argv.includes('--background')) showWindow();
+	});
+	// macOS: clicking the Dock icon brings the window back.
+	app.on('activate', showWindow);
 
 	if (!process.env.VITE_DEV_SERVER_URL) {
 		app.applicationMenu = new Menu();

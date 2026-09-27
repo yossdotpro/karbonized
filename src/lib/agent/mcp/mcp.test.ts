@@ -129,6 +129,9 @@ describe('client snippets', () => {
 		executablePath: 'C:\\Program Files\\Karbonized\\Karbonized.exe',
 		lastClientAt: null,
 		error: null,
+		background: true,
+		openAtLogin: false,
+		canOpenAtLogin: true,
 	};
 
 	it('configures each client with the URL and token', () => {
@@ -148,11 +151,26 @@ describe('client snippets', () => {
 			},
 		});
 		expect(code.code).toBe(
-			'claude mcp add --transport http karbonized http://127.0.0.1:7824/mcp --header "Authorization: Bearer tok123"',
+			'claude mcp add karbonized -e ELECTRON_RUN_AS_NODE=1 -e KARBONIZED_MCP_URL=http://127.0.0.1:7824/mcp -e KARBONIZED_MCP_TOKEN=tok123 -- "C:\\\\Program Files\\\\Karbonized\\\\Karbonized.exe" "C:\\\\Program Files\\\\Karbonized\\\\resources\\\\mcp-stdio.cjs"',
 		);
-		expect(JSON.parse(cursor.code).mcpServers.karbonized).toEqual({
-			url: status.url,
-			headers: { Authorization: 'Bearer tok123' },
-		});
+		expect(JSON.parse(cursor.code)).toEqual(JSON.parse(desktop.code));
+	});
+});
+
+describe('startMcpBridge', () => {
+	it('tells the main process when the editor can take tool calls', async () => {
+		const { startMcpBridge } = await import('./renderer');
+		const setReady = vi.fn();
+		const unsubscribe = vi.fn();
+		const bridge = {
+			mcp: { onRequest: vi.fn(() => unsubscribe), respond: vi.fn(), setReady },
+		} as unknown as Parameters<typeof startMcpBridge>[0];
+
+		const stop = startMcpBridge(bridge);
+		expect(setReady).toHaveBeenLastCalledWith(true);
+
+		stop();
+		expect(setReady).toHaveBeenLastCalledWith(false);
+		expect(unsubscribe).toHaveBeenCalled();
 	});
 });
