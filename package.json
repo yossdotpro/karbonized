@@ -9,7 +9,7 @@
 		"email": "yossthedev@gmail.com",
 		"url": "http://yoss.pro/"
 	},
-	"description": "Image Editing Made Easy",
+	"description": "The programmable image editor",
 	"engines": {
 		"node": ">=18.0.0"
 	},

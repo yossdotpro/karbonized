@@ -62,7 +62,7 @@ export const AboutModal: React.FC<Props> = ({ open, onClose }) => {
 							</span>
 						</div>
 						<DialogDescription className='mt-1'>
-							Image generator for code snippets and mockups
+							The programmable image editor
 						</DialogDescription>
 					</div>
 				</div>
