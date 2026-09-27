@@ -591,19 +591,27 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				key: 'color',
 				kind: 'color',
 				default: '#ffffff',
-				description: 'Frame color.',
+				description:
+					'Toolbar color. Light: #ffffff with controls #1f1f1f; dark: #2b2c30 with #e8eaed.',
 			},
 			{
 				key: 'controlsColor',
 				kind: 'color',
 				default: '#0e111b',
-				description: 'Window controls color.',
+				description: 'Text and icon color of the toolbar.',
 			},
 			{
 				key: 'src',
 				kind: 'image',
 				default: '',
-				description: 'Screenshot shown inside the window (URL or data URL).',
+				description:
+					'Screenshot shown inside the window (URL or data URL), covering the page area from the top.',
+			},
+			{
+				key: 'windowShadow',
+				kind: 'boolean',
+				default: true,
+				description: 'Soft, realistic shadow around the window.',
 			},
 		],
 	},
