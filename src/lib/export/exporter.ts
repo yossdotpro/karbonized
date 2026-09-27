@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 import { useUIStore } from '@/stores';
 import { isNative } from '@/utils/isNative';
 import { Base64Binary } from '@/utils/Base64Utils';
+import { getFilesBridge } from '@/lib/persistence/desktop-files';
 
 /**
  * Image export for the workspace and individual blocks.
@@ -151,13 +152,44 @@ export const renderImage = (
 const safeFileName = (name: string) =>
 	name.trim().replace(/[\\/:*?"<>|]+/g, '-') || 'karbonized';
 
-/** Save a rendered image: save dialog on native targets, download on the web. */
+export type SaveResult =
+	{ kind: 'file'; path: string } | { kind: 'download'; fileName: string };
+
+/** The payload of a data URL: base64 for binary images, markup for SVG. */
+const dataUrlPayload = (dataUrl: string, format: ExportFormat): string => {
+	const comma = dataUrl.indexOf(',');
+	const header = dataUrl.slice(0, comma);
+	const payload = dataUrl.slice(comma + 1);
+	if (format !== 'svg') return payload;
+	return header.includes(';base64')
+		? new TextDecoder().decode(Base64Binary.decodeArrayBuffer(payload))
+		: decodeURIComponent(payload);
+};
+
+/**
+ * Save a rendered image. The desktop app writes it itself: straight to the
+ * export folder, or through a "Save as" dialog opened there when `ask` is
+ * set. Tauri shows its save dialog and the web downloads the file. Returns
+ * `null` when the user cancels a dialog.
+ */
 export const saveDataUrl = async (
 	dataUrl: string,
 	name: string,
 	format: ExportFormat,
-): Promise<void> => {
+	{ ask = true }: { ask?: boolean } = {},
+): Promise<SaveResult | null> => {
 	const fileName = `${safeFileName(name)}.${EXTENSIONS[format]}`;
+
+	const files = getFilesBridge();
+	if (files?.saveImage) {
+		const path = await files.saveImage({
+			name: safeFileName(name),
+			extension: EXTENSIONS[format] as 'png' | 'jpg' | 'svg',
+			data: dataUrlPayload(dataUrl, format),
+			ask,
+		});
+		return path === null ? null : { kind: 'file', path };
+	}
 
 	if (await isNative()) {
 		const [{ save }, { writeBinaryFile, writeTextFile }] = await Promise.all([
@@ -168,33 +200,36 @@ export const saveDataUrl = async (
 			defaultPath: fileName,
 			filters: [{ name: 'Image', extensions: [EXTENSIONS[format]] }],
 		});
-		if (filePath === null) return;
+		if (filePath === null) return null;
 
 		if (format === 'svg') {
-			await writeTextFile(filePath, dataUrl);
+			await writeTextFile(filePath, dataUrlPayload(dataUrl, format));
 		} else {
-			const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
-			await writeBinaryFile(filePath, Base64Binary.decodeArrayBuffer(base64));
+			await writeBinaryFile(
+				filePath,
+				Base64Binary.decodeArrayBuffer(dataUrlPayload(dataUrl, format)),
+			);
 		}
-		return;
+		return { kind: 'file', path: filePath };
 	}
 
 	const link = document.createElement('a');
 	link.download = fileName;
 	link.href = dataUrl;
 	link.click();
+	return { kind: 'download', fileName };
 };
 
 export const exportElement = async (
 	element: HTMLElement | null,
 	name: string,
 	overrides: Partial<ExportSettings> = {},
-): Promise<void> => {
-	if (!element) return;
+): Promise<SaveResult | null> => {
+	if (!element) return null;
 
 	const settings = { ...useExportSettings.getState(), ...overrides };
 	const dataUrl = await renderImage(element, settings);
-	await saveDataUrl(dataUrl, name, settings.format);
+	return saveDataUrl(dataUrl, name, settings.format);
 };
 
 export const canCopyImage = (): boolean =>

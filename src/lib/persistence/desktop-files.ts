@@ -16,6 +16,24 @@ export interface FilesBridge {
 		extensions: string[];
 		filterName: string;
 	}) => Promise<string | null>;
+	/**
+	 * Write an exported image. Without `ask` it goes straight to the export
+	 * folder under a free name; with it, a "Save as" dialog opens there.
+	 * Returns the path, or `null` if the dialog was cancelled.
+	 */
+	saveImage?: (input: {
+		name: string;
+		extension: 'png' | 'jpg' | 'svg';
+		/** Base64 for png and jpg, the markup for svg. */
+		data: string;
+		ask: boolean;
+	}) => Promise<string | null>;
+	/** Where images are exported (default: Pictures/Karbonized). */
+	getExportFolder?: () => Promise<string>;
+	/** Pick another export folder; `null` if cancelled. */
+	chooseExportFolder?: () => Promise<string | null>;
+	/** Show an exported file (or the export folder) in the file manager. */
+	reveal?: (path: string) => Promise<void>;
 }
 
 export const getFilesBridge = (): FilesBridge | undefined =>

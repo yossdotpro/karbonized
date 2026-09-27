@@ -75,8 +75,13 @@ export const getCanvasSnapshotTool = defineTool({
 export const exportImageTool = defineTool({
 	name: 'export_image',
 	title: 'Export image',
-	description:
-		'Export the canvas as an image file. The user picks where to save it (or it downloads). Uses the export settings of the app for anything not given.',
+	description: [
+		'Export the canvas as an image, without asking the user anything by default.',
+		'destination "folder" (default) writes the file to the export folder of the desktop app (Pictures/Karbonized unless the user changed it) under a free name and returns its path; in the browser the file downloads.',
+		'"return" saves nothing and returns the image itself (the SVG markup for svg).',
+		'"ask" opens a save dialog, only when the user wants to pick the place.',
+		'Uses the export settings of the app for anything not given.',
+	].join(' '),
 	input: z.object({
 		format: z.enum(['png', 'jpeg', 'svg']).optional(),
 		scale: z.number().min(0.5).max(4).optional(),
@@ -84,15 +89,21 @@ export const exportImageTool = defineTool({
 			.boolean()
 			.optional()
 			.describe('Leave out the background (png and svg).'),
-		fileName: z.string().optional().describe('File name without extension.'),
+		fileName: z
+			.string()
+			.max(120)
+			.optional()
+			.describe('File name without extension (default: the workspace name).'),
+		destination: z.enum(['folder', 'return', 'ask']).optional(),
 		returnImage: z
 			.boolean()
 			.optional()
-			.describe('Also return the exported image (png and jpeg).'),
+			.describe('Also return the exported image when saving it.'),
 	}),
 	mutates: false,
 	execute: async (args, context) => {
 		const workspace = requireWorkspace();
+		const destination = args.destination ?? 'folder';
 		const settings = {
 			...useExportSettings.getState(),
 			...(args.format && { format: args.format }),
@@ -113,26 +124,65 @@ export const exportImageTool = defineTool({
 
 		const dataUrl = await renderImage(workspaceElement(), settings);
 		const name = args.fileName?.trim() || workspace.workspaceName;
-		await saveDataUrl(dataUrl, name, settings.format);
+		const described = `${settings.format.toUpperCase()}${
+			settings.format === 'svg' ? '' : ` at ${settings.scale}×`
+		} (${Math.round(width)}×${Math.round(height)} px)`;
+		const image = (): ToolContent => {
+			const { mimeType, data } = splitDataUrl(dataUrl);
+			return settings.format === 'svg'
+				? { type: 'text', text: atobUtf8(data) }
+				: { type: 'image', mimeType, data };
+		};
+
+		if (destination === 'return') {
+			if (settings.format !== 'svg' && !context.supportsImages) {
+				throw new ToolError(
+					'The current model does not accept images. Use destination "folder".',
+				);
+			}
+			return {
+				content: [
+					{ type: 'text', text: `Rendered ${name} as ${described}.` },
+					image(),
+				],
+			};
+		}
+
+		const saved = await saveDataUrl(dataUrl, name, settings.format, {
+			ask: destination === 'ask',
+		});
+		if (!saved) {
+			return {
+				content: [
+					{ type: 'text', text: 'The user cancelled the save dialog.' },
+				],
+			};
+		}
 
 		const content: ToolContent[] = [
 			{
 				type: 'text',
-				text: `Exported ${name} as ${settings.format.toUpperCase()}${
-					settings.format === 'svg' ? '' : ` at ${settings.scale}×`
-				}.`,
+				text:
+					saved.kind === 'file'
+						? `Saved ${name} as ${described} to ${saved.path}`
+						: `Downloaded ${saved.fileName} as ${described}.`,
 			},
 		];
 		if (
 			args.returnImage &&
-			context.supportsImages &&
-			settings.format !== 'svg'
+			(settings.format === 'svg' || context.supportsImages)
 		) {
-			content.push({ type: 'image', ...splitDataUrl(dataUrl) });
+			content.push(image());
 		}
 
 		return { content };
 	},
 });
+
+/** Base64 of UTF-8 text back to the text. */
+const atobUtf8 = (data: string): string =>
+	new TextDecoder().decode(
+		Uint8Array.from(atob(data), (char) => char.charCodeAt(0)),
+	);
 
 export const exportTools = [getCanvasSnapshotTool, exportImageTool];

@@ -1,6 +1,8 @@
 import { ClipboardCopy, Download, Share2, TriangleAlert } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { toastSaved } from '@/lib/export/saved-toast';
+import { ExportFolderField } from '@/components/CustomControls/ExportFolderField';
 import {
 	Dialog,
 	DialogBar,
@@ -114,7 +116,9 @@ export const PreviewModal: React.FC<Props> = ({ open, onClose }) => {
 	};
 
 	const handleExport = () =>
-		run('export', () => exportElement(workspaceElement(), name));
+		run('export', async () =>
+			toastSaved(await exportElement(workspaceElement(), name)),
+		);
 
 	const handleCopy = () =>
 		run('copy', async () => {
@@ -280,6 +284,8 @@ export const PreviewModal: React.FC<Props> = ({ open, onClose }) => {
 								/>
 							</div>
 						)}
+
+						<ExportFolderField />
 
 						<div className='mt-auto flex flex-col gap-1 rounded-control border border-border bg-background/60 px-3 py-2'>
 							<span className='text-[11px] text-muted-foreground'>

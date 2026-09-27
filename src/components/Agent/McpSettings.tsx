@@ -14,6 +14,7 @@ import {
 	mcpClientSnippets,
 } from '@/lib/agent/mcp/client-config';
 import { ipcErrorMessage } from '@/lib/agent/mcp/use-mcp-status';
+import { ExportFolderField } from '@/components/CustomControls/ExportFolderField';
 
 const copy = async (text: string, what: string) => {
 	try {
@@ -216,6 +217,8 @@ export const McpSettings: React.FC = () => {
 					</div>
 				</div>
 			</div>
+
+			<ExportFolderField hint='Images exported by MCP clients are saved here without asking.' />
 
 			<div className='flex flex-col gap-2 border-t border-border pt-4'>
 				<div className='flex items-center justify-between gap-2'>

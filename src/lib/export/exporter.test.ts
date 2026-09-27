@@ -1,48 +1,56 @@
-import { describe, expect, it } from 'vitest';
-import {
-	MAX_CANVAS_SIDE,
-	exceedsCanvasLimit,
-	outputSize,
-	supportsScale,
-	supportsTransparency,
-} from './exporter';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { saveDataUrl } from './exporter';
 
-describe('export settings helpers', () => {
-	it('knows what each format supports', () => {
-		expect(supportsTransparency('png')).toBe(true);
-		expect(supportsTransparency('svg')).toBe(true);
-		expect(supportsTransparency('jpeg')).toBe(false);
+const svg = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="4"/></svg>';
 
-		expect(supportsScale('png')).toBe(true);
-		expect(supportsScale('jpeg')).toBe(true);
-		expect(supportsScale('svg')).toBe(false);
+describe('saveDataUrl on the desktop', () => {
+	afterEach(() => {
+		delete window.karbonized;
 	});
 
-	it('computes the output size for the scale', () => {
-		expect(outputSize(1920, 1080, { format: 'png', scale: 2 })).toEqual({
-			width: 3840,
-			height: 2160,
+	const withBridge = () => {
+		const saveImage = vi.fn(async () => '/pictures/Karbonized/post.png');
+		window.karbonized = { files: { saveText: vi.fn(), saveImage } };
+		return saveImage;
+	};
+
+	it('writes to the export folder without a dialog when asked not to', async () => {
+		const saveImage = withBridge();
+		const result = await saveDataUrl(
+			'data:image/png;base64,AAAA',
+			'My: post',
+			'png',
+			{ ask: false },
+		);
+		expect(saveImage).toHaveBeenCalledWith({
+			name: 'My- post',
+			extension: 'png',
+			data: 'AAAA',
+			ask: false,
 		});
-		expect(outputSize(1280, 720, { format: 'jpeg', scale: 0.5 })).toEqual({
-			width: 640,
-			height: 360,
-		});
-		// SVG ignores the scale.
-		expect(outputSize(1280, 720, { format: 'svg', scale: 3 })).toEqual({
-			width: 1280,
-			height: 720,
+		expect(result).toEqual({
+			kind: 'file',
+			path: '/pictures/Karbonized/post.png',
 		});
 	});
 
-	it('flags outputs larger than the browser canvas limit', () => {
-		expect(exceedsCanvasLimit(3840, 2160, { format: 'png', scale: 4 })).toBe(
-			false,
+	it('sends the SVG markup, not the data URL', async () => {
+		const saveImage = withBridge();
+		await saveDataUrl(
+			`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`,
+			'post',
+			'svg',
 		);
-		expect(exceedsCanvasLimit(4500, 1000, { format: 'png', scale: 4 })).toBe(
-			true,
+		expect(saveImage).toHaveBeenCalledWith(
+			expect.objectContaining({ extension: 'svg', data: svg, ask: true }),
 		);
+	});
+
+	it('returns null when the dialog is cancelled', async () => {
+		const saveImage = withBridge();
+		saveImage.mockResolvedValueOnce(null as unknown as string);
 		expect(
-			exceedsCanvasLimit(MAX_CANVAS_SIDE + 1, 10, { format: 'svg', scale: 1 }),
-		).toBe(true);
+			await saveDataUrl('data:image/jpeg;base64,AAAA', 'post', 'jpeg'),
+		).toBeNull();
 	});
 });

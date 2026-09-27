@@ -101,6 +101,12 @@ const agent: AgentBridge = {
 
 const files: FilesBridge = {
 	saveText: (input) => ipcRenderer.invoke('karbonized:files:save-text', input),
+	saveImage: (input) =>
+		ipcRenderer.invoke('karbonized:files:save-image', input),
+	getExportFolder: () => ipcRenderer.invoke('karbonized:files:export-folder'),
+	chooseExportFolder: () =>
+		ipcRenderer.invoke('karbonized:files:choose-export-folder'),
+	reveal: (path) => ipcRenderer.invoke('karbonized:files:reveal', path),
 };
 
 contextBridge.exposeInMainWorld('karbonized', { agent, files });

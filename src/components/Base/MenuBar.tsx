@@ -23,6 +23,7 @@ import {
 	renderBlob,
 } from '@/lib/export/exporter';
 import { toast } from 'sonner';
+import { toastSaved } from '@/lib/export/saved-toast';
 import {
 	PROJECT_EXTENSION,
 	ProjectFileError,
@@ -118,7 +119,9 @@ export const MenuBar: React.FC = () => {
 
 	const exportImage = async (format: ExportFormat) => {
 		try {
-			await exportElement(workspaceElement(), exportName(), { format });
+			toastSaved(
+				await exportElement(workspaceElement(), exportName(), { format }),
+			);
 		} catch (error) {
 			console.error(error);
 			toast.error('Export failed', {

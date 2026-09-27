@@ -68,8 +68,8 @@ Agent and the MCP server share the same tools:
 
 | Tool                                   | What it does                                                                                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `get_design_guide`                     | The design standards (sizes per platform, layout, type, color, HTML block rules, final checklist)                                     |
-| `search_icons`                         | Icon names (Font Awesome and installed icon packs) for icon blocks and `@type:icon` variables                             |
+| `get_design_guide`                     | The design standards (sizes per platform, layout, type, color, HTML block rules, final checklist)                                    |
+| `search_icons`                         | Icon names (Font Awesome and installed icon packs) for icon blocks and `@type:icon` variables                                        |
 | `get_workspace`                        | Canvas size, background, selection and every block with its position, size and properties                                            |
 | `create_workspace`                     | New project with a canvas size, opened in the editor                                                                                 |
 | `set_canvas_background`                | Color, gradient, texture, wallpaper or dynamic background, blur and noise                                                            |
@@ -89,7 +89,7 @@ Agent and the MCP server share the same tools:
 | `export_component`                     | The `.kcomponent` file of a library component or of an HTML block                                                                    |
 | `load_starter_pack`                    | Import the components that ship with Karbonized                                                                                      |
 | `get_canvas_snapshot`                  | PNG of the canvas (models with image input)                                                                                          |
-| `export_image`                         | Export PNG, JPEG or SVG through the normal save flow                                                                                 |
+| `export_image`                         | Export PNG, JPEG or SVG without a dialog: to the export folder (desktop), as a download (web) or back to the caller                  |
 | `list_commands` / `run_command`        | Editor commands: undo, duplicate, zoom, snapping, rulers, and the tools the user draws with (shape, brush, nodes, eraser, crop, pan) |
 
 ### Design standards
@@ -116,7 +116,7 @@ The rest is left out on purpose:
   needs from them.
 - **Clearing the workspace** has no undo step; `delete_blocks` does.
 
-Picking a tool changes what the *user's* next drag does — a model cannot draw
+Picking a tool changes what the _user's_ next drag does — a model cannot draw
 by itself. To put something on the canvas, `add_block` and `add_component` are
 the direct route: they take a position, a size and properties.
 

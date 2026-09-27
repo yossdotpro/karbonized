@@ -3,6 +3,7 @@ import { ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { toast } from 'sonner';
+import { toastSaved } from '@/lib/export/saved-toast';
 import { type ExportFormat, exportElement } from '@/lib/export/exporter';
 import React, {
 	useCallback,
@@ -337,7 +338,11 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	const exportBlock = useCallback(
 		async (format: ExportFormat) => {
 			try {
-				await exportElement(ref.current, `${workspaceName}-${id}`, { format });
+				toastSaved(
+					await exportElement(ref.current, `${workspaceName}-${id}`, {
+						format,
+					}),
+				);
 			} catch (error) {
 				console.error(error);
 				toast.error('Export failed');
