@@ -38,6 +38,8 @@
 - Block "Export layer" uses the same scale and transparency settings
 - Notifications for export, copy and project errors instead of browser alerts
 - **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
+- **Templates** on the start screen: code snippet, launch post, app showcase, browser mockup and quote card, built from regular blocks you can edit (one undo removes them)
+- **Rename a tab** by double clicking it, or with **Rename** in its context menu
 - **New start screen**: one-click canvas sizes, open a file, what's new, and **recent projects** with thumbnails that stay available after their tab is closed. The full list of sizes and the custom size moved to a **New project** dialog
 - **New color picker**: opens next to its field, with an eyedropper, a palette, recent colors and a gradient mode with a live preview, two stops and a 0–360° angle
 - **Aligned property panels**: layout, shadow, mask, filters, text, stroke and image settings share one row layout, with inline number fields, the current value of each slider and one-click resets

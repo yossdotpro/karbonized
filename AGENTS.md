@@ -39,6 +39,7 @@ The app includes **Agent**, an in-app AI assistant, and a local **MCP server** i
 - `src/lib/persistence/project-file.ts` / `project-io.ts`: the `.kproject` file (plain JSON, `version: 2`, with a thumbnail) and the save/open side that talks to the stores. Opening rewrites block, group and workspace ids so a project can be opened next to the ones already open, and its values land in `initialProperties`. Legacy AES-encrypted files and bare `{ workspace, properties }` JSON still open
 - `src/lib/persistence/projects.ts`: create a project, snapshot one workspace, reopen a recent project (values through `initialProperties`)
 - `src/lib/persistence/recents.ts`: recent projects and their thumbnails (IndexedDB), recorded while editing and shown on the start screen (`/new`)
+- `src/lib/templates/starters.ts`: built-in templates on the start screen; each one is a size, a background and `addBlock` inputs (keys from `catalog.ts`)
 - `src/components/CustomControls/PropertyControls.tsx`: `PropertyRow`, `FieldInput`, `SliderField`, `ToggleGroup` / `ToggleButton` — use them for block property menus so rows line up
 - `src/lib/editor/`: editor actions with arguments (`actions.ts`) and undo/redo helpers (`history.ts`)
 - `src/lib/editor/layout.ts`: panel layouts (canvas, properties, agent, both). The layout is just `propertiesOpen` (`ui-store`, persisted) plus the agent's `panelOpen`; the status bar button and `view.layout-*` commands switch it. The agent docks as its own column at the left edge; the properties panel floats over the right edge of the canvas

@@ -8,6 +8,7 @@ import {
 	ImageIcon,
 	MoreHorizontal,
 	Plus,
+	LayoutTemplate,
 	Sparkles,
 	X,
 } from 'lucide-react';
@@ -29,6 +30,11 @@ import {
 	type RecentProject,
 } from '@/lib/persistence/recents';
 import { useWorkspaceStore } from '@/stores';
+import {
+	STARTER_TEMPLATES,
+	createFromTemplate,
+	type StarterTemplate,
+} from '@/lib/templates/starters';
 import { version } from '../../package.json';
 
 const QUICK_STARTS = [
@@ -93,6 +99,110 @@ const SectionTitle: React.FC<{
 		{children}
 		{action && <div className='ml-auto'>{action}</div>}
 	</div>
+);
+
+/** A sketch of what a template puts on the canvas, drawn over its background. */
+const TemplateArt: React.FC<{ id: string }> = ({ id }) => {
+	const bar = 'rounded-full bg-white/85';
+	const faint = 'rounded-full bg-white/45';
+
+	switch (id) {
+		case 'code-snippet':
+			return (
+				<div className='flex h-[62%] w-[72%] flex-col gap-1.5 rounded-[5px] bg-[#1d1f2b] p-2 shadow-lg shadow-black/30'>
+					<div className='flex gap-1'>
+						{['#ff5f57', '#febc2e', '#28c840'].map((color) => (
+							<span
+								key={color}
+								className='size-1.5 rounded-full'
+								style={{ background: color }}
+							/>
+						))}
+					</div>
+					<span className='h-1 w-3/5 rounded-full bg-[#c792ea]' />
+					<span className='ml-2 h-1 w-2/5 rounded-full bg-[#82aaff]' />
+					<span className='ml-2 h-1 w-1/2 rounded-full bg-[#c3e88d]' />
+					<span className='h-1 w-1/4 rounded-full bg-[#89ddff]' />
+				</div>
+			);
+		case 'launch-post':
+			return (
+				<div className='flex w-[78%] flex-col gap-1.5'>
+					<span className='h-1 w-1/5 rounded-full bg-[#fb7185]' />
+					<span className={cn(bar, 'h-2.5 w-4/5')} />
+					<span className={cn(bar, 'h-2.5 w-3/5')} />
+					<span className={cn(faint, 'mt-1 h-1.5 w-2/3')} />
+				</div>
+			);
+		case 'app-showcase':
+			return (
+				<div className='flex h-[86%] flex-col items-center gap-1.5'>
+					<span className={cn(bar, 'h-2 w-16')} />
+					<span className='mt-1 aspect-[9/17] h-[75%] rounded-[6px] border-2 border-black/70 bg-white shadow-lg shadow-black/30' />
+				</div>
+			);
+		case 'browser-mockup':
+			return (
+				<div className='flex h-[74%] w-[78%] flex-col overflow-hidden rounded-[4px] bg-white shadow-lg shadow-black/30'>
+					<div className='flex h-2.5 items-center gap-0.5 bg-slate-100 px-1'>
+						{['#ff5f57', '#febc2e', '#28c840'].map((color) => (
+							<span
+								key={color}
+								className='size-1 rounded-full'
+								style={{ background: color }}
+							/>
+						))}
+						<span className='ml-1 h-1 w-1/3 rounded-full bg-slate-300' />
+					</div>
+					<div className='flex flex-1 flex-col gap-1 p-1.5'>
+						<span className='h-1.5 w-1/2 rounded-full bg-slate-300' />
+						<span className='h-1 w-3/4 rounded-full bg-slate-200' />
+					</div>
+				</div>
+			);
+		default:
+			return (
+				<div className='flex w-[72%] flex-col gap-1.5'>
+					<span className={cn(bar, 'h-2 w-full')} />
+					<span className={cn(bar, 'h-2 w-5/6')} />
+					<span className={cn(bar, 'h-2 w-2/3')} />
+					<span className={cn(faint, 'mt-1.5 h-1.5 w-1/4')} />
+				</div>
+			);
+	}
+};
+
+const TemplateCard: React.FC<{
+	template: StarterTemplate;
+	onOpen: () => void;
+}> = ({ template, onOpen }) => (
+	<button
+		type='button'
+		onClick={onOpen}
+		className='group flex flex-col overflow-hidden rounded-surface border border-border bg-card text-left transition-all hover:-translate-y-0.5 hover:border-ring/60 hover:shadow-lg hover:shadow-black/10 focus-visible:outline-2 focus-visible:outline-ring'
+	>
+		<div className='canvas-grid flex aspect-[4/3] w-full items-center justify-center border-b border-border p-3'>
+			<div
+				className='flex max-h-full max-w-full items-center justify-center overflow-hidden rounded-[4px] shadow-md shadow-black/20 transition-transform group-hover:scale-[1.03]'
+				style={{
+					background: template.preview,
+					aspectRatio: `${template.width} / ${template.height}`,
+					width: template.width > template.height ? '100%' : 'auto',
+					height: template.width > template.height ? 'auto' : '100%',
+				}}
+			>
+				<TemplateArt id={template.id} />
+			</div>
+		</div>
+		<div className='px-3 py-2.5'>
+			<div className='truncate text-[13px] font-medium text-foreground'>
+				{template.name}
+			</div>
+			<div className='truncate text-xs text-muted-foreground'>
+				{template.description}
+			</div>
+		</div>
+	</button>
 );
 
 const RecentCard: React.FC<{
@@ -298,6 +408,23 @@ export const NewProject: React.FC = () => {
 									</span>
 								</span>
 							</button>
+						))}
+					</div>
+				</section>
+
+				{/* Templates */}
+				<section className='mb-12'>
+					<SectionTitle icon={<LayoutTemplate />}>
+						Start from a template
+					</SectionTitle>
+
+					<div className='grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5'>
+						{STARTER_TEMPLATES.map((template) => (
+							<TemplateCard
+								key={template.id}
+								template={template}
+								onOpen={() => createFromTemplate(template)}
+							/>
 						))}
 					</div>
 				</section>
