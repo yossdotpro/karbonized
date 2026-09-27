@@ -15,26 +15,26 @@ interface Props {
 }
 
 const changelog = `
-## v 2.0.0
+## v 2.0.0 - Release
 
-* New interface: calmer, denser design across the whole app
-* Command palette (Ctrl/⌘ K) with every action and its shortcut
-* Your session is saved automatically and restored when you come back
-* HTML block editor redesigned as a code editor (explorer, tabs, preview panel)
-* Shortcuts no longer fire while typing, and conflicting ones were fixed
-* Tools use single keys: V select, H pan, C crop, W warp
-* New start screen with templates, quick canvas sizes and your recent projects
-* Double click a tab to rename it
-* Agent follows design standards made for social media, and uses HTML blocks
+* New look: new logo, calmer interface and the rose accent back
+* Agent, a design assistant that edits the canvas with the AI model of your choice (Ctrl L)
+* MCP server in the desktop app for Claude Desktop, Claude Code and Cursor; clients can start Karbonized in the background
 * Templates with variables: {{title}}, {{date}}… filled from the Workspace panel or by Agent
 * Brand kit with your colors, fonts and logos, used by the pickers and by Agent
 * Agent and MCP export images without asking where to save
-* MCP clients can start Karbonized in the background; closing the window keeps it in the tray
-* Icon packs: creators can share icon sets as .kcomponent files, usable in the Icon block and in components
+* New start screen with templates, quick canvas sizes and your recent projects
+* Vector brush that follows pen pressure, shapes drawn by dragging, node editing, eraser, rulers and guides
+* The whole Google Fonts catalog for text, with alignment, weight, spacing, outline and shadow
+* Multiple selection, align and distribute, arrow keys and snapping toggle
+* Component library: import several .kcomponent files, a starter pack of examples, and icon packs made by creators
 * Realistic browser mockup and resizable phones
 * New color picker with eyedropper, recent colors and gradient angle
-* Cleaner property panels and a clearer brush bar
-* feat: Create Dynamic Background from Image, Phone, and Window block context menus
+* Command palette (Ctrl/⌘ K) with every action and its shortcut
+* Your session and undo history are saved and restored when you come back
+* HTML block editor redesigned as a code editor (explorer, tabs, preview panel, console)
+* Projects save and open reliably as plain .kproject files
+* Export at up to 4×, with a transparent background, or copy the image to the clipboard
 
 ## v 1.12.0 - Release (August 24th, 2023)
 

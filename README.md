@@ -16,24 +16,28 @@ Karbonized is a visual editor for creating images of code snippets, mockups and 
 
 ## ✨ What's new in 2.0
 
-* **New interface** — a calmer, denser design with light and dark themes across the whole app.
-* **Command palette** — press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to search and run any action, with its shortcut next to it.
-* **Autosave** — your workspaces are saved as you work and restored when you come back.
-* **HTML blocks with a real code editor** — edit HTML, CSS and JavaScript in a Monaco-powered editor with an explorer, file tabs, a live preview, a console and auto-generated controls for your variables. Works offline.
-* **Custom components (`.kcomponent`)** — package HTML blocks as YAML files, import them into your library and reuse them in any project.
-* **Consistent shortcuts** — shortcuts no longer fire while you type, and tools use single keys like in design apps.
-* **Agent, the design assistant** — describe what you want and Agent edits the canvas for you, with Anthropic, OpenAI, Gemini, OpenRouter or local models (Ollama, LM Studio). Undo everything it did in one step.
-* **MCP server** — in the desktop app, let Claude Desktop, Claude Code, Cursor and other MCP clients read and edit your designs.
+* **Agent, the design assistant** — describe the image you want and Agent builds it on the canvas, with Anthropic, OpenAI, Gemini, OpenRouter or local models (Ollama, LM Studio). It follows design standards made for social media, and everything it did undoes in one step.
+* **MCP server** — Claude Desktop, Claude Code, Cursor and other MCP clients can design with Karbonized. They start it in the background when it is not open, and exports land in a folder without any dialog.
+* **Templates with variables** — write `{{title}}`, `{{date}}` or `{{code}}` in any block and fill them from the Workspace panel (or let Agent do it): the next post is a new value, not a redesign.
+* **Brand kit** — your colors, fonts, logos and guidelines in one place. The pickers offer them first and Agent reads them before designing.
+* **Drawing tools** — a vector brush that follows pen pressure, shapes drawn by dragging, node editing, an eraser, rulers and guides.
+* **Components and icon packs** — a reworked `.kcomponent` library with a starter pack, and icon packs that anyone can make from a folder of SVGs.
+* **The whole Google Fonts catalog**, typography controls and text edited right on the canvas.
+* **New start screen** with templates, quick sizes and recent projects; a new color picker, a realistic browser mockup and resizable phones.
+* **New interface**, a command palette (<kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd>), autosave with undo history, and HTML blocks edited in a real code editor.
 
 See the full [changelog](./CHANGELOG.md).
 
 ## 🚀 Features
 
-* **🧱 Block-based canvas:** code snippets, text, images, icons, shapes, phone and window mockups, QR codes and HTML blocks. Move, resize, rotate, crop and warp them, group them into layers and undo any change.
+* **🧱 Block-based canvas:** code snippets, text, images, icons, shapes, freehand strokes, phone and browser mockups, QR codes and HTML blocks. Move, resize, rotate, crop and warp them, select several at once, align and distribute them, group them into layers and undo any change.
+* **✏️ Drawing:** a vector brush with pressure, shapes drawn by dragging, node editing, an eraser, rulers and snapping guides.
 * **🎨 Backgrounds:** solid colors, gradients, textures, images and dynamic backgrounds, with blur and noise.
-* **✨ Agent:** an assistant panel that designs with you using the model of your choice. See the [Agent guide](./docs/agent.md).
-* **🔌 MCP server:** the desktop app can expose its editing tools to MCP clients like Claude Desktop, Claude Code and Cursor.
-* **🧩 HTML blocks and components:** build your own blocks with HTML/CSS/JS, expose variables as controls and actions as buttons, and share them as `.kcomponent` files.
+* **✨ Agent:** an assistant panel that designs with you using the model of your choice, following design standards for social media. See the [Agent guide](./docs/agent.md).
+* **🔌 MCP server:** the desktop app exposes its editing tools to MCP clients like Claude Desktop, Claude Code and Cursor. Clients start it in the background, it can live in the tray, and images are exported straight to a folder.
+* **🧩 Templates and brand:** project variables (`{{title}}`) turn any design into a template, and a brand kit keeps your colors, fonts and logos at hand for you and for Agent.
+* **🧱 HTML blocks and components:** build your own blocks with HTML/CSS/JS, expose variables as controls and actions as buttons, share them as `.kcomponent` files, and publish icon packs.
+* **🔤 Typography:** installed fonts and the whole Google Fonts catalog, with alignment, weight, spacing, outline and shadow.
 * **⌨️ Keyboard-first:** a command palette and shortcuts for tools, editing, zoom and exporting.
 * **💾 Export:** save your designs as **PNG**, **JPEG** or **SVG** at up to 4× scale, with a transparent background, copy them to the clipboard or share them directly.
 * **🗂 Projects:** several workspaces at once, automatic session saving, and `.kproject` files you can save, open and turn into templates.
@@ -48,6 +52,8 @@ Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to see every command. The mo
 | --- | --- |
 | Command palette | <kbd>Ctrl</kbd> <kbd>K</kbd> |
 | Select / Pan / Crop / Warp tools | <kbd>V</kbd> / <kbd>H</kbd> / <kbd>C</kbd> / <kbd>W</kbd> |
+| Brush / Edit nodes / Eraser / Shape | <kbd>B</kbd> / <kbd>A</kbd> / <kbd>E</kbd> / <kbd>R</kbd> |
+| Rulers and guides | <kbd>Shift</kbd> <kbd>R</kbd> |
 | Undo / Redo | <kbd>Ctrl</kbd> <kbd>Z</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Z</kbd> |
 | Select all / Deselect | <kbd>Ctrl</kbd> <kbd>A</kbd> / <kbd>Esc</kbd> |
 | Add to or remove from the selection | <kbd>Shift</kbd> + click, or drag on the canvas |
@@ -62,6 +68,7 @@ Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>K</kbd> to see every command. The mo
 | Lock aspect ratio | <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd> |
 | Toggle properties panel | <kbd>Ctrl</kbd> <kbd>B</kbd> |
 | Show / hide Agent | <kbd>Ctrl</kbd> <kbd>L</kbd> |
+| Cycle panel layouts | <kbd>Ctrl</kbd> <kbd>.</kbd> |
 | New project / Open project | <kbd>Alt</kbd> <kbd>N</kbd> / <kbd>Ctrl</kbd> <kbd>O</kbd> |
 | Save project / Export | <kbd>Ctrl</kbd> <kbd>S</kbd> / <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>E</kbd> |
 | Copy image | <kbd>Alt</kbd> <kbd>Shift</kbd> <kbd>C</kbd> |
@@ -83,6 +90,7 @@ On macOS use <kbd>⌘</kbd> instead of <kbd>Ctrl</kbd>.
 * [Agent and the MCP server](./docs/agent.md)
 * [HTML blocks](./docs/html-blocks.md) and the [HTML block API](./docs/html-block-api.md)
 * [Creating and importing components](./docs/kcomponent-guide.md) and the [`.kcomponent` format](./docs/kcomponent-format.md)
+* [Making an icon pack](./docs/icon-packs.md)
 * [Extensions (plugin system)](./docs/plugin_system.md)
 
 ## 🏗 Building
