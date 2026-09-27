@@ -1,14 +1,16 @@
 # Changelog
 
-## Unreleased
+## v 2.0.0 - Release (September 27th, 2026)
 
 ### 🚀 Features
 
-- **Beedly, the design assistant** (`Ctrl+L`): a side panel that edits the canvas from a description, with streaming answers, visible tool calls, stop, retry and chat history
-- Beedly works with Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible server; providers, models and keys are set in **Beedly settings**
+- **New look**: a new logo, the Figtree typeface across the interface and the rose accent of v1 back on primary controls, focus rings, the canvas selection and snapping guides. Canvas blocks keep their typefaces, so exported images do not change
+- **Agent, the design assistant** (`Ctrl+L`): a panel docked on the left that edits the canvas from a description, with streaming answers, visible tool calls, stop, retry and chat history. It lives in the **AI** menu
+- Agent works with Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible server; providers, models and keys are set in **Agent settings**
 - API keys stay on the device: encrypted with the system keychain on desktop (and only sent to the base URL they were saved for), stored in the browser on the web
-- Everything Beedly does in one response undoes in one step, with **Undo changes** under the response
-- **Beedly** button in the status bar (shows when a response is in progress) and a **Beedly** menu in the menu bar: show or hide the panel, new chat, stop, switch model, settings and, in the desktop app, turn the MCP server on or off
+- Everything Agent does in one response undoes in one step, with **Undo changes** under the response
+- **Panel layouts**: the status bar button switches between Canvas, Properties, Agent and both (`Mod+.` cycles them)
+- An **AI** menu in the menu bar: show or hide the panel, new chat, stop, switch model, settings and, in the desktop app, turn the MCP server on or off
 - An **MCP** indicator in the status bar of the desktop app shows the server state and opens its settings
 - **New blocks land where you are looking**: in the middle of the visible canvas, whatever the zoom or the panning, and stepping aside instead of piling up on the same spot
 - **One active tool**: Select, Pan, Crop and Warp are now a single setting. Holding `Space` pans the canvas and releasing it goes back to the tool you were using, `Esc` leaves the current tool, and pressing a tool's button or shortcut again returns to Select
@@ -17,7 +19,7 @@
 - **Fonts for text blocks**: pick any font installed on the machine or any of the **1946 families of Google Fonts**, searchable and filtered by kind (sans, serif, display, handwriting, mono), each name shown in its own font. Only the names on screen are fetched for the preview, the chosen family is loaded with the weights it really has, and the exported image keeps it
 - **Typography controls** for text: alignment (left, center, right, justified), weight (300–800), line height and letter spacing
 - **Edit text on the canvas**: double click a text block to type in place; `Esc` (or clicking away) saves
-- **Beedly and the MCP server reach the new work**: they can crop a block (`crop` in `update_block`, in percent of each side), place the guides blocks snap to (`set_guides`), create freehand strokes and read the crop and the guides back from `get_workspace`; the tools the user draws with (shape, brush, nodes, eraser, crop, pan) and the rulers are commands they can run
+- **Agent and the MCP server reach the new work**: they can crop a block (`crop` in `update_block`, in percent of each side), place the guides blocks snap to (`set_guides`), create freehand strokes and read the crop and the guides back from `get_workspace`; the tools the user draws with (shape, brush, nodes, eraser, crop, pan) and the rulers are commands they can run
 - **Vector brush** (`B`): draw freehand on the canvas and the stroke is kept as a curve, not as pixels. The points are smoothed and thinned into a bezier path, so it stays sharp at any size; the bar at the bottom sets width, smoothing, thinning and color, and each stroke becomes a block that can be moved, resized, rotated, recolored, closed and filled, and undone
 - **Eraser** (`E`): press and go over what you want gone; everything the pointer touches in one pass is deleted in one step
 - **Rulers and guides** (`Shift+R`): rulers along the top and the left in canvas pixels, that follow the pan and the zoom. Drag out of them to leave a guide the blocks snap to, drag a guide off the canvas to take it away, and **Clear guides** removes them all
@@ -43,6 +45,9 @@
 - **Templates with variables**: a project can hold variables (text, long text, date or "today"). Blocks that contain `{{name}}` show the value, so a design becomes a template whose content changes without touching the layout. Edit them in the Workspace panel, or let Agent fill them with `set_variables`
 - **Brand kit** (File → Brand kit): your colors, fonts, logos and guidelines in one place. The color and font pickers offer them first, Agent and MCP clients read them before designing (`get_brand_kit`, `add_brand_logo`), and a kit can be shared as a `.kbrand` file
 - **MCP without an open window**: MCP clients start Karbonized in the background when it is not running; while the server is on, closing the window keeps it running in the tray, and it can start hidden at login. Only one Karbonized runs at a time
+- **Component library reworked**: import several `.kcomponent` files at once (or drop them), with a result and warnings per file; duplicates are replaced instead of rejected; favorites, usage, categories, search and sorting. Only `manifest.name` and `html` are required, YAML errors report their line, and `manifest.width`/`height` size the block
+- **Starter pack**: eight example components (terminal window, commit card, diff viewer, stat tile, quote card, keyboard shortcut, progress ring and chat bubble), one click away from the empty library
+- **Agent and MCP use the component library**: `list_components`, `import_component`, `add_component`, `export_component` and `load_starter_pack`
 - **Icon packs**: creators can publish icon sets as `.kcomponent` files (`type: icon-pack`, SVG icons, sanitized on import). Installed packs show up in the component library (browse and add), in the Icon block picker and in components through `/* @type:icon */` variables (which also take Font Awesome icons) drawn with the `.k-icon` helper. `yarn icon-pack` builds a pack from a folder of SVGs; see `docs/icon-packs.md`
 - **New icon picker** with search for the Icon block
 - **HTML blocks load their fonts**: Google fonts named in the block CSS now render (a shadow root cannot load them by itself)
@@ -66,6 +71,7 @@
 
 ### 🧹 Removed
 
+- **Save project as template**: it wrote the same file under another extension. Save the project, or turn it into a template with project variables
 - **Tweet block**: it depended on an external service to load tweets and is no longer available. Projects that used it open without it
 - **Avatar block**: a picture in a circle with no settings of its own, which an image block with a circle mask covers. It had no button to add it and never saved what it held
 - **Badge block**: a text and an avatar in a pill, which a text block and an image cover. Projects that used it open without it
@@ -73,6 +79,9 @@
 
 ### 🐛 Fixes
 
+- **Saving and opening projects**: a saved `.kproject` held only a thumbnail, and opening one dropped blocks without saved properties, cut property names with dashes, broke groups and could reuse ids already on screen. `.kproject` is now plain JSON (`version: 2`, with a thumbnail); older encrypted and plain files still open, and dropping one on the window opens it
+- The packaged desktop app rendered a blank window (it loads from `file://`, now routed on the hash), and saving suggested a `blob:` id as the file name; it now uses a real "Save as" dialog
+- Agent says when no API key is saved for a provider that needs one, instead of sending the request and showing the provider's error
 - The brush bar's sliders had no width, so the bar showed only overlapping icons
 - The color picker opened at the top-left corner of the window instead of next to its field
 - The status bar showed `NaN` when no block was selected
@@ -99,7 +108,7 @@
 
 - Vitest test suite (`yarn test`) covering shortcuts, undo/redo history, align/distribute math, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
 
-## v 2.0.0
+## v 2.0.0 - Release Candidate
 
 ### 🚀 Features
 
