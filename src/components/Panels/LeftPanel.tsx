@@ -7,74 +7,59 @@ import {
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { getRandomNumber } from '@/utils/getRandom';
 import {
-	AppWindow,
-	Badge,
-	Circle,
-	CodeSquare,
-	Crop,
-	Ellipsis,
-	Hand,
-	Image,
-	MousePointer2,
-	QrCode,
-	Smartphone,
-	Sticker,
-	Type,
+	BoxSelect,
+	Brush,
 	ChevronLeft,
 	ChevronRight,
-	Square,
+	Crop,
+	Ellipsis,
+	Eraser,
+	Hand,
+	LayoutTemplate,
+	Moon,
+	MousePointer2,
+	Package,
 	PenTool,
 	Puzzle,
-	Moon,
+	Spline,
+	Square,
 	Sun,
-	LayoutTemplate,
-	BoxSelect,
-	X,
-	Globe,
 } from 'lucide-react';
 import React, { useEffect, useState, useContext, useRef, useMemo } from 'react';
 import { AppContext } from '../../AppContext';
 import { useScreenDirection } from '../../hooks/useScreenDirection';
-import { useWorkspaceStore, useControlsStore, useUIStore } from '../../stores';
+import { useUIStore } from '../../stores';
+import type { EditorTool } from '../../stores/ui-store';
 import { isElectron } from '../../utils/isElectron';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { Separator } from '../ui/separator';
-import { IconBrandHtml5, IconBrandX, IconHtml } from '@tabler/icons-react';
 import { ComponentsGalleryDialog } from '../Modals/ComponentsGalleryDialog';
 import { useKComponentStore } from '../../stores/kcomponent-store';
-import { KComponent } from '../../models/KComponent';
-import { Package } from 'lucide-react';
+import { useAddKComponentToCanvas } from '@/hooks/useAddKComponentToCanvas';
 import { useCommands } from '@/lib/commands/registry';
+import { BLOCK_DROP_TYPE, INSERTABLE_BLOCKS } from '@/lib/blocks/registry';
+import { addBlock } from '@/lib/editor/actions';
+import { toast } from 'sonner';
+
+/** Tools come first in the bar, then the blocks that can be inserted. */
+const TOOL_COUNT = 7;
 
 export const LeftPanel: React.FC = () => {
 	/* App Store */
-	const addControl = useControlsStore((state) => state.addControl);
-	const addInitialProperty = useControlsStore(
-		(state) => state.addInitialProperty,
-	);
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
 	const setWorkspaceTab = useUIStore((state) => state.setSelectedTab);
-	const setEditing = useUIStore((state) => state.setEditing);
-	const editing = useUIStore((state) => state.editing);
-	const drag = useUIStore((state) => state.drag);
-	const setDrag = useUIStore((state) => state.setDrag);
-	const crop = useUIStore((state) => state.crop);
-	const setCrop = useUIStore((state) => state.setCrop);
-	const warp = useUIStore((state) => state.warp);
-	const setWarp = useUIStore((state) => state.setWarp);
-	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
-	const currentWorkspaceID = useWorkspaceStore(
-		(state) => state.currentWorkspaceID,
+	const activeTool = useUIStore((state) => state.activeTool);
+	const setActiveTool = useUIStore((state) => state.setActiveTool);
+	const startDrawing = useUIStore((state) => state.startDrawing);
+	const drawShape = useUIStore((state) => state.drawShape);
+
+	/* The library dialog lives in the store so the menu bar can open it too. */
+	const showComponentsDialog = useKComponentStore(
+		(state) => state.isGalleryOpen,
 	);
-
-	/* KComponent Store */
-	const { importedComponents } = useKComponentStore();
-
-	/* Component Gallery Dialog State */
-	const [showComponentsDialog, setShowComponentsDialog] = useState(false);
+	const setShowComponentsDialog = useKComponentStore(
+		(state) => state.setGalleryOpen,
+	);
 
 	/* Component State */
 	const isHorizontal = useScreenDirection();
@@ -86,54 +71,13 @@ export const LeftPanel: React.FC = () => {
 
 	const containerRef = useRef<HTMLDivElement>(null);
 
-	// Handler to add imported component to canvas
-	const handleAddKComponentToCanvas = (component: KComponent) => {
-		const getElementsByType = (type: string) => {
-			if (currentWorkspace !== undefined)
-				return (
-					currentWorkspace?.controls.filter((item) => item.type === type)
-						?.length + 1
-				);
-		};
+	const handleAddKComponentToCanvas = useAddKComponentToCanvas();
 
-		// Create an HTML block with the imported component's content
-		const controlId = `html-${getRandomNumber()}`;
-		addControl(
-			{
-				type: 'html',
-				id: controlId,
-				isSelectable: true,
-				isDeleted: false,
-				name: component.manifest.name || `html ${getElementsByType('html')}`,
-				isVisible: true,
-			},
-			currentWorkspaceID,
-		);
-
-		// Set the HTML, CSS, and JS content from the imported component
-		// using the store's initialProperties mechanism
-		addInitialProperty(
-			{ id: `${controlId}-html`, value: component.html },
-			currentWorkspaceID,
-		);
-		addInitialProperty(
-			{ id: `${controlId}-css`, value: component.css },
-			currentWorkspaceID,
-		);
-		addInitialProperty(
-			{ id: `${controlId}-js`, value: component.js },
-			currentWorkspaceID,
-		);
-	};
-
-	// Tool configuration
 	const tools = useMemo(() => {
-		const getElementsByType = (type: string) => {
-			if (currentWorkspace !== undefined)
-				return (
-					currentWorkspace?.controls.filter((item) => item.type === type)
-						?.length + 1
-				);
+		/* Picking the active tool again goes back to Select, so every tool can
+		   be turned off with its own button or shortcut. */
+		const pickTool = (tool: EditorTool) => () => {
+			setActiveTool(activeTool === tool && tool !== 'select' ? 'select' : tool);
 		};
 
 		return [
@@ -142,264 +86,93 @@ export const LeftPanel: React.FC = () => {
 				icon: MousePointer2,
 				label: 'Select',
 				shortcut: 'V',
-				action: () => {
-					setEditing(true);
-					setDrag(false);
-					setCrop(false);
-					setWarp(false);
-				},
-				isActive: editing && !crop && !warp,
+				action: pickTool('select'),
+				isActive: activeTool === 'select',
 			},
 			{
 				id: 'pan',
 				icon: Hand,
 				label: 'Pan',
 				shortcut: 'H',
-				action: () => {
-					setEditing(false);
-					setCrop(false);
-					setWarp(false);
-					setDrag(true);
-				},
-				isActive: drag,
+				action: pickTool('pan'),
+				isActive: activeTool === 'pan',
 			},
 			{
 				id: 'crop',
 				icon: Crop,
 				label: 'Crop',
 				shortcut: 'C',
-				action: () => {
-					setDrag(false);
-					setWarp(false);
-					setCrop(true);
-				},
-				isActive: crop,
+				action: pickTool('crop'),
+				isActive: activeTool === 'crop',
 			},
 			{
 				id: 'warp',
 				icon: BoxSelect,
 				label: 'Warp',
 				shortcut: 'W',
-				action: () => {
-					setDrag(false);
-					setCrop(false);
-					setWarp(!warp);
-				},
-				isActive: warp,
+				action: pickTool('warp'),
+				isActive: activeTool === 'warp',
 			},
 			{
-				id: 'code',
-				icon: CodeSquare,
-				label: 'Code',
-				action: () => {
-					addControl(
-						{
-							type: 'code',
-							id: `code-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `code ${getElementsByType('code')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
+				id: 'brush',
+				icon: Brush,
+				label: 'Brush',
+				shortcut: 'B',
+				action: pickTool('brush'),
+				isActive: activeTool === 'brush',
 			},
 			{
-				id: 'image',
-				icon: Image,
-				label: 'Image',
-				action: () => {
-					addControl(
-						{
-							type: 'image',
-							id: `image-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `image ${getElementsByType('image')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
+				id: 'nodes',
+				icon: Spline,
+				label: 'Edit nodes',
+				shortcut: 'A',
+				action: pickTool('nodes'),
+				isActive: activeTool === 'nodes',
 			},
 			{
-				id: 'icon',
-				icon: Sticker,
-				label: 'Icon',
-				action: () => {
-					addControl(
-						{
-							type: 'icon',
-							id: `icon-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `icon ${getElementsByType('icon')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
+				id: 'eraser',
+				icon: Eraser,
+				label: 'Eraser',
+				shortcut: 'E',
+				action: pickTool('eraser'),
+				isActive: activeTool === 'eraser',
 			},
-			{
-				id: 'text',
-				icon: Type,
-				label: 'Text',
+			/* Every block type comes from the registry, so a new block only
+			   has to be added there */
+			...INSERTABLE_BLOCKS.map((block) => ({
+				id: block.type,
+				icon: block.icon,
+				label: block.label,
+				shortcut:
+					block.type === 'shape' ? 'R' : (undefined as string | undefined),
 				action: () => {
-					addControl(
-						{
-							type: 'text',
-							id: `text-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `text ${getElementsByType('text')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
+					// Shapes are drawn on the canvas instead of dropped on it.
+					if (block.type === 'shape') {
+						if (activeTool === 'draw') {
+							setActiveTool('select');
+						} else {
+							startDrawing(drawShape);
+						}
+						return;
+					}
+
+					try {
+						addBlock({ type: block.type });
+					} catch (error) {
+						toast.error(
+							error instanceof Error
+								? error.message
+								: 'The block was not added',
+						);
+					}
 				},
-				isActive: false,
-			},
-			{
-				id: 'shape',
-				icon: Circle,
-				label: 'Shape',
-				action: () => {
-					addControl(
-						{
-							type: 'shape',
-							id: `shape-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `shape ${getElementsByType('shape')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
-			},
-			{
-				id: 'phone',
-				icon: Smartphone,
-				label: 'Phone',
-				action: () => {
-					addControl(
-						{
-							type: 'phone_mockup',
-							id: `phone_mockup-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `phone mockup ${getElementsByType('phone_mockup')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
-			},
-			{
-				id: 'qr',
-				icon: QrCode,
-				label: 'QR Code',
-				action: () => {
-					addControl(
-						{
-							type: 'qr',
-							id: `qr-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `qr ${getElementsByType('qr')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
-			},
-			{
-				id: 'badge',
-				icon: Badge,
-				label: 'Badge',
-				action: () => {
-					addControl(
-						{
-							type: 'badge',
-							id: `badge-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `badge ${getElementsByType('badge')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
-			},
-			{
-				id: 'tweet',
-				icon: IconBrandX,
-				label: 'Tweet',
-				action: () => {
-					addControl(
-						{
-							type: 'tweet',
-							id: `tweet-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `tweet ${getElementsByType('tweet')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
-			},
-			{
-				id: 'window',
-				icon: AppWindow,
-				label: 'Window',
-				action: () => {
-					addControl(
-						{
-							type: 'window',
-							id: `window-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `window ${getElementsByType('window')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
-			},
-			{
-				id: 'html',
-				icon: IconBrandHtml5,
-				label: 'HTML',
-				action: () => {
-					addControl(
-						{
-							type: 'html',
-							id: `html-${getRandomNumber()}`,
-							isSelectable: true,
-							isDeleted: false,
-							name: `html ${getElementsByType('html')}`,
-							isVisible: true,
-						},
-						currentWorkspaceID,
-					);
-				},
-				isActive: false,
-			},
+				isActive: block.type === 'shape' && activeTool === 'draw',
+			})),
 			{
 				id: 'components',
 				icon: Package,
 				label: 'Components',
+				shortcut: undefined as string | undefined,
 				action: () => {
 					setShowComponentsDialog(true);
 				},
@@ -407,16 +180,11 @@ export const LeftPanel: React.FC = () => {
 			},
 		];
 	}, [
-		editing,
-		crop,
-		warp,
-		drag,
-		setEditing,
-		setDrag,
-		setCrop,
-		setWarp,
-		addControl,
-		currentWorkspace,
+		activeTool,
+		setActiveTool,
+		startDrawing,
+		drawShape,
+		setShowComponentsDialog,
 	]);
 
 	// Calculate visible tools based on screen height
@@ -445,27 +213,18 @@ export const LeftPanel: React.FC = () => {
 		tools.map((tool, index) => ({
 			id: `tools.${tool.id}`,
 			title:
-				index < 4
+				index < TOOL_COUNT
 					? `${tool.label} tool`
 					: tool.id === 'components'
 						? 'Open component gallery'
 						: `Add ${tool.label.toLowerCase()}`,
-			group: index < 4 ? 'Tools' : 'Insert',
+			group: index < TOOL_COUNT ? 'Tools' : 'Insert',
 			icon: tool.icon,
 			shortcut: tool.shortcut,
 			keywords: ['insert', 'add', 'block', tool.id],
 			run: tool.action,
 		})),
 	);
-
-	useEffect(() => {
-		if (workspaceMode === 'design') {
-			setShowMenu(true);
-			setTab('hierarchy');
-		} else if (workspaceMode !== 'custom') {
-			setShowMenu(false);
-		}
-	}, [workspaceMode]);
 
 	return (
 		<div
@@ -479,6 +238,12 @@ export const LeftPanel: React.FC = () => {
 						<Tooltip message={tool.label} shortcut={tool.shortcut}>
 							<Button
 								onClick={tool.action}
+								/* Blocks can also be dragged to a spot on the canvas */
+								draggable={index >= TOOL_COUNT && tool.id !== 'components'}
+								onDragStart={(event) => {
+									event.dataTransfer.setData(BLOCK_DROP_TYPE, tool.id);
+									event.dataTransfer.effectAllowed = 'copy';
+								}}
 								variant='ghost'
 								size='icon'
 								aria-label={tool.label}
@@ -492,7 +257,7 @@ export const LeftPanel: React.FC = () => {
 								<tool.icon size={16} strokeWidth={1.75} />
 							</Button>
 						</Tooltip>
-						{index === 3 && (
+						{index === TOOL_COUNT - 1 && (
 							<Separator
 								orientation='horizontal'
 								className='my-1 h-px w-5 bg-border'
@@ -560,7 +325,6 @@ export const LeftPanel: React.FC = () => {
 							variant={tab === 'hierarchy' && showMenu ? 'default' : 'ghost'}
 							size='icon'
 							onClick={() => {
-								setWorkspaceMode('custom');
 								setTab('hierarchy');
 								setShowMenu(true);
 							}}
@@ -577,7 +341,6 @@ export const LeftPanel: React.FC = () => {
 								variant={tab === 'extensions' && showMenu ? 'default' : 'ghost'}
 								size='icon'
 								onClick={() => {
-									setWorkspaceMode('custom');
 									setTab('extensions');
 
 									/* Load Extension and App Data */
@@ -602,7 +365,6 @@ export const LeftPanel: React.FC = () => {
 								variant='ghost'
 								size='icon'
 								onClick={() => {
-									setWorkspaceMode('custom');
 									setTab('hierarchy');
 									setShowMenu(!showMenu);
 								}}
@@ -625,7 +387,6 @@ export const LeftPanel: React.FC = () => {
 								size='icon'
 								onClick={() => {
 									setTab('control');
-									setWorkspaceMode('custom');
 									setShowMenu(true);
 								}}
 								className='rounded-xl'
@@ -643,7 +404,6 @@ export const LeftPanel: React.FC = () => {
 								size='icon'
 								onClick={() => {
 									setTab('workspace');
-									setWorkspaceMode('custom');
 									setWorkspaceTab('workspace');
 									setShowMenu(true);
 								}}

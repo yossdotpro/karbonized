@@ -23,6 +23,17 @@ const changelog = `
 * HTML block editor redesigned as a code editor (explorer, tabs, preview panel)
 * Shortcuts no longer fire while typing, and conflicting ones were fixed
 * Tools use single keys: V select, H pan, C crop, W warp
+* New start screen with templates, quick canvas sizes and your recent projects
+* Double click a tab to rename it
+* Agent follows design standards made for social media, and uses HTML blocks
+* Templates with variables: {{title}}, {{date}}… filled from the Workspace panel or by Agent
+* Brand kit with your colors, fonts and logos, used by the pickers and by Agent
+* Agent and MCP export images without asking where to save
+* MCP clients can start Karbonized in the background; closing the window keeps it in the tray
+* Icon packs: creators can share icon sets as .kcomponent files, usable in the Icon block and in components
+* Realistic browser mockup and resizable phones
+* New color picker with eyedropper, recent colors and gradient angle
+* Cleaner property panels and a clearer brush bar
 * feat: Create Dynamic Background from Image, Phone, and Window block context menus
 
 ## v 1.12.0 - Release (August 24th, 2023)

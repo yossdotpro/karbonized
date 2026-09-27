@@ -1,3 +1,4 @@
+import { IconPickerField } from '../CustomControls/IconPicker';
 import React from 'react';
 import { Play } from 'lucide-react';
 import {
@@ -98,6 +99,21 @@ export const HTMLBlockCSSVariablesControls: React.FC<CSSControlsProps> = ({
 									onUpdateVariable(variable.name, checked)
 								}
 							/>
+						</div>
+					);
+
+				case 'icon':
+					return (
+						<div key={variable.name} className='space-y-2'>
+							<Label className='font-mono text-[11px] font-normal text-muted-foreground'>
+								{variable.name}
+							</Label>
+							<div className='flex'>
+								<IconPickerField
+									value={variable.value as string}
+									onChange={(name) => onUpdateVariable(variable.name, name)}
+								/>
+							</div>
 						</div>
 					);
 

@@ -1,3 +1,4 @@
+import { HIERARCHY_ICON_OVERRIDES, blockIcon } from '@/lib/blocks/registry';
 import { Button } from '@/components/ui/button';
 import {
 	ContextMenu,
@@ -20,25 +21,15 @@ import {
 	Boxes,
 	ChevronDown,
 	ChevronRight,
-	Circle,
-	Code2,
 	EllipsisVertical,
 	Eye,
 	EyeOff,
-	Folder,
 	FolderInput,
-	Image,
 	Lock,
 	LockOpen,
-	Monitor,
 	Copy,
 	PenLine,
-	QrCode,
 	SendToBack,
-	Shapes,
-	SquareCode,
-	Sticker,
-	TextCursorInput,
 	Trash2,
 	Users,
 } from 'lucide-react';
@@ -318,37 +309,10 @@ const ChevronUpIcon = () => <ArrowUp className='mr-2 size-4' />;
 const ChevronDownIcon = () => <ArrowDown className='mr-2 size-4' />;
 const BringToFrontIcon = () => <Boxes className='mr-2 size-4' />;
 
+/** Icon of a block in the hierarchy; the types live in the block registry. */
 export const MenuIcon: React.FC<{ type: string }> = ({ type }) => {
-	switch (type) {
-		case 'code':
-			return <Code2 className='size-4' />;
-		case 'text':
-			return <TextCursorInput className='size-4' />;
-		case 'qr':
-			return <QrCode className='size-4' />;
-		case 'image':
-			return <Image className='size-4' />;
-		case 'window':
-			return <SquareCode className='size-4' />;
-		case 'avatar':
-			return <Users className='size-4' />;
-		case 'shape':
-			return <Circle className='size-4' />;
-		case 'phone_mockup':
-			return <Monitor className='size-4' />;
-		case 'icon':
-			return <Sticker className='size-4' />;
-		case 'tweet':
-			return <TextCursorInput className='size-4' />;
-		case 'badge':
-			return <Shapes className='size-4' />;
-		case 'custom':
-			return <PuzzleLikeIcon />;
-		case 'group':
-			return <Folder className='size-4' />;
-		default:
-			return <Boxes className='size-4' />;
-	}
+	// The icons come from a static map, so this never creates a component.
+	const Icon = HIERARCHY_ICON_OVERRIDES[type] ?? blockIcon(type);
+	// eslint-disable-next-line react-hooks/static-components
+	return <Icon className='size-4' />;
 };
-
-const PuzzleLikeIcon = () => <Sticker className='size-4' />;

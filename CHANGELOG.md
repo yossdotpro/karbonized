@@ -1,5 +1,104 @@
 # Changelog
 
+## Unreleased
+
+### 🚀 Features
+
+- **Beedly, the design assistant** (`Ctrl+L`): a side panel that edits the canvas from a description, with streaming answers, visible tool calls, stop, retry and chat history
+- Beedly works with Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, LM Studio and any OpenAI-compatible server; providers, models and keys are set in **Beedly settings**
+- API keys stay on the device: encrypted with the system keychain on desktop (and only sent to the base URL they were saved for), stored in the browser on the web
+- Everything Beedly does in one response undoes in one step, with **Undo changes** under the response
+- **Beedly** button in the status bar (shows when a response is in progress) and a **Beedly** menu in the menu bar: show or hide the panel, new chat, stop, switch model, settings and, in the desktop app, turn the MCP server on or off
+- An **MCP** indicator in the status bar of the desktop app shows the server state and opens its settings
+- **New blocks land where you are looking**: in the middle of the visible canvas, whatever the zoom or the panning, and stepping aside instead of piling up on the same spot
+- **One active tool**: Select, Pan, Crop and Warp are now a single setting. Holding `Space` pans the canvas and releasing it goes back to the tool you were using, `Esc` leaves the current tool, and pressing a tool's button or shortcut again returns to Select
+- **Rotation in degrees**: the Position panel takes the angle of the block as a number; a warped block shows a **Reset warp** button, and blocks report their angle even after being warped
+- **Crops are proportional**: a crop is stored in percentages, so it follows the block when it is resized, the crop area can be dragged as a whole, and **Reset crop** in the block menu removes it
+- **Fonts for text blocks**: pick any font installed on the machine or any of the **1946 families of Google Fonts**, searchable and filtered by kind (sans, serif, display, handwriting, mono), each name shown in its own font. Only the names on screen are fetched for the preview, the chosen family is loaded with the weights it really has, and the exported image keeps it
+- **Typography controls** for text: alignment (left, center, right, justified), weight (300–800), line height and letter spacing
+- **Edit text on the canvas**: double click a text block to type in place; `Esc` (or clicking away) saves
+- **Beedly and the MCP server reach the new work**: they can crop a block (`crop` in `update_block`, in percent of each side), place the guides blocks snap to (`set_guides`), create freehand strokes and read the crop and the guides back from `get_workspace`; the tools the user draws with (shape, brush, nodes, eraser, crop, pan) and the rulers are commands they can run
+- **Vector brush** (`B`): draw freehand on the canvas and the stroke is kept as a curve, not as pixels. The points are smoothed and thinned into a bezier path, so it stays sharp at any size; the bar at the bottom sets width, smoothing, thinning and color, and each stroke becomes a block that can be moved, resized, rotated, recolored, closed and filled, and undone
+- **Eraser** (`E`): press and go over what you want gone; everything the pointer touches in one pass is deleted in one step
+- **Rulers and guides** (`Shift+R`): rulers along the top and the left in canvas pixels, that follow the pan and the zoom. Drag out of them to leave a guide the blocks snap to, drag a guide off the canvas to take it away, and **Clear guides** removes them all
+- **Alt+drag leaves a copy** of the block behind, and **Shift keeps a drag on one axis**
+- **Drag a block from the toolbar** to the spot on the canvas where it should land
+- **Shapes take a gradient fill**, and **Convert to stroke** in their menu turns a shape into a stroke, so the node tool can edit it point by point
+- **Text takes an outline and a shadow of its own letters**, not only the shadow of the block
+- The brush steadies the line while it is drawn, not only when it is let go, and shows a circle of the width it paints at the current zoom
+- **Edit the nodes of a stroke** (`A`): pick a stroke and its points show on the canvas; drag one to move it, click the stroke to add one and `Alt`+click to take one out. Every edit is one step of undo
+- **The brush has a stroke that lives**: it follows the pressure of a pen, and the speed of the hand when there is no pen, so a line is thicker where it lingers and thinner where it runs, with tapered ends. The stroke keeps its points, so its width and how much it thins can still be changed after it is drawn
+- **Shapes are drawn on the canvas**: pick the shape tool (`R`), choose a shape in the bar at the bottom and drag to draw it where and as big as you want; `Shift` keeps it square and `Alt` draws from the center. A click without dragging still drops one at its default size
+- **Shapes redrawn**: rectangle with adjustable corners, ellipse, triangle, polygon with 3–12 sides, star with 3–12 points and adjustable depth, heart, line and arrow. Every shape takes a fill, a stroke (width, color, solid, dashed or dotted) and is drawn at the block's real size, so corners and strokes keep their thickness. Shapes from older projects keep working
+- **Images frame their picture**: stretch, cover or fit, offset X and Y, zoom, corner radius, a URL field and "use original size"; an image file can be dropped on the block and an image in the clipboard pasted onto it
+- **Text blocks fit their text**: new text blocks grow and shrink with their content, font size and style. Resizing with a side handle keeps the width and wraps the text (the height still follows it); a top, bottom or corner handle fixes both. Pick **Auto**, **Auto height** or **Fixed** in the Text section, which now takes several lines. Existing text blocks keep their size
+- **MCP server** in the desktop app (off by default): Claude Desktop, Claude Code, Cursor and other MCP clients can read the workspace, create projects, add, edit, align and delete blocks, edit HTML block code, change the background and size, look at the canvas and export images; settings include ready-made client configurations
+- **Export options**: scale (0.5×–4×) with the resulting size, transparent background for PNG and SVG, JPEG quality; the export dialog remembers your choices and warns when the image is too large for the browser
+- **Copy image to the clipboard** (`Alt+Shift+C`, File menu and export dialog)
+- Block "Export layer" uses the same scale and transparency settings
+- Notifications for export, copy and project errors instead of browser alerts
+- **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
+- **Agent designs to a standard**: a shared design guide for social media (sizes per platform and story safe zones, margins and grid, a type scale for phones, contrast, palettes, HTML block rules and a final checklist) in Agent's prompt and in the MCP server instructions, plus `get_design_guide` and `search_icons` tools
+- **Agent and MCP clients export without dialogs**: `export_image` saves to an export folder (`Pictures/Karbonized` by default, changeable in the export dialog and MCP settings) and returns the path, or returns the image itself. Exports from the menu say where the file went, with a Show button
+- **Templates with variables**: a project can hold variables (text, long text, date or "today"). Blocks that contain `{{name}}` show the value, so a design becomes a template whose content changes without touching the layout. Edit them in the Workspace panel, or let Agent fill them with `set_variables`
+- **Brand kit** (File → Brand kit): your colors, fonts, logos and guidelines in one place. The color and font pickers offer them first, Agent and MCP clients read them before designing (`get_brand_kit`, `add_brand_logo`), and a kit can be shared as a `.kbrand` file
+- **MCP without an open window**: MCP clients start Karbonized in the background when it is not running; while the server is on, closing the window keeps it running in the tray, and it can start hidden at login. Only one Karbonized runs at a time
+- **Icon packs**: creators can publish icon sets as `.kcomponent` files (`type: icon-pack`, SVG icons, sanitized on import). Installed packs show up in the component library (browse and add), in the Icon block picker and in components through `/* @type:icon */` variables (which also take Font Awesome icons) drawn with the `.k-icon` helper. `yarn icon-pack` builds a pack from a folder of SVGs; see `docs/icon-packs.md`
+- **New icon picker** with search for the Icon block
+- **HTML blocks load their fonts**: Google fonts named in the block CSS now render (a shadow root cannot load them by itself)
+- **Realistic browser mockup**: Chrome-style tab strip, toolbar and omnibox with macOS or Windows controls, Light/Dark/Midnight themes and a soft shadow; the chrome scales with the block and screenshots cover the page instead of stretching
+- **Phones can be resized**: device mockups scale to any size and keep their proportions
+- **Templates** on the start screen: code snippet, launch post, app showcase, browser mockup and quote card, built from regular blocks you can edit (one undo removes them)
+- **Rename a tab** by double clicking it, or with **Rename** in its context menu
+- **New start screen**: one-click canvas sizes, open a file, what's new, and **recent projects** with thumbnails that stay available after their tab is closed. The full list of sizes and the custom size moved to a **New project** dialog
+- **New color picker**: opens next to its field, with an eyedropper, a palette, recent colors and a gradient mode with a live preview, two stops and a 0–360° angle
+- **Aligned property panels**: layout, shadow, mask, filters, text, stroke and image settings share one row layout, with inline number fields, the current value of each slider and one-click resets
+- **Block context menu** redesigned: opacity with value, duplicate, arrange (bring to front, forward, backward, send to back), hide, lock, export layer and delete
+- **Snapping toggle** (`Shift+S`, also in the status bar); selection handles and snap guides restyled
+- **Delete / Backspace** remove the selected block from anywhere on the canvas
+- **Arrow keys** move the selected block by 1px (10px with Shift); each step can be undone; locked blocks stay in place
+- **Multiple selection**: drag on the canvas to select blocks, `Shift`+click to add or remove one, `Ctrl+A` selects every block and `Esc` clears the selection; selected blocks move together
+- **Align and distribute** from the properties panel or with shortcuts (`Alt+A/H/D` left/center/right, `Alt+W/V/S` top/middle/bottom, `Alt+Shift+H/V` distribute); a single block aligns to the canvas
+- Duplicate, delete and arrow keys apply to the whole selection; aligning, distributing and moving several blocks undo in one step
+- **Undo history is saved with the session**: the last 100 steps can still be undone after reloading or reopening the app
+- **Block editor console** also shows errors thrown later by block scripts (timers, event listeners, promises and async actions) and no longer logs every action registration
+- **Action scope hint** in `main.js`: each `// @action:` marker shows which lines run with the action, with a gutter bar over its code
+
+### 🧹 Removed
+
+- **Tweet block**: it depended on an external service to load tweets and is no longer available. Projects that used it open without it
+- **Avatar block**: a picture in a circle with no settings of its own, which an image block with a circle mask covers. It had no button to add it and never saved what it held
+- **Badge block**: a text and an avatar in a pill, which a text block and an image cover. Projects that used it open without it
+- **Freehand drawing on a canvas layer**: it was never reachable, was not saved with the project and could not be undone. The vector brush replaces it
+
+### 🐛 Fixes
+
+- The brush bar's sliders had no width, so the bar showed only overlapping icons
+- The color picker opened at the top-left corner of the window instead of next to its field
+- The status bar showed `NaN` when no block was selected
+- The crop and warp tools did nothing when they were picked while the pan tool was active
+- The crop tool showed no crop handles when the selection handles had not been resolved yet, which also happened while the window was in the background
+- Resizing or rotating several blocks at once could not be undone
+- Clicking a block without moving it added an empty undo step
+- QR codes could not be resized: they were fixed at 100×100
+- HTML blocks were limited to 1200×800
+- The image block and the block itself kept two different corner radius values
+- Undo and redo entries could be applied again later and revert newer edits of the same property, and a block could overwrite a value it had just received with its previous one
+- The Electron binary was never downloaded because Yarn 4 skips dependency install scripts; `yarn install` now installs it
+- Pressing Delete while typing in a field deleted the selected block
+- The view re-centered every time a block was added or removed; it now fits only when switching workspaces or changing the canvas size
+- CSS variables without a `@type` annotation were always detected as text, so colors, sizes and booleans got a text field instead of a color picker, slider or switch
+- HTML block scripts broke when a JS string variable contained quotes or new lines, or when an action label contained an apostrophe
+- Redo after undoing several steps restored the wrong values
+
+### ⚡ Performance
+
+- Monaco is served as its own chunk, so the block editor page drops from 3.7 MB to 61 kB and app updates no longer invalidate the cached editor
+
+### 🧪 Tests
+
+- Vitest test suite (`yarn test`) covering shortcuts, undo/redo history, align/distribute math, the command registry, the canvas viewer helpers, the block console, the CSS/JS block parsers and `.kcomponent` files
+
 ## v 2.0.0
 
 ### 🚀 Features

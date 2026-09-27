@@ -1,5 +1,5 @@
 import { CircleDashed, RotateCw, Search } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeList } from 'react-window';
@@ -12,27 +12,19 @@ export const ExtensionPanel: React.FC = () => {
 	/* Component State */
 	const [extensions, setExtensions] = useState<Extension[]>([]);
 	const [query, setQuery] = useState('');
-	const [controls, setControls] = useState<any>([]);
 	const [loading, setLoading] = useState(false);
 
-	useEffect(() => {
-		if (query !== '') {
-			const all: any[] = [];
-			extensions.forEach((ext) => {
-				ext.components.forEach((component) => {
-					all.push(component);
-				});
-			});
+	const controls = useMemo(() => {
+		if (query === '') return [];
 
-			setControls(
-				all.filter((item) =>
-					(item.properties.name as string)
-						.toUpperCase()
-						.includes(query.toUpperCase()),
-				),
+		return extensions
+			.flatMap((ext) => ext.components as any[])
+			.filter((item) =>
+				(item.properties.name as string)
+					.toUpperCase()
+					.includes(query.toUpperCase()),
 			);
-		}
-	}, [query]);
+	}, [extensions, query]);
 
 	useEffect(() => {
 		(window as any).electron.ipcRenderer.on(

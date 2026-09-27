@@ -13,6 +13,7 @@
 		"output": "release/${version}"
 	},
 	"files": ["dist", "dist-electron"],
+	"asarUnpack": ["dist-electron/mcp-stdio.cjs"],
 	"mac": {
 		"artifactName": "${productName}_${version}.${ext}",
 		"target": ["dmg"],

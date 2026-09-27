@@ -39,9 +39,9 @@ export const CustomBlock: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<Palette size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Colors</Label>
+								<div className='flex items-center gap-2'>
+									<Palette />
+									<Label>Colors</Label>
 								</div>
 							}
 						>
@@ -50,7 +50,7 @@ export const CustomBlock: React.FC<Props> = ({ id }) => {
 								color={color}
 								type='HexAlpha'
 								onColorChange={setColor}
-								label='Fill Color'
+								label='Fill'
 							></ColorPicker>
 
 							<ColorPicker
@@ -58,7 +58,7 @@ export const CustomBlock: React.FC<Props> = ({ id }) => {
 								type='HexAlpha'
 								color={bgcolor}
 								onColorChange={setBgColor}
-								label='Background Color'
+								label='Background'
 							></ColorPicker>
 						</CustomCollapse>
 					</>

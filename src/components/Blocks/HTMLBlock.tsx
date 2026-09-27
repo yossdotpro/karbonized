@@ -2,6 +2,8 @@ import { IconCode, IconWorld } from '@tabler/icons-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
+import { escapeHtml } from '@/lib/variables/variables';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { Label } from '../ui/label';
@@ -22,7 +24,7 @@ import {
 	generateCompiledSource,
 	updateCSSVariable,
 	updateJSVariable,
-	scopeCSS,
+	buildBlockStylesheet,
 	createSafeDOM,
 	fileHandler,
 	fileUtils,
@@ -33,6 +35,8 @@ import {
 	defaultJSContent,
 } from '../../lib/blocks-api/default-content';
 import { useHTMLBlockBindings } from '@/hooks/useHTMLBlockBindings';
+import { useIconUrls } from '@/hooks/useIconUrls';
+import { loadFontsUsedInCss } from '@/lib/fonts/fonts';
 import {
 	HTMLBlockActionsControls,
 	HTMLBlockCSSVariablesControls,
@@ -57,6 +61,8 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 		defaultHTMLContent,
 		`${id}-html`,
 	);
+	// Project variables are filled in; their values are escaped as text.
+	const shownHtml = useResolvedText(htmlContent, escapeHtml);
 	const [cssContent, setCSSContent] = useControlState(
 		defaultCSSContent,
 		`${id}-css`,
@@ -81,6 +87,12 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 		cssContent,
 		jsContent,
 	);
+	const iconUrls = useIconUrls(cssVariables);
+
+	// Fonts in a shadow root only render when the page has loaded them.
+	useEffect(() => {
+		void loadFontsUsedInCss(cssContent);
+	}, [cssContent]);
 
 	// Function to add dev logs
 	const addDevLog = (type: 'log' | 'warn' | 'error', message: string) => {
@@ -149,23 +161,9 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 	};
 
 	// Generate ShadowDOM content
-	const generateShadowDOMContent = () => {
-		const scopedCSS = scopeCSS(cssContent, ':host');
-		const processedCSS = `
-		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap');
-		:host {
-			display: block;
-			font-family:'Noto Sans', sans-serif;
-			font-weight: 400;
-			all: initial;
-			font-family: 'Noto Sans', sans-serif;
-		}
-		:host * { box-sizing: border-box; }
-		${scopedCSS}
-		`;
-
-		return { processedCSS };
-	};
+	const generateShadowDOMContent = () => ({
+		processedCSS: buildBlockStylesheet(cssContent, cssVariables, iconUrls),
+	});
 
 	// Refresh ShadowDOM
 	const refreshShadowDOM = () => {
@@ -211,7 +209,7 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 			container.style.display = 'flex';
 			container.style.width = '100%';
 			container.style.height = '100%';
-			container.innerHTML = htmlContent;
+			container.innerHTML = shownHtml;
 			shadowRoot.appendChild(container);
 
 			// Execute JavaScript only if allowed
@@ -282,18 +280,8 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 						fileUtils,
 					};
 
-					(
-						window as Window & {
-							htmlBlockAPI?: typeof htmlBlockAPI;
-							safeQuerySelector?: typeof safeQuerySelector;
-						}
-					).htmlBlockAPI = htmlBlockAPI;
-					(
-						window as Window & {
-							htmlBlockAPI?: typeof htmlBlockAPI;
-							safeQuerySelector?: typeof safeQuerySelector;
-						}
-					).safeQuerySelector = safeQuerySelector;
+					// Expose the API to block scripts.
+					Object.assign(window, { htmlBlockAPI, safeQuerySelector });
 
 					const actionRegistrations = generateActionRegistrations(
 						parsedJavaScript.actions,
@@ -333,7 +321,14 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 			}, 500); // Debounce refresh
 			return () => clearTimeout(timeoutId);
 		}
-	}, [htmlContent, cssContent, jsContent, autoRefresh, allowScriptExecution]);
+	}, [
+		shownHtml,
+		cssContent,
+		jsContent,
+		autoRefresh,
+		allowScriptExecution,
+		iconUrls,
+	]);
 
 	// Initial load
 	useEffect(() => {
@@ -462,10 +457,10 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 				borderEditable={false}
 				defaultHeight='300px'
 				defaultWidth='400px'
-				minHeight='200px'
-				minWidth='300px'
-				maxWidth='1200px'
-				maxHeight='800px'
+				minHeight='80px'
+				minWidth='100px'
+				maxWidth='4000px'
+				maxHeight='4000px'
 				menu={
 					<>
 						{/* Content Editor */}

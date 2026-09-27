@@ -1,11 +1,13 @@
 import React, { Suspense, useEffect, useRef, useState } from 'react';
 import {
-	BrowserRouter as Router,
+	BrowserRouter,
+	HashRouter,
 	Routes,
 	Route,
 	Navigate,
 	useLocation,
 } from 'react-router-dom';
+import { usesHashRouting } from './lib/routing';
 import './App.css';
 import { AppContext } from './AppContext';
 import { useScreenDirection } from './hooks/useScreenDirection';
@@ -14,6 +16,7 @@ import './utils.css';
 import { isElectron } from './utils/isElectron';
 import { Spinner } from '@/components/ui/spinner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 import { KarbonizedLogoFlat } from './components/Icons/Icons';
 import {
 	CommandPalette,
@@ -21,6 +24,7 @@ import {
 	ShortcutManager,
 } from './components/CommandPalette';
 import { useSessionAutosave } from './lib/persistence/autosave';
+import { getAgentBridge } from './lib/agent/bridge';
 
 const Editor = React.lazy(async () => await import('./pages/Editor'));
 const NewProject = React.lazy(async () => await import('./pages/NewProject'));
@@ -30,6 +34,9 @@ const TitleBar = React.lazy(
 );
 const ContextualMenuBar = React.lazy(
 	async () => await import('./components/Base/ContextualMenuBar'),
+);
+const McpBridge = React.lazy(
+	async () => await import('./components/Agent/McpBridge'),
 );
 
 const AppShell: React.FC<{
@@ -50,7 +57,7 @@ const AppShell: React.FC<{
 					) : (
 						<header className='flex h-10 shrink-0 items-center gap-2 border-b border-border bg-sidebar pl-3 pr-2'>
 							<Suspense>
-								<KarbonizedLogoFlat className='size-4 shrink-0' />
+								<KarbonizedLogoFlat className='size-4 shrink-0 text-foreground dark:text-white' />
 
 								<ContextualMenuBar></ContextualMenuBar>
 							</Suspense>
@@ -129,9 +136,7 @@ const SessionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [initialPath] = useState(() => location.pathname);
 	const [landed, setLanded] = useState(false);
 
-	useEffect(() => {
-		if (ready && location.pathname === '/editor') setLanded(true);
-	}, [ready, location.pathname]);
+	if (ready && !landed && location.pathname === '/editor') setLanded(true);
 
 	if (!ready) {
 		return (
@@ -153,6 +158,9 @@ const SessionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 	return <>{children}</>;
 };
+
+/* The packaged desktop app runs from `file://`, where only hashes route. */
+const Router = usesHashRouting() ? HashRouter : BrowserRouter;
 
 const App: React.FC = () => {
 	const [theme, toggleTheme] = useTheme();
@@ -177,11 +185,18 @@ const App: React.FC = () => {
 					>
 						<SessionGate>
 							<AppShell isHorizontal={isHorizontal} />
+							{/* MCP clients can control the app (desktop only) */}
+							{getAgentBridge() && (
+								<Suspense>
+									<McpBridge />
+								</Suspense>
+							)}
 						</SessionGate>
 					</div>
 
 					<ShortcutManager />
 					<CommandPalette />
+					<Toaster />
 				</AppContext.Provider>
 			</TooltipProvider>
 		</Router>

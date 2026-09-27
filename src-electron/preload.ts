@@ -1,4 +1,12 @@
 import { contextBridge, ipcRenderer, app, shell } from 'electron';
+import type { FilesBridge } from '../src/lib/persistence/desktop-files';
+import type {
+	AgentBridge,
+	HttpBridgeEvent,
+	McpRequest,
+	McpResponse,
+	McpStatus,
+} from '../src/lib/agent/bridge';
 
 document.addEventListener('click', (event: any) => {
 	if (event.target.tagName === 'A' && event.target.href.startsWith('http')) {
@@ -7,7 +15,7 @@ document.addEventListener('click', (event: any) => {
 	}
 });
 
-window.addEventListener('DOMContentLoaded', () => { });
+window.addEventListener('DOMContentLoaded', () => {});
 
 export type Channels = 'minimizeApp' | 'maximizeApp' | 'closeApp';
 
@@ -51,3 +59,59 @@ contextBridge.exposeInMainWorld('electron', {
 		},
 	},
 });
+
+/** Subscribe to a main process channel; returns the unsubscribe function. */
+const subscribe =
+	<T>(channel: string) =>
+	(listener: (payload: T) => void) => {
+		const handler = (_event: Electron.IpcRendererEvent, payload: T) =>
+			listener(payload);
+		ipcRenderer.on(channel, handler);
+		return () => {
+			ipcRenderer.removeListener(channel, handler);
+		};
+	};
+
+const agent: AgentBridge = {
+	keys: {
+		set: (profileId, key, baseUrl) =>
+			ipcRenderer.invoke('agent:keys:set', profileId, key, baseUrl),
+		remove: (profileId) => ipcRenderer.invoke('agent:keys:remove', profileId),
+		has: (profileId, baseUrl) =>
+			ipcRenderer.invoke('agent:keys:has', profileId, baseUrl),
+	},
+	http: {
+		request: (requestId, profileId, request) =>
+			ipcRenderer.send('agent:http:request', requestId, profileId, request),
+		abort: (requestId) => ipcRenderer.send('agent:http:abort', requestId),
+		onEvent: subscribe<HttpBridgeEvent>('agent:http:event'),
+	},
+	mcp: {
+		getStatus: () => ipcRenderer.invoke('agent:mcp:status'),
+		setEnabled: (enabled) =>
+			ipcRenderer.invoke('agent:mcp:set-enabled', enabled),
+		setPort: (port) => ipcRenderer.invoke('agent:mcp:set-port', port),
+		regenerateToken: () => ipcRenderer.invoke('agent:mcp:regenerate-token'),
+		setBackground: (background) =>
+			ipcRenderer.invoke('agent:mcp:set-background', background),
+		setOpenAtLogin: (openAtLogin) =>
+			ipcRenderer.invoke('agent:mcp:set-open-at-login', openAtLogin),
+		setReady: (ready) => ipcRenderer.send('agent:mcp:ready', ready),
+		onStatus: subscribe<McpStatus>('agent:mcp:status-changed'),
+		onRequest: subscribe<McpRequest>('agent:mcp:request'),
+		respond: (response: McpResponse) =>
+			ipcRenderer.send('agent:mcp:response', response),
+	},
+};
+
+const files: FilesBridge = {
+	saveText: (input) => ipcRenderer.invoke('karbonized:files:save-text', input),
+	saveImage: (input) =>
+		ipcRenderer.invoke('karbonized:files:save-image', input),
+	getExportFolder: () => ipcRenderer.invoke('karbonized:files:export-folder'),
+	chooseExportFolder: () =>
+		ipcRenderer.invoke('karbonized:files:choose-export-folder'),
+	reveal: (path) => ipcRenderer.invoke('karbonized:files:reveal', path),
+};
+
+contextBridge.exposeInMainWorld('karbonized', { agent, files });

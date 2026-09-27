@@ -1,0 +1,158 @@
+manifest:
+  name: "Diff Viewer"
+  author: "Karbonized"
+  description: "A unified diff with line numbers, added and removed rows. Paste your own lines into the HTML tab to show a real change."
+  version: "1.0.0"
+  category: "Dev"
+  width: 620
+  height: 275
+  tags:
+    - "diff"
+    - "git"
+    - "code"
+    - "starter"
+
+html: |
+  <div class="diff">
+    <div class="head">
+      <span class="file">src/utils/kcomponentParser.ts</span>
+      <span class="counts"><span class="plus">+4</span><span class="minus">−2</span></span>
+    </div>
+    <div class="lines">
+      <div class="line ctx"><span class="n">41</span><span class="mark"></span><span class="code">export function parseKComponent(yaml: string) {</span></div>
+      <div class="line del"><span class="n">42</span><span class="mark">−</span><span class="code">  const parsed = yaml.load(content) as any;</span></div>
+      <div class="line del"><span class="n">43</span><span class="mark">−</span><span class="code">  if (!parsed.css) throw new Error('Missing css');</span></div>
+      <div class="line add"><span class="n">42</span><span class="mark">+</span><span class="code">  const parsed = yaml.load(content, { json: true });</span></div>
+      <div class="line add"><span class="n">43</span><span class="mark">+</span><span class="code">  if (!isPlainObject(parsed)) {</span></div>
+      <div class="line add"><span class="n">44</span><span class="mark">+</span><span class="code">    return { component: null, errors, warnings };</span></div>
+      <div class="line add"><span class="n">45</span><span class="mark">+</span><span class="code">  }</span></div>
+      <div class="line ctx"><span class="n">46</span><span class="mark"></span><span class="code">  return { manifest, html, css, js };</span></div>
+    </div>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #12141a;
+    /* @type:color */
+    --head-bg: #191d26;
+    /* @type:color */
+    --border: #262b36;
+    /* @type:color */
+    --text: #c9d1de;
+    /* @type:color */
+    --muted: #6d7689;
+    /* @type:color */
+    --add: #0ca30c;
+    /* @type:color */
+    --del: #d03b3b;
+    /* @type:number min:10 max:20 step:1 unit:px */
+    --font-size: 13px;
+    /* @type:number min:0 max:28 step:1 unit:px */
+    --radius: 12px;
+    /* @type:number min:4 max:16 step:1 unit:% */
+    --tint: 12%;
+    /* @type:shadow */
+    --shadow: #00000066 0px 20px 44px 0px;
+  }
+
+  .diff {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    font-family: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
+    font-size: var(--font-size);
+  }
+
+  .head {
+    display: flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 16px;
+    background: var(--head-bg);
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .file {
+    font-size: 0.92em;
+    color: var(--text);
+  }
+
+  .counts {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+    font-size: 0.85em;
+  }
+
+  .plus { color: var(--add); }
+  .minus { color: var(--del); }
+
+  .lines {
+    flex: 1;
+    padding: 10px 0;
+  }
+
+  .line {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 1px 16px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+
+  .n {
+    width: 26px;
+    text-align: right;
+    color: var(--muted);
+    font-size: 0.85em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .mark {
+    width: 10px;
+    color: var(--muted);
+  }
+
+  .code { white-space: pre; }
+
+  .add {
+    background: color-mix(in srgb, var(--add) var(--tint), transparent);
+  }
+
+  .add .mark { color: var(--add); }
+
+  .del {
+    background: color-mix(in srgb, var(--del) var(--tint), transparent);
+  }
+
+  .del .mark { color: var(--del); }
+
+js: |
+  // @var filename:string = "src/utils/kcomponentParser.ts"
+
+  const head = document.querySelector('.file');
+  if (head) head.textContent = filename;
+
+  // Counts follow the rows, so editing the diff keeps the header honest.
+  const recount = () => {
+    const added = document.querySelectorAll('.line.add').length;
+    const removed = document.querySelectorAll('.line.del').length;
+    const plus = document.querySelector('.plus');
+    const minus = document.querySelector('.minus');
+    if (plus) plus.textContent = '+' + added;
+    if (minus) minus.textContent = '−' + removed;
+  };
+
+  recount();
+
+  // @action:Recount changes
+  recount();
+  log('Header updated from the visible rows');

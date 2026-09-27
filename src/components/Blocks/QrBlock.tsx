@@ -2,6 +2,7 @@ import { IconPalette, IconQrcode } from '@tabler/icons-react';
 import React, { useId, useState } from 'react';
 import karbonized from '../../assets/logo.svg';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
+import { PropertyRow } from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { Label } from '../ui/label';
@@ -9,6 +10,7 @@ import { Input } from '../ui/input';
 import { HexAlphaColorPicker, HexColorPicker } from 'react-colorful';
 import { QRCodeSVG } from 'qrcode.react';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
 
 interface Props {
 	id: string;
@@ -17,6 +19,7 @@ interface Props {
 export const QrControl: React.FC<Props> = ({ id }) => {
 	/* Component States */
 	const [text, setText] = useControlState('karbonized', `${id}-text`);
+	const shownText = useResolvedText(text);
 	const [backgroundColor, setBackgroundColor] = useControlState(
 		'#1e408400',
 		`${id}-backgroundColor`,
@@ -32,20 +35,20 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 				id={id}
 				shadowEditable={false}
 				borderEditable={false}
-				defaultHeight='50px'
-				defaultWidth='50px'
-				minHeight={'50px'}
-				minWidth={'100px'}
-				maxWidth={'100px'}
-				maxHeight={'100px'}
+				defaultHeight='150px'
+				defaultWidth='150px'
+				minHeight={'40px'}
+				minWidth={'40px'}
+				maxWidth={'2000px'}
+				maxHeight={'2000px'}
 				menu={
 					<>
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconPalette size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Colors</Label>
+								<div className='flex items-center gap-2'>
+									<IconPalette />
+									<Label>Colors</Label>
 								</div>
 							}
 						>
@@ -53,43 +56,46 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 								isGradientEnable={false}
 								color={foregroundColor}
 								onColorChange={setforegroundColor}
-								label='Foreground Color'
+								label='Foreground'
 							></ColorPicker>
 
 							<ColorPicker
 								isGradientEnable={false}
 								color={backgroundColor}
 								onColorChange={setBackgroundColor}
-								label='Background Color'
+								label='Background'
 							></ColorPicker>
 						</CustomCollapse>
 
 						<CustomCollapse
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconQrcode size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>QR Code</Label>
+								<div className='flex items-center gap-2'>
+									<IconQrcode />
+									<Label>QR Code</Label>
 								</div>
 							}
 						>
-							<Label className='text-xs text-muted-foreground'>Text</Label>
-							<Input
-								className='h-8 text-sm'
-								onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
-									setText(ev.target.value);
-								}}
-								value={text}
-							></Input>
+							<PropertyRow label='Text'>
+								<Input
+									className='h-7 text-xs md:text-xs'
+									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
+										setText(ev.target.value);
+									}}
+									value={text}
+								></Input>
+							</PropertyRow>
 						</CustomCollapse>
 					</>
 				}
 			>
+				{/* The code is drawn at a fixed size and scaled to the block */}
 				<QRCodeSVG
 					bgColor={backgroundColor}
 					fgColor={foregroundColor}
-					size={100}
+					size={512}
+					style={{ width: '100%', height: '100%' }}
 					className='flex flex-auto'
-					value={text}
+					value={shownText}
 				></QRCodeSVG>
 			</ControlTemplate>
 		</>

@@ -1,0 +1,150 @@
+manifest:
+  name: "Terminal Window"
+  author: "Karbonized"
+  description: "A terminal with window chrome, prompt lines and output. Colors, radius, padding and shadow are editable from the properties panel."
+  version: "1.0.0"
+  category: "Dev"
+  width: 640
+  height: 260
+  tags:
+    - "terminal"
+    - "shell"
+    - "code"
+    - "starter"
+
+html: |
+  <div class="term">
+    <div class="bar">
+      <span class="dot close"></span>
+      <span class="dot min"></span>
+      <span class="dot max"></span>
+      <span class="tab">zsh — karbonized</span>
+    </div>
+    <div class="body">
+      <p class="row"><span class="prompt">❯</span><span class="dir">karbonized</span><span class="cmd">yarn build</span></p>
+      <p class="row out">vite v7.3.6 building for production...</p>
+      <p class="row out">transforming 9786 modules</p>
+      <p class="row ok">✓ built in 12.84s</p>
+      <p class="row"><span class="prompt">❯</span><span class="dir">karbonized</span><span class="caret"></span></p>
+    </div>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #12141a;
+    /* @type:color */
+    --bar: #191d26;
+    /* @type:color */
+    --border: #262b36;
+    /* @type:color */
+    --text: #e6e9ef;
+    /* @type:color */
+    --muted: #8b93a7;
+    /* @type:color */
+    --prompt: #3987e5;
+    /* @type:color */
+    --ok: #0ca30c;
+    /* @type:number min:0 max:32 step:1 unit:px */
+    --radius: 12px;
+    /* @type:number min:10 max:24 step:1 unit:px */
+    --font-size: 14px;
+    /* @type:number min:8 max:40 step:1 unit:px */
+    --padding: 18px;
+    /* @type:shadow */
+    --shadow: #00000073 0px 24px 48px 0px;
+  }
+
+  .term {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    box-shadow: var(--shadow);
+    font-family: 'Geist Mono Variable', ui-monospace, SFMono-Regular, monospace;
+    font-size: var(--font-size);
+    line-height: 1.7;
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    height: 38px;
+    background: var(--bar);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+
+  .close { background: #ec6a5e; }
+  .min { background: #f4bf4f; }
+  .max { background: #61c554; }
+
+  .tab {
+    margin-left: 10px;
+    color: var(--muted);
+    font-size: 0.82em;
+  }
+
+  .body {
+    flex: 1;
+    padding: var(--padding);
+    color: var(--text);
+  }
+
+  .row {
+    margin: 0 0 2px 0;
+    white-space: pre-wrap;
+  }
+
+  .prompt {
+    color: var(--prompt);
+    margin-right: 8px;
+  }
+
+  .dir {
+    color: var(--muted);
+    margin-right: 8px;
+  }
+
+  .out { color: var(--muted); }
+  .ok { color: var(--ok); }
+
+  .caret {
+    display: inline-block;
+    width: 9px;
+    height: 1.05em;
+    vertical-align: text-bottom;
+    background: var(--prompt);
+  }
+
+js: |
+  // Keep the markup and these values in sync: editing a variable rewrites the DOM.
+  // @var title:string = "zsh — karbonized"
+  // @var directory:string = "karbonized"
+  // @var command:string = "yarn build"
+
+  const setText = (selector, value) => {
+    const node = document.querySelector(selector);
+    if (node) node.textContent = value;
+  };
+
+  setText('.tab', title);
+  setText('.cmd', command);
+  document.querySelectorAll('.dir').forEach((node) => {
+    node.textContent = directory;
+  });
+
+  // @action:Clear output
+  document.querySelectorAll('.out, .ok').forEach((node) => node.remove());
+  log('Output cleared');

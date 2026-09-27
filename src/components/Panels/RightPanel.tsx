@@ -15,6 +15,7 @@ import { Label } from '../ui/label';
 import { ScrollArea } from '../ui/scroll-area';
 import { Separator } from '../ui/separator';
 import { HierarchyPanel } from './HierarchyPanel';
+import { ArrangeBar } from './ArrangeBar';
 import { Tooltip } from '../CustomControls/Tooltip';
 import { useCommands } from '@/lib/commands/registry';
 
@@ -26,13 +27,11 @@ export const RightPanel: React.FC = () => {
 
 	/* Component State */
 	const panel = usePanelRef();
-	const [showMenu, setShowMenu] = useState(true);
+	const showMenu = useUIStore((state) => state.propertiesOpen);
+	const setShowMenu = useUIStore((state) => state.setPropertiesOpen);
 	const [tab, setTab] = useState<'workspace' | 'control' | 'hierarchy'>(
 		'control',
 	);
-
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
 
 	useCommands([
 		{
@@ -42,10 +41,7 @@ export const RightPanel: React.FC = () => {
 			icon: showMenu ? PanelRightClose : PanelRightOpen,
 			shortcut: 'Mod+B',
 			allowInInput: true,
-			run: () => {
-				setShowMenu((current) => !current);
-				setWorkspaceMode('custom');
-			},
+			run: () => setShowMenu(!useUIStore.getState().propertiesOpen),
 		},
 		...(
 			[
@@ -60,7 +56,6 @@ export const RightPanel: React.FC = () => {
 			icon,
 			run: () => {
 				setTab(id);
-				setWorkspaceMode('custom');
 				setShowMenu(true);
 				if (id === 'workspace') setWorkspaceTab('workspace');
 			},
@@ -85,29 +80,23 @@ export const RightPanel: React.FC = () => {
 		return () => cancelAnimationFrame(frame);
 	}, [showMenu]);
 
-	useEffect(() => {
-		if (workspaceMode === 'edit') {
-			setShowMenu(true);
-		} else if (workspaceMode !== 'custom') {
-			setShowMenu(false);
-		}
-	}, [workspaceMode]);
-
-	useEffect(() => {
-		if (workspaceTab === 'control') {
-			setTab('control');
-		}
-	}, [workspaceTab]);
+	const [syncedTab, setSyncedTab] = useState(workspaceTab);
+	if (workspaceTab !== syncedTab) {
+		setSyncedTab(workspaceTab);
+		if (workspaceTab === 'control') setTab('control');
+	}
 
 	return (
 		<ResizablePanel
 			className={'min-w-16'}
 			collapsible
 			collapsedSize={54}
-			defaultSize={500}
+			defaultSize={340}
 			maxSize={600}
 			minSize={120}
 			panelRef={panel}
+			// Keep its width when the agent opens and the canvas area narrows.
+			groupResizeBehavior='preserve-pixel-size'
 		>
 			<div
 				className={`pointer-events-auto mr-auto flex h-full w-full gap-1.5 overflow-hidden border-l border-border bg-sidebar p-1.5 text-foreground`}
@@ -125,7 +114,6 @@ export const RightPanel: React.FC = () => {
 							aria-label={showMenu ? 'Collapse panel' : 'Expand panel'}
 							onClick={() => {
 								setShowMenu(!showMenu);
-								setWorkspaceMode('custom');
 							}}
 							className='mb-1'
 						>
@@ -161,7 +149,6 @@ export const RightPanel: React.FC = () => {
 									aria-pressed={isActive}
 									onClick={() => {
 										setTab(item.id as any);
-										setWorkspaceMode('custom');
 										setShowMenu(true);
 										if (item.id === 'workspace') setWorkspaceTab('workspace');
 									}}
@@ -189,6 +176,7 @@ export const RightPanel: React.FC = () => {
 						<Label className='flex h-8 shrink-0 select-none items-center px-1 text-[11px] font-medium uppercase tracking-wider text-muted-foreground'>
 							Control
 						</Label>
+						<ArrangeBar />
 						<ScrollArea className='flex-1 h-full'>
 							{/* Menu Portal Container - always in DOM when control tab is active */}
 							<div className='p-1' id='menu'></div>

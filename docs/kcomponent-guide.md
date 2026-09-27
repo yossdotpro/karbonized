@@ -4,78 +4,86 @@
 
 This guide explains how to import custom `.kcomponent` files into Karbonized and how to create your own components.
 
+## The Starter Pack
+
+Karbonized ships with eight worked examples. Open the component library with an
+empty library and click **Load starter pack**, or import any single file from
+`src/assets/kcomponents/`.
+
+They are the reference implementations of this format: between them they cover
+every binding the properties panel can generate (colors, numbers with units,
+shadows, `@var` strings and numbers, and `@action` buttons), and every one is
+written to look finished with scripts disabled. `src/assets/kcomponents/README.md`
+lists the house rules they follow — worth reading before authoring your own.
+
 ## Importing Components
 
 ### Method 1: Using the Menu Bar
 
-1. Navigate to **MenuBar → Components → Import Components**
-2. In the import dialog, you have two options:
-   - **Import New Tab**: Upload a `.kcomponent` file or paste YAML content directly
-   - **Component Library Tab**: View and manage already imported components
+1. Navigate to **MenuBar → Components → Import Components** (or run
+   *Import components…* from the command palette)
+2. Choose a file, drop one on the dialog, or paste the YAML
 
-### Method 2: File Upload
+### Method 2: File Upload or Drag and Drop
 
 1. Open the Import Components dialog
-2. Click on the "Import New" tab
-3. Click "Choose File" to select a `.kcomponent` file from your computer
-4. The file will be validated automatically
-5. If valid, you'll see a preview of the component
-6. Click "Import Component" to add it to your library
+2. Click **Choose files** and pick one or more `.kcomponent`, `.yaml` or `.yml`
+   files, or drop them straight onto the drop zone
+3. Every file is parsed and added to the library, and the dialog lists what
+   happened to each one: added, updated, or why it was rejected
+4. A single file that fails to parse is loaded into the editor below so you can
+   fix it without leaving the dialog
 
 ### Method 3: Paste YAML Content
 
 1. Open the Import Components dialog
-2. Click on the "Import New" tab
-3. Paste the YAML content directly into the text area
-4. The content will be validated automatically
-5. If valid, you'll see a preview of the component
-6. Click "Import Component" to add it to your library
+2. Paste the YAML content into the text area
+3. The content is validated as you type: errors are shown in red and warnings
+   (dropped or normalized fields) in amber
+4. Click **Add to library**, or **Add to canvas** to import it and drop it on
+   the workspace right away
+
+If a component with the same name and author already exists, the button becomes
+**Replace in library** and updates the existing entry instead of creating a
+duplicate.
 
 ### Downloading an Example
 
-If you're new to creating components, you can download an example `.kcomponent` file:
+If you're new to creating components, you can download an example
+`.kcomponent` file:
 
 1. Open the Import Components dialog
-2. Click on the "Import New" tab
-3. Click "Download Example"
-4. Use the example as a reference for creating your own components
+2. Click **Download example**
+3. Use the example as a reference for creating your own components
 
 ## Managing Imported Components
 
 ### Viewing the Component Library
 
-1. In the Left Panel, click on the **Components** button (package icon)
-2. The Components Gallery dialog will open
-3. You'll see all imported components with their details:
-   - Component name and category
-   - Author
-   - Description
-   - Tags
+1. In the Left Panel, click on the **Components** button (package icon), or use
+   **MenuBar → Components → Component Library**
+2. The library shows every imported component as a card with its thumbnail,
+   name, version, author, description and tags
 
-### Searching Components
+### Searching and Filtering Components
 
-1. Open the Components Gallery dialog
-2. Use the search bar to filter components by:
-   - Component name
-   - Author
-   - Description
-   - Category
-   - Tags
+- Use the search bar to filter by name, author, description, category or tags
+- Use the category chips to narrow the list to one category, or to your
+  favorites
+- Use the sort menu to order by recently imported, name, or most used
 
 ### Adding Components to Canvas
 
-1. Open the Components Gallery dialog
-2. Find the component you want to add
-3. Click the **+** button next to the component
-4. The component will be added to the canvas as an HTML block with all its content pre-loaded
+1. Open the component library
+2. Click the card preview, or the **Add** button
+3. The component is added to the canvas as an HTML block with its HTML, CSS and
+   JS pre-loaded, sized from `manifest.width`/`manifest.height` when present
 
-### Deleting Components
+### Favorites, Export and Deletion
 
-1. Open the Components Gallery dialog
-2. Find the component you want to delete
-3. Click the **trash** button next to the component
-4. Confirm the deletion
-5. The component will be removed from your library
+- **Star**: marks a component as a favorite so it gets its own filter chip
+- **Download**: exports the component back to a `.kcomponent` file to share it
+- **Trash**: deletes the component; click it twice to confirm
 
 ## Producing Components
 
@@ -190,8 +198,8 @@ js: |
 
 Before sharing your component, ensure:
 
-- [ ] All required fields are present (manifest, html, css, js)
-- [ ] Manifest has a name
+- [ ] The required fields are present (`manifest.name` and `html`)
+- [ ] Manifest has a name, and an author if you plan to share it
 - [ ] YAML is valid and properly formatted
 - [ ] CSS variables have correct type annotations
 - [ ] JavaScript actions work correctly
@@ -301,6 +309,11 @@ Each action will appear as a separate button in the properties panel.
 
 ## Sharing Components
 
+You can export any component back to a `.kcomponent` file from the library
+(the download button on its card), or export the block you are editing from
+**Block Editor → Export .kcomponent**.
+
+
 Once you've created and tested your component:
 
 1. **Save the `.kcomponent` file** - Keep the source YAML file
@@ -312,9 +325,12 @@ Once you've created and tested your component:
 
 ### Component Not Importing
 
-- Check that the YAML is valid
-- Ensure all required fields are present
-- Verify the file extension is `.kcomponent`
+- Read the error in the dialog: it names the offending field, and reports the
+  line number for YAML syntax errors
+- Check that `manifest.name` and `html` are present and that `html` is not empty
+- Verify the file extension is `.kcomponent`, `.yaml` or `.yml`
+- Check the size limits: 512 KB per section and 1 MB per file
+- If the import says the component already exists, use **Replace in library**
 
 ### CSS Variables Not Working
 

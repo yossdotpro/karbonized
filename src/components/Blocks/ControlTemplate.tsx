@@ -1,18 +1,31 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import { ContextMenuTrigger } from '@/components/ui/context-menu';
+import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { toJpeg, toPng, toSvg } from 'html-to-image';
-import React, { useCallback, useEffect, useRef, type ReactNode } from 'react';
+import { toast } from 'sonner';
+import { toastSaved } from '@/lib/export/saved-toast';
+import { type ExportFormat, exportElement } from '@/lib/export/exporter';
+import React, {
+	useCallback,
+	useEffect,
+	useLayoutEffect,
+	useRef,
+	type ReactNode,
+} from 'react';
 import { useControlState } from '../../hooks/useControlState';
-import { useKeyPress } from '../../hooks/useKeyPress';
 import {
 	useWorkspaceStore,
 	useControlsStore,
 	useUIStore,
 	useHistoryStore,
 } from '../../stores';
+import { isWarped, parseRotation, withRotation } from '@/lib/editor/actions';
 import { ControlContextMenu } from './ControlContextMenu';
 import { ControlMenu } from './ControlMenu';
+import {
+	ControlMenuContext,
+	type ControlMenuValue,
+} from './ControlMenuContext';
 
 interface ControlProps {
 	id: string;
@@ -31,6 +44,15 @@ interface ControlProps {
 	maxWidth?: string;
 	minHeight?: string;
 	minWidth?: string;
+	/**
+	 * Let the content size the block: `both` fits width and height, `height`
+	 * keeps the stored width and grows the height. The stored size follows.
+	 */
+	autoSize?: 'none' | 'both' | 'height';
+	/** The width or height was typed in the position panel. */
+	onSizeInput?: (axis: 'w' | 'h') => void;
+	/** Replaces the default double click (which toggles the edit panel). */
+	onDoubleClick?: () => void;
 
 	onClick?: () => void;
 	onCreateDynamicBackground?: () => Promise<void> | void;
@@ -52,6 +74,9 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	minWidth = '300px',
 	defaultHeight = '50px',
 	defaultWidth = '80px',
+	autoSize = 'none',
+	onSizeInput,
+	onDoubleClick,
 	onCreateDynamicBackground,
 }) => {
 	// App Store
@@ -73,11 +98,24 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	const setPastHistory = useHistoryStore((state) => state.setPast);
 	const setFutureHistory = useHistoryStore((state) => state.setFuture);
 	const setControlState = useHistoryStore((state) => state.setControlState);
+	const commitBatch = useHistoryStore((state) => state.commitBatch);
 	const deleteControl = useControlsStore((state) => state.deleteControl);
+	const duplicateControl = useControlsStore((state) => state.duplicateControl);
+	const moveControlByStep = useControlsStore(
+		(state) => state.moveControlByStep,
+	);
+	const moveControlToEdge = useControlsStore(
+		(state) => state.moveControlToEdge,
+	);
+	const toggleControlVisibility = useControlsStore(
+		(state) => state.toggleControlVisibility,
+	);
+	const toggleControlLock = useControlsStore(
+		(state) => state.toggleControlLock,
+	);
 
 	const setID = useControlsStore((state) => state.setCurrentControlID);
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-	const setWorkspaceMode = useUIStore((state) => state.setWorkspaceMode);
+	const setPropertiesOpen = useUIStore((state) => state.setPropertiesOpen);
 
 	// Component States
 	const [zIndex, setzIndex] = useControlState('0', `${id}-zindex`);
@@ -102,7 +140,7 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		`${id}-control_size`,
 		true,
 	);
-	const [clip] = useControlState('', `${id}-clip`, true);
+	const [clip, setClip] = useControlState('', `${id}-clip`, true);
 	const [borderRadius, setBorderRadius] = useControlState(
 		border,
 		`${id}-borderRadius`,
@@ -142,13 +180,48 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		`${id}-maskRepeat`,
 	);
 
-	/* Delete Element when Delete Key is pressed */
-	const isPressed = useKeyPress('Delete');
+	/* Blocks sized by their content: keep the stored size in step with it, so
+	   the position panel, alignment and tools see the real box. */
+	const syncContentSize = useRef(() => {});
+	useLayoutEffect(() => {
+		syncContentSize.current = () => {
+			const element = document.getElementById(id);
+			if (!element) return;
+
+			const next = { w: element.offsetWidth, h: element.offsetHeight };
+			if (next.w === Number(size.w) && next.h === Number(size.h)) return;
+
+			// Write the store, not the local state: the block reads it back, and
+			// writing both at once makes them chase each other.
+			const sizeId = `${id}-control_size`;
+			const { ControlProperties, addControlProperty } =
+				useControlsStore.getState();
+			const stored = ControlProperties.find((item) => item.id === sizeId);
+			if (stored?.value?.w !== next.w || stored?.value?.h !== next.h) {
+				addControlProperty(
+					{ id: sizeId, value: next },
+					useWorkspaceStore.getState().currentWorkspaceID,
+				);
+			}
+		};
+	});
+
+	// After every render (content, font size…). Reading the layout works even
+	// when the window is not painting, unlike observers.
+	useLayoutEffect(() => {
+		if (autoSize !== 'none' && visibility) syncContentSize.current();
+	});
+
+	// Changes that don't re-render the block, such as web fonts loading.
 	useEffect(() => {
-		if (isPressed && controlID === id) {
-			deleteControl(id, currentWorkspace);
-		}
-	}, [controlID, currentWorkspace, deleteControl, id, isPressed]);
+		if (autoSize === 'none' || !visibility) return;
+		const element = document.getElementById(id);
+		if (!element) return;
+
+		const observer = new ResizeObserver(() => syncContentSize.current());
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, [autoSize, id, visibility]);
 
 	/* Sync the selected control with the shared editor state on selection */
 	useEffect(() => {
@@ -198,6 +271,11 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		'mask-triangle-4',
 	];
 
+	/* Mask classes live in src/styles/masks.css; `mask` fits the shape to the
+	   block, leaving it out tiles the shape (Mask Repeat) */
+	const hasMask = mask !== '' && mask !== 'default';
+	const maskClassName = hasMask && cn(!maskRepeat && 'mask', mask);
+
 	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -234,92 +312,163 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 		}
 	}, [controlTransform]);
 
-	// Save Image as PNG
-	const exportAsPng = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
+	/** Drop the crop of the block as one undoable step. */
+	const resetCrop = useCallback(() => {
+		if (clip === '') return;
 
-		toPng(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.png';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
+		commitBatch([{ id: `${id}-clip`, previous: clip, next: '' }]);
+		setClip('');
+	}, [clip, commitBatch, id, setClip]);
+
+	/** Turn the block to `degrees` as one undoable step. A warped block loses
+	    its matrix: an angle cannot be applied on top of it. */
+	const rotateTo = useCallback(
+		(degrees: number) => {
+			const next = withRotation(transform, degrees);
+			if (next === transform) return;
+
+			commitBatch([{ id: `${id}-transform`, previous: transform, next }]);
+			setTransform(next);
+			if (id === controlID) setControlTransform(next);
+		},
+		[commitBatch, controlID, id, setControlTransform, setTransform, transform],
+	);
+
+	/* Export this block as an image with the current export settings */
+	const exportBlock = useCallback(
+		async (format: ExportFormat) => {
+			try {
+				toastSaved(
+					await exportElement(ref.current, `${workspaceName}-${id}`, {
+						format,
+					}),
+				);
+			} catch (error) {
+				console.error(error);
+				toast.error('Export failed');
+			}
+		},
+		[id, ref, workspaceName],
+	);
+	const exportAsPng = useCallback(() => exportBlock('png'), [exportBlock]);
+	const exportAsSvg = useCallback(() => exportBlock('svg'), [exportBlock]);
+	const exportAsJpeg = useCallback(() => exportBlock('jpeg'), [exportBlock]);
+
+	const toggleSelection = useControlsStore((state) => state.toggleSelection);
+	const selectedControlIDs = useControlsStore(
+		(state) => state.selectedControlIDs,
+	);
+
+	const syncSelectionState = useCallback(
+		(event?: React.MouseEvent | React.TouchEvent) => {
+			// Shift+click adds or removes the block from the selection.
+			if (event?.shiftKey) {
+				toggleSelection(id);
+				return;
+			}
+
+			// Clicking a block that is part of a multi-selection keeps the selection
+			// so the whole group can be dragged.
+			if (selectedControlIDs.length > 1 && selectedControlIDs.includes(id))
+				return;
+
+			if (controlID === id) return;
+
+			setID(id);
+			setControlPos({
+				x: position.x,
+				y: position.y,
 			});
-	}, [ref, workspaceName]);
-
-	// Save Image as SVG
-	const exportAsSvg = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
-
-		toSvg(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.svg';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
+			setControlSize({
+				w: size.w,
+				h: size.h,
 			});
-	}, [ref, workspaceName]);
+			setControlTransform(transform);
+		},
+		[
+			controlID,
+			id,
+			position.x,
+			position.y,
+			selectedControlIDs,
+			setControlPos,
+			setControlSize,
+			setControlTransform,
+			setID,
+			size.h,
+			size.w,
+			toggleSelection,
+			transform,
+		],
+	);
 
-	// Save Image as JPEG
-	const exportAsJpeg = useCallback(async () => {
-		if (ref.current === null) {
-			return;
-		}
-
-		toJpeg(ref.current, {
-			cacheBust: true,
-		})
-			.then((dataUrl) => {
-				const link = document.createElement('a');
-				link.download = workspaceName + '.jpeg';
-				link.href = dataUrl;
-				link.click();
-			})
-			.catch((err) => {
-				console.error(err);
-			});
-	}, [ref, workspaceName]);
-
-	const syncSelectionState = useCallback(() => {
-		if (controlID === id) return;
-
-		setID(id);
-		setControlPos({
-			x: position.x,
-			y: position.y,
-		});
-		setControlSize({
-			w: size.w,
-			h: size.h,
-		});
-		setControlTransform(transform);
-	}, [
-		controlID,
+	/* Everything the panel of the block reads and writes. */
+	const menuValue: ControlMenuValue = {
 		id,
-		position.x,
-		position.y,
+		controlID,
+		shadowEditable,
+		maskEditable,
+		borderEditable,
+		Masks,
+		controlPos,
+		controlSize,
+		onSizeInput,
+		rotation: parseRotation(transform),
+		warped: isWarped(transform),
+		onRotate: rotateTo,
+		pastHistory,
+		setPastHistory,
+		setFutureHistory,
+		setControlState,
 		setControlPos,
 		setControlSize,
-		setControlTransform,
 		setID,
-		size.h,
-		size.w,
-		transform,
-	]);
+		onDeleteControl: () => {
+			deleteControl(id, currentWorkspace);
+		},
+		flipX,
+		setFlipX,
+		flipY,
+		setFlipY,
+		zIndex,
+		setzIndex,
+		rotateX,
+		setRotateX,
+		rotateY,
+		setRotateY,
+		shadowX,
+		setShadowX,
+		shadowY,
+		setShadowY,
+		shadowBlur,
+		setShadowBlur,
+		shadowColor,
+		setShadowColor,
+		borderRadius,
+		setBorderRadius,
+		mask,
+		setMask,
+		maskRepeat,
+		setMaskRepeat,
+		blur,
+		setBlur,
+		brightness,
+		setBrightness,
+		contrast,
+		setContrast,
+		grayscale,
+		setGrayscale,
+		huerotate,
+		setHueRotate,
+		invert,
+		setInvert,
+		saturate,
+		setSaturate,
+		opacity,
+		setOpacity,
+		sepia,
+		setSepia,
+	};
 
 	return (
 		<>
@@ -338,18 +487,33 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 						removeControl={() => {
 							deleteControl(id, currentWorkspace);
 						}}
+						onDuplicate={() =>
+							duplicateControl(id, currentWorkspace, currentWorkspace?.id || '')
+						}
+						onMoveStep={(direction) =>
+							moveControlByStep({ id, direction }, currentWorkspace)
+						}
+						onMoveEdge={(position) =>
+							moveControlToEdge({ id, position }, currentWorkspace)
+						}
+						onHide={() => toggleControlVisibility(id, currentWorkspace)}
+						onToggleLock={() => toggleControlLock(id, currentWorkspace)}
+						onResetCrop={clip === '' ? undefined : resetCrop}
+						locked={
+							currentWorkspace?.controls.find((item) => item.id === id)
+								?.locked ?? false
+						}
 					>
 						<ContextMenuTrigger>
 							<motion.div
 								id={id}
 								key={id}
-								className={`absolute flex flex-auto select-none block-${id} ${
-									!maskRepeat && 'mask'
-								}  ${mask}`}
+								data-block-id={id}
+								className={`absolute flex flex-auto select-none block-${id}`}
 								style={{
 									zIndex,
-									height: size.h + 'px',
-									width: size.w + 'px',
+									height: autoSize === 'none' ? size.h + 'px' : 'auto',
+									width: autoSize === 'both' ? 'max-content' : size.w + 'px',
 									maxHeight,
 									maxWidth,
 									minHeight,
@@ -369,46 +533,52 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 									onMouseDown={syncSelectionState}
 									onTouchStart={syncSelectionState}
 									onDoubleClick={() => {
-										setWorkspaceTab('control');
-
-										if (workspaceMode !== 'edit') {
-											setWorkspaceMode('edit');
-										} else {
-											setWorkspaceMode('zen');
+										if (onDoubleClick) {
+											onDoubleClick();
+											return;
 										}
+
+										setWorkspaceTab('control');
+										setPropertiesOpen(true);
 									}}
 								>
+									{/* The exported node carries the mask so per-block exports keep
+									    it; flips, rotation and filters stay inside the masked area */}
 									<div
 										id={'control-' + id}
 										ref={ref}
-										style={{
-											borderRadius: borderRadius + 'px',
-											backgroundColor: color,
-											transform: `${flipX ? 'scaleX(-1)' : ''} ${
-												flipY ? 'scaleY(-1)' : ''
-											} rotateY(${rotateY + 'deg'}) rotateX(${rotateX + 'deg'})`,
-
-											filter: `blur(${blur + 'px'}) brightness(${
-												brightness + '%'
-											}) contrast(${contrast + '%'})  grayscale(${
-												grayscale + '%'
-											}) hue-rotate(${huerotate + 'deg'}) invert(${
-												invert + '%'
-											}) opacity(${opacity + '%'}) saturate(${
-												saturate + '%'
-											}) sepia(${sepia + '%'}) drop-shadow(${
-												shadowX +
-												'px ' +
-												shadowY +
-												'px ' +
-												shadowBlur +
-												'px ' +
-												shadowColor
-											})`,
-										}}
-										className='flex h-full flex-auto flex-col'
+										className={cn('flex h-full flex-auto', maskClassName)}
 									>
-										{children}
+										<div
+											style={{
+												borderRadius: borderRadius + 'px',
+												backgroundColor: color,
+												transform: `${flipX ? 'scaleX(-1)' : ''} ${
+													flipY ? 'scaleY(-1)' : ''
+												} rotateY(${rotateY + 'deg'}) rotateX(${rotateX + 'deg'})`,
+
+												filter: `blur(${blur + 'px'}) brightness(${
+													brightness + '%'
+												}) contrast(${contrast + '%'})  grayscale(${
+													grayscale + '%'
+												}) hue-rotate(${huerotate + 'deg'}) invert(${
+													invert + '%'
+												}) opacity(${opacity + '%'}) saturate(${
+													saturate + '%'
+												}) sepia(${sepia + '%'}) drop-shadow(${
+													shadowX +
+													'px ' +
+													shadowY +
+													'px ' +
+													shadowBlur +
+													'px ' +
+													shadowColor
+												})`,
+											}}
+											className='flex h-full flex-auto flex-col'
+										>
+											{children}
+										</div>
 									</div>
 								</div>
 							</motion.div>
@@ -416,72 +586,10 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 					</ControlContextMenu>
 				)}
 
-				{/* Menu */}
-				<ControlMenu
-					id={id}
-					controlID={controlID}
-					menu={menu}
-					shadowEditable={shadowEditable}
-					maskEditable={maskEditable}
-					borderEditable={borderEditable}
-					Masks={Masks}
-					controlPos={controlPos}
-					controlSize={controlSize}
-					pastHistory={pastHistory}
-					setPastHistory={setPastHistory}
-					setFutureHistory={setFutureHistory}
-					setControlState={setControlState}
-					setControlPos={setControlPos}
-					setControlSize={setControlSize}
-					currentWorkspace={currentWorkspace}
-					setWorkspaceControls={() => {}}
-					setID={setID}
-					onDeleteControl={() => {
-						deleteControl(id, currentWorkspace);
-					}}
-					flipX={flipX}
-					setFlipX={setFlipX}
-					flipY={flipY}
-					setFlipY={setFlipY}
-					zIndex={zIndex}
-					setzIndex={setzIndex}
-					rotateX={rotateX}
-					setRotateX={setRotateX}
-					rotateY={rotateY}
-					setRotateY={setRotateY}
-					shadowX={shadowX}
-					setShadowX={setShadowX}
-					shadowY={shadowY}
-					setShadowY={setShadowY}
-					shadowBlur={shadowBlur}
-					setShadowBlur={setShadowBlur}
-					shadowColor={shadowColor}
-					setShadowColor={setShadowColor}
-					borderRadius={borderRadius}
-					setBorderRadius={setBorderRadius}
-					mask={mask}
-					setMask={setMask}
-					maskRepeat={maskRepeat}
-					setMaskRepeat={setMaskRepeat}
-					blur={blur}
-					setBlur={setBlur}
-					brightness={brightness}
-					setBrightness={setBrightness}
-					contrast={contrast}
-					setContrast={setContrast}
-					grayscale={grayscale}
-					setGrayscale={setGrayscale}
-					huerotate={huerotate}
-					setHueRotate={setHueRotate}
-					invert={invert}
-					setInvert={setInvert}
-					saturate={saturate}
-					setSaturate={setSaturate}
-					opacity={opacity}
-					setOpacity={setOpacity}
-					sepia={sepia}
-					setSepia={setSepia}
-				/>
+				{/* The panel of the block: what it shows travels in a context */}
+				<ControlMenuContext.Provider value={menuValue}>
+					<ControlMenu menu={menu}></ControlMenu>
+				</ControlMenuContext.Provider>
 			</AnimatePresence>
 		</>
 	);

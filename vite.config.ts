@@ -79,6 +79,25 @@ export default defineConfig({
 		}),
 	],
 
+	build: {
+		rollupOptions: {
+			output: {
+				// Monaco rarely changes: keep it in its own chunk so app updates
+				// don't invalidate it, and so the block editor page stays small.
+				// Language modes stay in their own lazy chunks.
+				manualChunks(id) {
+					if (
+						id.includes('/node_modules/monaco-editor/') &&
+						!id.includes('/language/') &&
+						!id.includes('/basic-languages/')
+					) {
+						return 'monaco';
+					}
+				},
+			},
+		},
+	},
+
 	resolve: {
 		alias: {
 			"@": path.resolve(__dirname, "./src"),

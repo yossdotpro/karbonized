@@ -6,7 +6,8 @@ The `.kcomponent` file format is a YAML-based format for defining custom compone
 
 ## File Structure
 
-A `.kcomponent` file is a YAML file with the following structure:
+A `.kcomponent` file is a YAML file with the following structure. Only
+`manifest.name` and `html` are required; `css` and `js` can be omitted.
 
 ```yaml
 manifest:
@@ -44,12 +45,18 @@ js: |
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | string | Yes | The name of the component |
-| `author` | string | No | The author of the component |
-| `description` | string | No | A brief description of the component |
+| `name` | string | Yes | The name of the component (max. 80 chars) |
+| `author` | string | No | The author of the component (max. 80 chars) |
+| `description` | string | No | A brief description of the component (max. 500 chars) |
 | `version` | string | No | Version following semantic versioning (e.g., "1.0.0") |
 | `category` | string | No | Category for organizing components (e.g., "UI Components", "Forms") |
-| `tags` | array of strings | No | Tags for searching and filtering components |
+| `tags` | array of strings | No | Tags for searching and filtering (max. 12, comma separated text is also accepted) |
+| `width` | number | No | Preferred block width in px when added to the canvas (16–4096) |
+| `height` | number | No | Preferred block height in px when added to the canvas (16–4096) |
+| `thumbnail` | string | No | Preview image shown in the library: an `https://` URL or an inline `data:image/…;base64,` value |
+
+`name` and `author` together identify a component: importing a file with the
+same pair updates the existing entry instead of creating a duplicate.
 
 ## HTML Section
 
@@ -111,6 +118,41 @@ Generates a shadow editor in the properties panel.
 ```
 
 Generates a toggle switch in the properties panel.
+
+#### Icon Variables
+
+```css
+/* @type:icon */
+--feature-icon: FaRocket;
+```
+
+Generates an icon picker in the properties panel with the built-in Font Awesome
+icons (`FaRocket`) and the icons of the installed icon packs (`acme:bolt`). When the block renders, the
+name becomes the image of the icon, meant for a mask. Draw it with the built-in
+`.k-icon` helper, which takes the text color and is `1em` square:
+
+```html
+<span class="k-icon" style="--k-icon: var(--feature-icon)"></span>
+```
+
+Font Awesome icons are always there. An icon from a pack the user has not
+installed draws nothing, so a shared component should default to a Font Awesome
+icon or say which pack it needs.
+
+### Icon packs
+
+A `.kcomponent` with `manifest.type: icon-pack` holds icons instead of HTML:
+an `icons` map of names to SVG markup, plus a `prefix` that names the pack's
+icons (`acme:bolt`). Importing one adds its icons to the Icon block, to
+`@type:icon` variables and to the component library. See
+[`icon-packs.md`](icon-packs.md) for the full format, the SVG rules and the
+`yarn icon-pack` script that builds a pack from a folder of SVG files.
+
+### Fonts
+
+Name a Google font in `font-family` and the app loads it for the block (a
+`@import` of Google Fonts is also understood). Fonts have to be loaded by the
+page: a shadow root cannot load them by itself.
 
 ### Example CSS
 
@@ -275,11 +317,35 @@ js: |
 
 ## Validation Rules
 
-- The `manifest` field is required
+The importer separates hard errors (the file is rejected) from warnings (the
+file is imported, but a field was dropped or normalized).
+
+Errors:
+
+- The YAML must be valid; syntax errors report the offending line
+- The `manifest` field is required and must be an object
 - `manifest.name` is required
-- `html`, `css`, and `js` fields are required
-- The YAML must be valid
-- All fields must use the correct syntax
+- `html` is required and cannot be empty
+- `html`, `css` and `js` must be text, and each section must stay under 512 KB
+- The whole file must stay under 1 MB
+
+Warnings:
+
+- `css` or `js` missing: the component is imported without styles or actions
+- Unknown fields, at the root or inside the manifest, are ignored
+- Text fields longer than their limit are truncated
+- Duplicate tags are removed, and only the first 12 are kept
+- `width`/`height` outside 16–4096 px are ignored
+- A `thumbnail` that is not an `https://` URL or an inline base64 image is ignored
+- A `version` that does not look like `1.2.3` is kept but flagged
+
+## Sizes and Limits
+
+| Limit | Value |
+|-------|-------|
+| Maximum file size | 1 MB |
+| Maximum size per `html`/`css`/`js` section | 512 KB |
+| Maximum components in the library | 200 |
 
 ## Best Practices
 

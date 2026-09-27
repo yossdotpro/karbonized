@@ -3,32 +3,49 @@ import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Spinner } from '@/components/ui/spinner';
-import React, {
-	Suspense,
-	useContext,
-	useEffect,
-	useRef,
-	useState,
-} from 'react';
+import React, { Suspense, useContext, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppContext } from '../AppContext';
-import { Tooltip } from '../components/CustomControls/Tooltip';
-import { useScreenDirection } from '../hooks/useScreenDirection';
-import {
-	useWorkspaceStore,
-	useControlsStore,
-	useHistoryStore,
-	useUIStore,
-	useDrawingStore,
-} from '../stores';
-import { getRandomNumber } from '../utils/getRandom';
+import { useWorkspaceStore, useControlsStore, useUIStore } from '../stores';
+import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
+import { useRecentsTracker } from '@/lib/persistence/recents';
+import { ShapeBar } from '@/components/Panels/ShapeBar';
+import { Rulers } from '@/components/Base/Rulers';
+import { BrushBar } from '@/components/Panels/BrushBar';
+import { isEditableTarget } from '@/lib/commands/shortcuts';
+import { redo, undo } from '@/lib/editor/history';
+import { useAgentUI } from '@/lib/agent/ui-store';
 import {
+	alignSelection,
+	distributeSelection,
+	getMovableSelection,
+	nudgeSelection,
+	selectAllControls,
+} from '@/lib/canvas/selection';
+import {
+	fitViewer,
+	setViewerZoom,
+	useViewStore,
+	zoomViewerBy,
+} from '@/lib/viewer';
+import {
+	AlignCenterHorizontal,
+	AlignCenterVertical,
+	AlignEndHorizontal,
+	AlignEndVertical,
+	AlignHorizontalSpaceAround,
+	AlignStartHorizontal,
+	AlignStartVertical,
+	AlignVerticalSpaceAround,
+	BoxSelect,
 	Brush,
 	Copy,
+	Magnet,
+	Ruler,
+	Trash2,
 	Focus,
 	Lock,
 	Redo2,
@@ -56,6 +73,12 @@ const RightPanel = React.lazy(
 const InfiniteViewer = React.lazy(
 	async () => await import('react-infinite-viewer'),
 );
+const AgentPanel = React.lazy(
+	async () => await import('../components/Agent/AgentPanel'),
+);
+const AgentCommands = React.lazy(
+	async () => await import('../components/Agent/AgentCommands'),
+);
 
 export const Editor: React.FC = () => {
 	const { viewerRef } = useContext(AppContext);
@@ -64,122 +87,128 @@ export const Editor: React.FC = () => {
 
 	/* App Store */
 	const duplicateControl = useControlsStore((state) => state.duplicateControl);
-	const setCurrentControlID = useControlsStore(
-		(state) => state.setCurrentControlID,
-	);
-	const setControlPos = useControlsStore((state) => state.setControlPosition);
-	const setControlSize = useControlsStore((state) => state.setControlSize);
-	const setControlTransform = useControlsStore(
-		(state) => state.setControlTransform,
-	);
-	const drag = useUIStore((state) => state.drag);
-	const canDraw = useDrawingStore((state) => state.isDrawing);
-	const isErasing = useDrawingStore((state) => state.isErasing);
-	const lineWidth = useDrawingStore((state) => state.lineWidth);
-	const strokeColor = useDrawingStore((state) => state.strokeColor);
-	const setStrokeColor = useDrawingStore((state) => state.setStrokeColor);
-	const setLineWidth = useDrawingStore((state) => state.setLineWidth);
+	const deleteControl = useControlsStore((state) => state.deleteControl);
+	const activeTool = useUIStore((state) => state.activeTool);
+	const drag = activeTool === 'pan';
+	const crop = activeTool === 'crop';
 	const aspectRatio = useUIStore((state) => state.lockAspect);
 	const setAspectRatio = useUIStore((state) => state.setLockAspect);
 	const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace);
-	const setWorkspaceControls = useWorkspaceStore(
-		(state) => state.setWorkspaceControls,
-	);
+	const agentOpen = useAgentUI((state) => state.panelOpen);
 
 	/* Copy/Paste System */
 	const controlID = useControlsStore((state) => state.currentControlID);
-	const workspaceMode = useUIStore((state) => state.workspaceMode);
-
-	const redo = useHistoryStore((state) => state.redo);
-	const undo = useHistoryStore((state) => state.undo);
-	const controlState = useHistoryStore((state) => state.controlState);
 
 	/* Component Store and Actions */
-	const isHorizontal = useScreenDirection();
 
 	const ref = useRef<HTMLDivElement>(null);
+	const selectoRef = useRef<Selecto>(null);
+	const selectedControlIDs = useControlsStore(
+		(state) => state.selectedControlIDs,
+	);
 
-	const [zoom, setZoom] = useState(isHorizontal ? 0.9 : 0.4);
+	/* Holding Space pans the canvas and releasing it goes back to the tool
+	   that was active, the way every canvas editor does it. */
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.code !== 'Space' || isEditableTarget(event.target)) return;
+			// Space also scrolls the page.
+			event.preventDefault();
+			useUIStore.getState().holdTool('pan');
+		};
 
-	const applyHistoryResult = (
-		result:
-			| {
-					type: 'workspace-update';
-					snapshot: { controls: any[]; currentControlID: string };
-					historyId: string;
-			  }
-			| {
-					type: 'control-update';
-					historyId: string;
-			  }
-			| undefined,
-	) => {
-		if (result?.type === 'workspace-update') {
-			setWorkspaceControls(result.snapshot.controls);
-			setCurrentControlID(result.snapshot.currentControlID);
-			return;
-		}
+		const onKeyUp = (event: KeyboardEvent) => {
+			if (event.code !== 'Space') return;
+			useUIStore.getState().releaseTool();
+		};
 
-		if (result?.type !== 'control-update' || controlState == null) return;
+		// The pointer may leave the window while Space is held.
+		const onBlur = () => {
+			useUIStore.getState().releaseTool();
+		};
 
-		if (controlState.id.endsWith('-pos')) {
-			setControlPos(controlState.value);
-			return;
-		}
+		window.addEventListener('keydown', onKeyDown);
+		window.addEventListener('keyup', onKeyUp);
+		window.addEventListener('blur', onBlur);
+		return () => {
+			window.removeEventListener('keydown', onKeyDown);
+			window.removeEventListener('keyup', onKeyUp);
+			window.removeEventListener('blur', onBlur);
+		};
+	}, []);
 
-		if (controlState.id.endsWith('-control_size')) {
-			setControlSize(controlState.value);
-			return;
-		}
-
-		if (controlState.id.endsWith('-transform')) {
-			setControlTransform(controlState.value);
-		}
-	};
+	/* Keep the marquee's own selection in sync (Shift+drag continues it) */
+	useEffect(() => {
+		selectoRef.current?.setSelectedTargets(
+			selectedControlIDs
+				.map((id) => document.getElementById(id))
+				.filter((element): element is HTMLElement => element !== null),
+		);
+	}, [selectedControlIDs]);
 
 	const centerView = (): void => {
-		if (currentWorkspace !== undefined) {
-			const width = parseFloat(currentWorkspace?.workspaceWidth);
+		if (currentWorkspace === undefined) return;
 
-			if (isHorizontal) {
-				if (width < 1280) {
-					viewerRef.current?.setZoom(0.9);
-				} else if (width >= 1280 && width < 1920) {
-					viewerRef.current?.setZoom(0.6);
-				} else if (width >= 1920 && width < 2560) {
-					viewerRef.current?.setZoom(0.4);
-				} else if (width >= 2560 && width < 3840) {
-					viewerRef.current?.setZoom(0.3);
-				} else if (width >= 3840) {
-					viewerRef.current?.setZoom(0.2);
-				}
-			} else {
-				if (width < 1280) {
-					viewerRef.current?.setZoom(0.6);
-				} else if (width >= 1280 && width < 1920) {
-					viewerRef.current?.setZoom(0.25);
-				} else if (width >= 1920) {
-					viewerRef.current?.setZoom(0.1);
-				}
-			}
-
-			viewerRef.current?.scrollCenter();
-		}
+		fitViewer(
+			viewerRef,
+			{
+				width: parseFloat(currentWorkspace.workspaceWidth),
+				height: parseFloat(currentWorkspace.workspaceHeight),
+			},
+			document.querySelector<HTMLElement>('.viewer'),
+		);
 	};
 
-	const zoomBy = (delta: number): void => {
-		const zoom = viewerRef.current?.getZoom?.() ?? 1;
-		viewerRef.current?.setZoom(Math.max(0.05, zoom + delta));
+	const hasSelection = () =>
+		useControlsStore.getState().selectedControlIDs.length > 0;
+	const selectionSize = () => getMovableSelection().length;
+
+	/* Run a structural action on every selected control, in order */
+	const forEachSelected = (
+		action: (id: string, workspace: typeof currentWorkspace) => void,
+	) => {
+		useControlsStore.getState().selectedControlIDs.forEach((id) => {
+			action(id, useWorkspaceStore.getState().currentWorkspace);
+		});
 	};
+
+	const nudgeCommands = (
+		[
+			['left', 'ArrowLeft', -1, 0],
+			['right', 'ArrowRight', 1, 0],
+			['up', 'ArrowUp', 0, -1],
+			['down', 'ArrowDown', 0, 1],
+		] as const
+	).flatMap(([direction, key, dx, dy]) => [
+		{
+			id: `edit.nudge-${direction}`,
+			title: `Nudge ${direction}`,
+			group: 'Edit' as const,
+			shortcut: key,
+			hidden: true,
+			when: hasSelection,
+			run: () => nudgeSelection(dx, dy),
+		},
+		{
+			id: `edit.nudge-${direction}-large`,
+			title: `Nudge ${direction} 10px`,
+			group: 'Edit' as const,
+			shortcut: `Shift+${key}`,
+			hidden: true,
+			when: hasSelection,
+			run: () => nudgeSelection(dx * 10, dy * 10),
+		},
+	]);
 
 	useCommands([
+		...nudgeCommands,
 		{
 			id: 'edit.undo',
 			title: 'Undo',
 			group: 'Edit',
 			icon: Undo2,
 			shortcut: 'Mod+Z',
-			run: () => applyHistoryResult(undo()),
+			run: () => void undo(),
 		},
 		{
 			id: 'edit.redo',
@@ -187,7 +216,7 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Redo2,
 			shortcut: ['Mod+Shift+Z', 'Mod+Y'],
-			run: () => applyHistoryResult(redo()),
+			run: () => void redo(),
 		},
 		{
 			id: 'edit.duplicate',
@@ -195,13 +224,126 @@ export const Editor: React.FC = () => {
 			group: 'Edit',
 			icon: Copy,
 			shortcut: 'Mod+D',
-			when: () => useControlsStore.getState().currentControlID !== '',
+			when: hasSelection,
 			run: () =>
-				duplicateControl(
-					controlID,
-					currentWorkspace,
-					currentWorkspace?.id || '',
+				forEachSelected((id, workspace) =>
+					duplicateControl(id, workspace, workspace?.id || ''),
 				),
+		},
+		{
+			id: 'edit.delete',
+			title: 'Delete selection',
+			group: 'Edit',
+			icon: Trash2,
+			shortcut: ['Delete', 'Backspace'],
+			when: hasSelection,
+			run: () =>
+				forEachSelected((id, workspace) => deleteControl(id, workspace)),
+		},
+		{
+			id: 'edit.select-all',
+			title: 'Select all',
+			group: 'Edit',
+			icon: BoxSelect,
+			shortcut: 'Mod+A',
+			run: selectAllControls,
+		},
+		{
+			id: 'edit.deselect',
+			title: 'Deselect',
+			group: 'Edit',
+			shortcut: 'Escape',
+			hidden: true,
+			when: () =>
+				hasSelection() || useUIStore.getState().activeTool !== 'select',
+			run: () => {
+				// Escape leaves the current tool first, then clears the selection.
+				const { activeTool, setActiveTool } = useUIStore.getState();
+				if (activeTool !== 'select') {
+					setActiveTool('select');
+					return;
+				}
+				useControlsStore.getState().setSelection([]);
+			},
+		},
+		...(
+			[
+				['left', 'Align left', 'Alt+A', AlignStartVertical],
+				['center', 'Align horizontal centers', 'Alt+H', AlignCenterVertical],
+				['right', 'Align right', 'Alt+D', AlignEndVertical],
+				['top', 'Align top', 'Alt+W', AlignStartHorizontal],
+				['middle', 'Align vertical centers', 'Alt+V', AlignCenterHorizontal],
+				['bottom', 'Align bottom', 'Alt+S', AlignEndHorizontal],
+			] as const
+		).map(([alignment, title, shortcut, icon]) => ({
+			id: `arrange.align-${alignment}`,
+			title,
+			group: 'Edit' as const,
+			icon,
+			shortcut,
+			keywords: ['align', 'arrange', 'canvas'],
+			when: () => selectionSize() > 0,
+			run: () => alignSelection(alignment),
+		})),
+		{
+			id: 'arrange.distribute-horizontal',
+			title: 'Distribute horizontal spacing',
+			group: 'Edit',
+			icon: AlignHorizontalSpaceAround,
+			shortcut: 'Alt+Shift+H',
+			keywords: ['distribute', 'spacing', 'arrange'],
+			when: () => selectionSize() >= 3,
+			run: () => distributeSelection('horizontal'),
+		},
+		{
+			id: 'arrange.distribute-vertical',
+			title: 'Distribute vertical spacing',
+			group: 'Edit',
+			icon: AlignVerticalSpaceAround,
+			shortcut: 'Alt+Shift+V',
+			keywords: ['distribute', 'spacing', 'arrange'],
+			when: () => selectionSize() >= 3,
+			run: () => distributeSelection('vertical'),
+		},
+		{
+			id: 'view.toggle-rulers',
+			title: useViewStore.getState().showRulers ? 'Hide rulers' : 'Show rulers',
+			group: 'View',
+			icon: Ruler,
+			shortcut: 'Shift+R',
+			keywords: ['ruler', 'guides', 'grid'],
+			run: () => {
+				const { showRulers, setShowRulers } = useViewStore.getState();
+				setShowRulers(!showRulers);
+			},
+		},
+		{
+			id: 'view.clear-guides',
+			title: 'Clear guides',
+			group: 'View',
+			icon: Ruler,
+			keywords: ['ruler', 'guides'],
+			when: () => {
+				const { guides } = useViewStore.getState();
+				return guides.vertical.length + guides.horizontal.length > 0;
+			},
+			run: () => {
+				useViewStore.getState().clearGuides();
+			},
+		},
+		{
+			id: 'view.toggle-snapping',
+			title: useViewStore.getState().snapping
+				? 'Disable snapping'
+				: 'Enable snapping',
+			group: 'View',
+			icon: Magnet,
+			shortcut: 'Shift+S',
+			keywords: ['guides', 'align', 'snap'],
+			run: () => {
+				const { snapping, setSnapping } = useViewStore.getState();
+				setSnapping(!snapping);
+			},
 		},
 		{
 			id: 'view.lock-aspect',
@@ -227,7 +369,7 @@ export const Editor: React.FC = () => {
 			group: 'View',
 			icon: ZoomIn,
 			shortcut: 'Mod+Plus',
-			run: () => zoomBy(0.2),
+			run: () => zoomViewerBy(viewerRef, 1),
 		},
 		{
 			id: 'view.zoom-out',
@@ -235,17 +377,23 @@ export const Editor: React.FC = () => {
 			group: 'View',
 			icon: ZoomOut,
 			shortcut: 'Mod+Minus',
-			run: () => zoomBy(-0.2),
+			run: () => zoomViewerBy(viewerRef, -1),
 		},
 		{
 			id: 'view.zoom-reset',
-			title: 'Reset zoom',
+			title: 'Zoom to 100%',
 			group: 'View',
 			icon: RotateCcw,
 			shortcut: 'Shift+0',
-			run: () => viewerRef.current?.setZoom(0.7),
+			keywords: ['reset', 'actual size'],
+			run: () => {
+				setViewerZoom(viewerRef, 1);
+				requestAnimationFrame(() => viewerRef.current?.scrollCenter());
+			},
 		},
 	]);
+
+	useRecentsTracker();
 
 	/* Redirect to /new if no workspaces exist */
 	useEffect(() => {
@@ -254,127 +402,185 @@ export const Editor: React.FC = () => {
 		}
 	}, [workspaces, navigate]);
 
-	/* Center view when the workspace, mode or aspect lock changes */
+	/* Fit the view when switching workspaces or changing the canvas size */
 	useEffect(() => {
 		centerView();
-	}, [currentWorkspace, workspaceMode, aspectRatio]);
+	}, [
+		currentWorkspace?.id,
+		currentWorkspace?.workspaceWidth,
+		currentWorkspace?.workspaceHeight,
+	]);
 
 	return (
 		<div className='flex h-full w-full flex-col overflow-hidden'>
-			<div
+			<ResizablePanelGroup
+				orientation='horizontal'
 				onContextMenu={(e) => {
 					e.preventDefault();
 				}}
-				className='relative flex flex-auto flex-row overflow-hidden'
+				className='min-h-0 flex-auto overflow-hidden'
 			>
-				{/* Content */}
-				<div className='relative flex flex-auto flex-col overflow-hidden md:flex-row'>
-					{/* Draw Bar */}
-					{(canDraw || isErasing) && (
-						<div className=' absolute flex h-full w-full'>
-							<div className='z-50 mb-12 ml-auto mr-4 mt-auto flex flex-row items-center gap-1 rounded-[10px] border border-border bg-popover px-2 py-1 shadow-lg shadow-black/20'>
-								{/* Stroke Range */}
-								<Brush
-									size={16}
-									className='mx-1 my-auto text-muted-foreground'
-								></Brush>
-								<Slider
-									className='my-auto flex flex-auto p-1'
-									min={0}
-									max={100}
-									step={1}
-									value={[lineWidth]}
-									onValueChange={(value) => {
-										setLineWidth(value[0]);
-									}}
-								/>
+				{/* Agent, docked to the left edge so it never covers the canvas */}
+				{agentOpen && (
+					<>
+						<Suspense>
+							<AgentPanel />
+						</Suspense>
+						<ResizableHandle className='w-0 bg-transparent' />
+					</>
+				)}
 
-								<ColorPicker
-									isGradientEnable={false}
-									color={strokeColor}
-									onColorChange={setStrokeColor}
-									showLabel={false}
-									placement='right-end'
-									label='Color'
-								></ColorPicker>
+				{/* Canvas area. The properties panel floats over its right edge. */}
+				<ResizablePanel id='canvas' minSize={320}>
+					<div className='relative flex h-full w-full flex-row overflow-hidden'>
+						{/* Content */}
+						<div className='relative flex flex-auto flex-col overflow-hidden md:flex-row'>
+							{/* Settings of the tool that draws on the canvas */}
+							{(activeTool === 'draw' ||
+								activeTool === 'brush' ||
+								activeTool === 'nodes') && (
+								<div className='pointer-events-none absolute flex h-full w-full'>
+									<div className='pointer-events-auto flex h-full w-full'>
+										{activeTool === 'draw' ? (
+											<ShapeBar></ShapeBar>
+										) : activeTool === 'brush' ? (
+											<BrushBar></BrushBar>
+										) : (
+											<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex flex-row items-center gap-2 rounded-[10px] border border-border bg-popover px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg shadow-black/20'>
+												Pick a stroke, then drag a node to move it · click the
+												stroke to add one · Alt+click to take one out
+											</div>
+										)}
+									</div>
+								</div>
+							)}
 
-								{/* Zoom In */}
-								<Tooltip className='hidden flex-auto ' message='Zoom In'>
-									<Button
-										className='flex flex-auto p-1'
-										variant='ghost'
-										size='icon'
-										onClick={() => {
-											setZoom(zoom + 0.2);
-										}}
-									>
-										<ZoomIn size={15} className='text-foreground'></ZoomIn>
-									</Button>
-								</Tooltip>
-							</div>
-						</div>
-					)}
-
-					{/* Workspace */}
-					<div
-						className={`canvas-grid flex flex-auto flex-col ${drag && 'cursor-move'}`}
-					>
-						{/* Ruler Horizontal */}
-						<InfiniteViewer
-							ref={viewerRef}
-							className='viewer flex flex-auto'
-							useAutoZoom
-							useMouseDrag={drag}
-							useGesture
-							usePinch={!drag}
-							threshold={0}
-							useResizeObserver
-							useWheelScroll
-							useWheelPinch
-							useTransform
-							wheelScale={0.002}
-							maxPinchWheel={50}
-						>
+							{/* Workspace */}
 							<div
-								style={{
-									width: currentWorkspace?.workspaceWidth + 'px',
-									height: currentWorkspace?.workspaceHeight + 'px',
-								}}
-								className='viewport'
+								className={`canvas-grid relative flex flex-auto flex-col ${drag && 'cursor-move'}`}
 							>
-								<Suspense
-									fallback={
-										<div className='flex items-center justify-center'>
-											<Spinner className='size-5 text-muted-foreground' />
-										</div>
+								{/* Rulers and the guides dragged out of them */}
+								<Rulers></Rulers>
+
+								<InfiniteViewer
+									ref={viewerRef}
+									className='viewer flex flex-auto'
+									useAutoZoom
+									useMouseDrag={drag}
+									useGesture
+									usePinch={!drag}
+									threshold={0}
+									useResizeObserver
+									useWheelScroll
+									useWheelPinch
+									useTransform
+									wheelScale={0.002}
+									maxPinchWheel={50}
+									onPinch={({ zoom }: { zoom: number }) =>
+										useViewStore.getState().setZoomValue(zoom)
 									}
 								>
-									<Workspace reference={ref}></Workspace>
+									<div
+										style={{
+											width: currentWorkspace?.workspaceWidth + 'px',
+											height: currentWorkspace?.workspaceHeight + 'px',
+										}}
+										className='viewport'
+									>
+										<Suspense
+											fallback={
+												<div className='flex items-center justify-center'>
+													<Spinner className='size-5 text-muted-foreground' />
+												</div>
+											}
+										>
+											<Workspace reference={ref}></Workspace>
+										</Suspense>
+									</div>
+								</InfiniteViewer>
+
+								{/* Marquee selection: drag on an empty part of the canvas */}
+								{!drag &&
+									!crop &&
+									activeTool !== 'draw' &&
+									activeTool !== 'brush' &&
+									activeTool !== 'nodes' && (
+										<Selecto
+											ref={selectoRef}
+											dragContainer='.viewer'
+											selectableTargets={['#workspace [data-block-id]']}
+											hitRate={0}
+											selectByClick
+											selectFromInside={false}
+											toggleContinueSelect='shift'
+											ratio={0}
+											dragCondition={(event) => {
+												const target = event.inputEvent
+													?.target as Element | null;
+												// Blocks, selection handles and panels handle their own drags.
+												return !target?.closest(
+													'[data-block-id], .moveable-control-box, [data-radix-popper-content-wrapper]',
+												);
+											}}
+											onSelectEnd={({ selected, isClick, inputEvent }) => {
+												const ids = selected
+													.map((element) =>
+														element.getAttribute('data-block-id'),
+													)
+													.filter((id): id is string => Boolean(id))
+													.filter((id) => {
+														const control = currentWorkspace?.controls.find(
+															(item) => item.id === id,
+														);
+														return (
+															control &&
+															!control.locked &&
+															control.isVisible !== false
+														);
+													});
+
+												// A plain click on empty canvas clears the selection.
+												if (
+													isClick &&
+													!inputEvent?.shiftKey &&
+													ids.length === 0
+												) {
+													useControlsStore.getState().setSelection([]);
+													return;
+												}
+
+												useControlsStore.getState().setSelection(ids);
+											}}
+										/>
+									)}
+							</div>
+						</div>
+
+						{/* Panels, which float above the canvas and its rulers */}
+						<div className='pointer-events-none absolute z-30 flex h-full w-full'>
+							{/* Left Panel */}
+							<div className='pointer-events-auto flex max-w-xs'>
+								<Suspense>
+									<LeftPanel></LeftPanel>
 								</Suspense>
 							</div>
-						</InfiniteViewer>
-					</div>
-				</div>
 
-				{/* Panels */}
-				<div className='pointer-events-none absolute flex h-full w-full'>
-					{/* Left Panel */}
-					<div className='pointer-events-auto flex max-w-xs'>
-						<Suspense>
-							<LeftPanel></LeftPanel>
-						</Suspense>
+							{/* Right Panel */}
+							<ResizablePanelGroup orientation='horizontal'>
+								<ResizablePanel></ResizablePanel>
+								<ResizableHandle className='w-0 bg-transparent' />
+								<Suspense>
+									<RightPanel></RightPanel>
+								</Suspense>
+							</ResizablePanelGroup>
+						</div>
 					</div>
+				</ResizablePanel>
+			</ResizablePanelGroup>
 
-					{/* Right Panel */}
-					<ResizablePanelGroup orientation='horizontal'>
-						<ResizablePanel></ResizablePanel>
-						<ResizableHandle className='w-0 bg-transparent' />
-						<Suspense>
-							<RightPanel></RightPanel>
-						</Suspense>
-					</ResizablePanelGroup>
-				</div>
-			</div>
+			<Suspense>
+				<AgentCommands />
+			</Suspense>
 
 			<StatusBar></StatusBar>
 		</div>

@@ -12,30 +12,37 @@ import {
 	MenubarSubTrigger,
 	MenubarTrigger,
 } from '@/components/ui/menubar';
-import CryptoJS from 'crypto-js';
-import FileSaver from 'file-saver';
-import { toBlob, toPng } from 'html-to-image';
 import React, { Suspense, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { type Project } from '../../types';
+import { useWorkspaceStore, useUIStore } from '../../stores';
 import {
-	useWorkspaceStore,
-	useControlsStore,
-	useUIStore,
-	useProjectStore,
-} from '../../stores';
-import { ExportImage, export_format } from '../../utils/Exporter';
-import { getRandomNumber } from '../../utils/getRandom';
-import { PROJECT_KEY } from '../../utils/secrets';
+	type ExportFormat,
+	canCopyImage,
+	copyElementImage,
+	exportElement,
+	renderBlob,
+} from '@/lib/export/exporter';
+import { toast } from 'sonner';
+import { toastSaved } from '@/lib/export/saved-toast';
 import {
+	PROJECT_EXTENSION,
+	ProjectFileError,
+} from '@/lib/persistence/project-file';
+import {
+	openProjectFile,
+	saveCurrentProject,
+} from '@/lib/persistence/project-io';
+import {
+	ClipboardCopy,
 	Eraser,
-	FileJson,
 	FilePlus2,
 	FolderOpen,
 	Heart,
 	ImageDown,
 	Info,
+	Package,
 	PackagePlus,
+	SwatchBook,
 	Plus,
 	Save,
 	ScrollText,
@@ -49,8 +56,14 @@ import {
 	useCommands,
 } from '@/lib/commands/registry';
 import { shortcutLabel } from '@/lib/commands/shortcuts';
+import { useKComponentStore } from '@/stores/kcomponent-store';
+import { useAddKComponentToCanvas } from '@/hooks/useAddKComponentToCanvas';
+import { useFileDrop } from '@/hooks/useFileDrop';
 import TabBar from './TabBar';
+import { AgentMenu } from '../Agent/AgentMenu';
 import { Button } from '@/components/ui/button';
+
+const PROJECT_DROP_EXTENSIONS = [PROJECT_EXTENSION];
 
 const AboutModal = React.lazy(async () => await import('../Modals/AboutModal'));
 const ChangelogModal = React.lazy(
@@ -62,20 +75,12 @@ const DonationsModal = React.lazy(
 const PreviewModal = React.lazy(
 	async () => await import('../Modals/PreviewModal'),
 );
+const BrandKitDialog = React.lazy(
+	async () => await import('../Modals/BrandKitDialog'),
+);
 const ImportComponentsDialog = React.lazy(
 	async () => await import('../Modals/ImportComponentsDialog'),
 );
-
-const mergeHistoryById = <T extends { id: string }>(
-	current: T[],
-	incoming: T[],
-): T[] => {
-	const byId = new Map(current.map((item) => [item.id, item]));
-	incoming.forEach((item) => {
-		byId.set(item.id, item);
-	});
-	return Array.from(byId.values());
-};
 
 export const MenuBar: React.FC = () => {
 	const navigate = useNavigate();
@@ -89,14 +94,19 @@ export const MenuBar: React.FC = () => {
 	const [showChangelog, setShowChangelog] = useState(false);
 	const [showDonations, setShowDonations] = useState(false);
 	const [showImportComponents, setShowImportComponents] = useState(false);
+	const [showBrandKit, setShowBrandKit] = useState(false);
+
+	/* KComponent Store */
+	/* The library dialog itself lives in the editor's left panel. */
+	const setShowComponentLibrary = useKComponentStore(
+		(state) => state.setGalleryOpen,
+	);
+	const importedCount = useKComponentStore(
+		(state) => state.importedComponents.length,
+	);
+	const addKComponentToCanvas = useAddKComponentToCanvas();
 
 	/* App Store */
-	const ControlProperties = useControlsStore(
-		(state) => state.ControlProperties,
-	);
-	const saveProject = useProjectStore((state) => state.saveProject);
-	const loadProject = useProjectStore((state) => state.loadProject);
-
 	const cleanWorkspace = useWorkspaceStore((state) => state.cleanWorkspace);
 	const setCurrentWorkspace = useWorkspaceStore(
 		(state) => state.setCurrentWorkspace,
@@ -109,150 +119,105 @@ export const MenuBar: React.FC = () => {
 	);
 	const workspaces = useWorkspaceStore((state) => state.workspaces);
 
-	const exportImage = async (type: export_format) => {
-		setIsExporting(true);
-		await new Promise((resolve) => setTimeout(resolve, 100));
-		ExportImage(
-			currentWorkspace?.workspaceName ?? 'workspace',
-			document.getElementById('workspace'),
-			type,
-		);
-		setTimeout(() => setIsExporting(false), 500);
+	const workspaceElement = () => document.getElementById('workspace');
+	const exportName = () => currentWorkspace?.workspaceName ?? 'workspace';
+
+	const exportImage = async (format: ExportFormat) => {
+		try {
+			toastSaved(
+				await exportElement(workspaceElement(), exportName(), { format }),
+			);
+		} catch (error) {
+			console.error(error);
+			toast.error('Export failed', {
+				description: error instanceof Error ? error.message : undefined,
+			});
+		}
+	};
+
+	const handleCopyImage = async () => {
+		try {
+			await copyElementImage(workspaceElement());
+			toast.success('Image copied to clipboard');
+		} catch (error) {
+			console.error(error);
+			toast.error('Could not copy the image', {
+				description: error instanceof Error ? error.message : undefined,
+			});
+		}
 	};
 
 	const handleShare = async () => {
-		const element = document.getElementById('workspace');
-		console.log('share');
-		if (element != null) {
-			setIsExporting(true);
-			await new Promise((resolve) => setTimeout(resolve, 100));
-			const newFile = await toBlob(element);
-			setIsExporting(false);
-			if (newFile != null) {
-				const data = {
-					files: [
-						new File([newFile], 'image.png', {
-							type: newFile.type,
-						}),
-					],
-					title: 'Image',
-					text: 'image',
-				};
+		const element = workspaceElement();
+		if (!element) return;
 
-				try {
-					await navigator.share(data);
-				} catch (err) {
-					console.log(err);
-				}
+		const blob = await renderBlob(element);
+		if (!blob) return;
+
+		try {
+			await navigator.share({
+				files: [new File([blob], `${exportName()}.png`, { type: 'image/png' })],
+				title: exportName(),
+			});
+		} catch (error) {
+			if ((error as DOMException)?.name !== 'AbortError') {
+				toast.error('Sharing is not available here');
 			}
 		}
 	};
 
-	const handleLoadProject = () => {
+	const handleLoadProject = (): void => {
 		const input = document.createElement('input');
 		input.type = 'file';
-		input.accept = '.kproject';
-		input.addEventListener('change', (ev: any) => {
-			const target = ev.target as HTMLInputElement;
-			if (target.files && target.files.length > 0) {
-				if ((target.files[0].name as string).endsWith('.kproject')) {
-					const reader = new FileReader();
-					reader.addEventListener('load', () => {
-						try {
-							const text = CryptoJS.AES.decrypt(
-								reader.result as string,
-								PROJECT_KEY,
-							).toString(CryptoJS.enc.Utf8);
-							const project = JSON.parse(text) as Project;
+		input.accept = PROJECT_EXTENSION;
 
-							if (project.properties !== null && project.workspace !== null) {
-								const loadedProject = loadProject(project);
-
-								useWorkspaceStore.setState((state) => ({
-									...state,
-									workspaces: [...state.workspaces, loadedProject.newWorkspace],
-									currentWorkspaceID: loadedProject.workspaceId,
-									currentWorkspace: loadedProject.newWorkspace,
-								}));
-
-								useControlsStore.setState((state) => ({
-									...state,
-									ControlProperties: mergeHistoryById(
-										state.ControlProperties,
-										loadedProject.initialProperties,
-									),
-									currentControlID: '',
-								}));
-							} else {
-								alert('Please provide a valid Karbonized Project');
-							}
-						} catch (err) {
-							alert('Invalid Project File');
-						}
-					});
-					reader.readAsText(target.files[0]);
-				} else {
-					alert('Only Karbonized Projects are allowed');
-				}
-			}
+		input.addEventListener('change', () => {
+			const file = input.files?.[0];
+			if (file === undefined) return;
+			void handleOpenFile(file);
 		});
+
 		input.click();
 	};
 
-	const handleSaveProject = async () => {
-		const element = document.getElementById('workspace');
-
-		if (element != null) {
-			setIsExporting(true);
-			await new Promise((resolve) => setTimeout(resolve, 100));
-			const data = await toPng(element);
-			setIsExporting(false);
-
-			const project = { ...saveProject, thumb: data };
-
-			const blob = new Blob(
-				[CryptoJS.AES.encrypt(JSON.stringify(project), PROJECT_KEY).toString()],
-				{
-					type: 'text/plain;charset=utf-8',
-				},
-			);
-
-			FileSaver.saveAs(
-				blob,
-				currentWorkspace?.workspaceName ?? 'workspace' + '.kproject',
+	/** Opens a `.kproject` file, from the picker or dropped on the window. */
+	const handleOpenFile = async (file: File): Promise<void> => {
+		try {
+			const { name } = await openProjectFile(file);
+			if (location.pathname !== '/editor') navigate('/editor');
+			toast.success(`Opened ${name}`);
+		} catch (error) {
+			console.error(error);
+			toast.error(
+				error instanceof ProjectFileError
+					? error.message
+					: 'Could not open the project file',
+				{ description: file.name },
 			);
 		}
 	};
 
-	const handleSaveAsJson = async () => {
-		const element = document.getElementById('workspace');
-
-		if (element) {
-			setIsExporting(true);
-			await new Promise((resolve) => setTimeout(resolve, 100));
-			const data = await toPng(element);
-			setIsExporting(false);
-
-			const project = saveProject({
-				currentWorkspace,
-				currentWorkspaceID,
-				controlProperties: ControlProperties,
-			});
-
-			if (project.workspace) {
-				project.workspace.id = getRandomNumber().toString();
-			}
-
-			const blob = new Blob([JSON.stringify(project)], {
-				type: 'text/plain;charset=utf-8',
-			});
-
-			FileSaver.saveAs(
-				blob,
-				currentWorkspace?.workspaceName ?? 'workspace' + '.json',
+	const handleSaveProject = async (): Promise<void> => {
+		setIsExporting(true);
+		try {
+			const fileName = await saveCurrentProject();
+			if (fileName !== null) toast.success(`Saved ${fileName}`);
+		} catch (error) {
+			console.error(error);
+			toast.error(
+				error instanceof ProjectFileError
+					? error.message
+					: 'Could not save the project',
 			);
+		} finally {
+			setIsExporting(false);
 		}
 	};
+
+	/* A `.kproject` dropped anywhere on the window opens it. */
+	useFileDrop(PROJECT_DROP_EXTENSIONS, (files) => {
+		void handleOpenFile(files[0]);
+	});
 
 	const handleNewWorkspace = () => {
 		navigate('/new');
@@ -297,14 +262,6 @@ export const MenuBar: React.FC = () => {
 			run: () => void handleSaveProject(),
 		},
 		{
-			id: 'file.save-template',
-			title: 'Save project as template',
-			group: 'File',
-			icon: FileJson,
-			when: () => isEditor,
-			run: () => void handleSaveAsJson(),
-		},
-		{
 			id: 'file.export',
 			title: 'Export…',
 			group: 'File',
@@ -314,20 +271,30 @@ export const MenuBar: React.FC = () => {
 			when: () => isEditor,
 			run: () => setShowPreview(true),
 		},
+		{
+			id: 'file.copy-image',
+			title: 'Copy image',
+			group: 'File',
+			icon: ClipboardCopy,
+			shortcut: 'Alt+Shift+C',
+			keywords: ['clipboard', 'png', 'paste'],
+			when: () => isEditor && canCopyImage(),
+			run: () => void handleCopyImage(),
+		},
 		...(
 			[
-				['png', 'PNG', export_format.png],
-				['jpeg', 'JPEG', export_format.jpeg],
-				['svg', 'SVG', export_format.svg],
+				['png', 'PNG'],
+				['jpeg', 'JPEG'],
+				['svg', 'SVG'],
 			] as const
-		).map(([id, label, format]) => ({
+		).map(([id, label]) => ({
 			id: `file.export-${id}`,
 			title: `Export as ${label}`,
 			group: 'File' as const,
 			icon: ImageDown,
 			keywords: ['download', 'image'],
 			when: () => isEditor,
-			run: () => void exportImage(format),
+			run: () => void exportImage(id),
 		})),
 		{
 			id: 'file.share',
@@ -345,6 +312,23 @@ export const MenuBar: React.FC = () => {
 			keywords: ['kcomponent', 'extension'],
 			when: () => isEditor,
 			run: () => setShowImportComponents(true),
+		},
+		{
+			id: 'file.component-library',
+			title: 'Open component library…',
+			group: 'File',
+			icon: Package,
+			keywords: ['kcomponent', 'components', 'gallery', 'library'],
+			when: () => isEditor,
+			run: () => setShowComponentLibrary(true),
+		},
+		{
+			id: 'file.brand-kit',
+			title: 'Brand kit…',
+			group: 'File',
+			icon: SwatchBook,
+			keywords: ['brand', 'colors', 'fonts', 'logo', 'palette'],
+			run: () => setShowBrandKit(true),
 		},
 		{
 			id: 'workspace.clean',
@@ -406,12 +390,8 @@ export const MenuBar: React.FC = () => {
 								</MenubarShortcut>
 							</MenubarItem>
 
-							<MenubarItem
-								onClick={() => {
-									handleLoadProject();
-								}}
-							>
-								Load Project
+							<MenubarItem onClick={handleLoadProject}>
+								Open Project…
 								<MenubarShortcut>{shortcut('file.open')}</MenubarShortcut>
 							</MenubarItem>
 
@@ -428,19 +408,10 @@ export const MenuBar: React.FC = () => {
 							<MenubarItem
 								disabled={!isEditor}
 								onClick={async () => {
-									if (isEditor) await handleSaveAsJson();
-								}}
-							>
-								Save Project as Template
-							</MenubarItem>
-
-							<MenubarItem
-								disabled={!isEditor}
-								onClick={async () => {
 									if (isEditor) setShowPreview(true);
 								}}
 							>
-								Render
+								Export…
 								<MenubarShortcut>{shortcut('file.export')}</MenubarShortcut>
 							</MenubarItem>
 
@@ -452,7 +423,7 @@ export const MenuBar: React.FC = () => {
 									<MenubarItem
 										disabled={!isEditor}
 										onClick={() => {
-											if (isEditor) exportImage(export_format.png);
+											if (isEditor) exportImage('png');
 										}}
 									>
 										Export as PNG
@@ -461,7 +432,7 @@ export const MenuBar: React.FC = () => {
 									<MenubarItem
 										disabled={!isEditor}
 										onClick={() => {
-											if (isEditor) exportImage(export_format.jpeg);
+											if (isEditor) exportImage('jpeg');
 										}}
 									>
 										Export as JPEG
@@ -470,13 +441,21 @@ export const MenuBar: React.FC = () => {
 									<MenubarItem
 										disabled={!isEditor}
 										onClick={() => {
-											if (isEditor) exportImage(export_format.svg);
+											if (isEditor) exportImage('svg');
 										}}
 									>
 										Export as SVG
 									</MenubarItem>
 								</MenubarSubContent>
 							</MenubarSub>
+
+							<MenubarItem
+								disabled={!isEditor || !canCopyImage()}
+								onClick={() => runCommand('file.copy-image')}
+							>
+								Copy Image
+								<MenubarShortcut>{shortcut('file.copy-image')}</MenubarShortcut>
+							</MenubarItem>
 
 							<MenubarSeparator />
 							<MenubarItem
@@ -486,6 +465,11 @@ export const MenuBar: React.FC = () => {
 								}}
 							>
 								Share
+							</MenubarItem>
+
+							<MenubarSeparator />
+							<MenubarItem onClick={() => setShowBrandKit(true)}>
+								Brand Kit…
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
@@ -536,6 +520,17 @@ export const MenuBar: React.FC = () => {
 								}}
 							>
 								Import Components
+							</MenubarItem>
+							<MenubarItem
+								disabled={!isEditor || importedCount === 0}
+								onClick={() => {
+									if (isEditor) setShowComponentLibrary(true);
+								}}
+							>
+								Component Library
+								{importedCount > 0 && (
+									<MenubarShortcut>{importedCount}</MenubarShortcut>
+								)}
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
@@ -613,6 +608,9 @@ export const MenuBar: React.FC = () => {
 							</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
+
+					{/* AI */}
+					<AgentMenu isEditor={isEditor} />
 
 					{/* About */}
 					<MenubarMenu>
@@ -694,12 +692,24 @@ export const MenuBar: React.FC = () => {
 				</Suspense>
 			)}
 
+			{showBrandKit && (
+				<Suspense>
+					<BrandKitDialog open={showBrandKit} onOpenChange={setShowBrandKit} />
+				</Suspense>
+			)}
+
 			{showImportComponents && (
 				<Suspense>
 					<ImportComponentsDialog
 						open={showImportComponents}
 						onOpenChange={setShowImportComponents}
-						onAddToCanvas={() => {}}
+						onAddToCanvas={
+							isEditor
+								? (component) => {
+										addKComponentToCanvas(component);
+									}
+								: undefined
+						}
 					/>
 				</Suspense>
 			)}

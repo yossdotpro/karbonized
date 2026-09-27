@@ -35,6 +35,14 @@ The HTML Block automatically detects CSS variables and creates corresponding con
 | Hex values                                   | Color   | Color Picker  | `--accent: #ff5733`                        |
 | Numbers                                      | Number  | Slider        | `--padding: 20`                            |
 
+Annotated variables (`/* @type:color */`, `number`, `shadow`, `boolean` and
+`icon`) take precedence over these naming rules; see
+[`kcomponent-format.md`](kcomponent-format.md). `@type:icon` variables show a
+picker with Font Awesome and the installed icon packs and are drawn with
+`<span class="k-icon" style="--k-icon: var(--my-icon)"></span>` (see
+[`icon-packs.md`](icon-packs.md)). Google fonts named in `font-family` are
+loaded automatically.
+
 ### CSS Variable Example
 
 ```css

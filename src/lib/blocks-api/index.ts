@@ -26,13 +26,20 @@ export interface CustomAction {
 }
 
 // Export CSS utilities
-export { parseCSSVariables, updateCSSVariable, scopeCSS } from './css-parser';
+export {
+	parseCSSVariables,
+	updateCSSVariable,
+	scopeCSS,
+	buildBlockStylesheet,
+} from './css-parser';
 
 // Export JavaScript utilities
 export {
 	parseJavaScript,
 	generateActionRegistrations,
 	generateCompiledSource,
+	getActionScopes,
+	BLOCK_SCRIPT_URL,
 	escapeJavaScriptString,
 	updateJSVariable,
 } from './javascript-parser';

@@ -1,0 +1,122 @@
+manifest:
+  name: "Chat Bubble"
+  author: "Karbonized"
+  description: "An incoming and an outgoing message with tails, timestamps and a read receipt. Handy for product shots and onboarding docs."
+  version: "1.0.0"
+  category: "Social"
+  width: 440
+  height: 230
+  tags:
+    - "chat"
+    - "message"
+    - "mockup"
+    - "starter"
+
+html: |
+  <div class="thread">
+    <div class="row in">
+      <div class="bubble">
+        <p class="text">Did the new component library land?</p>
+        <span class="meta">09:41</span>
+      </div>
+    </div>
+    <div class="row out">
+      <div class="bubble">
+        <p class="text">Shipped it this morning. Drag any .kcomponent onto the canvas and it just works.</p>
+        <span class="meta">09:42 <span class="read">✓✓</span></span>
+      </div>
+    </div>
+  </div>
+
+css: |
+  :root {
+    /* @type:color */
+    --bg: #12141a;
+    /* @type:color */
+    --in-bg: #222735;
+    /* @type:color */
+    --in-text: #e6e9ef;
+    /* @type:color */
+    --out-bg: #2a78d6;
+    /* @type:color */
+    --out-text: #ffffff;
+    /* @type:color */
+    --meta: #9aa3b5;
+    /* @type:number min:12 max:22 step:1 unit:px */
+    --font-size: 15px;
+    /* @type:number min:8 max:28 step:1 unit:px */
+    --radius: 18px;
+    /* @type:number min:50 max:95 step:1 unit:% */
+    --max-width: 78%;
+  }
+
+  .thread {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: center;
+    width: 100%;
+    padding: 22px;
+    background: var(--bg);
+    font-family: 'Geist Variable', 'Noto Sans Variable', system-ui, sans-serif;
+    font-size: var(--font-size);
+  }
+
+  .row {
+    display: flex;
+  }
+
+  .out {
+    justify-content: flex-end;
+  }
+
+  .bubble {
+    position: relative;
+    max-width: var(--max-width);
+    padding: 10px 14px 8px 14px;
+    border-radius: var(--radius);
+  }
+
+  .in .bubble {
+    background: var(--in-bg);
+    border-bottom-left-radius: 6px;
+    color: var(--in-text);
+  }
+
+  .out .bubble {
+    background: var(--out-bg);
+    border-bottom-right-radius: 6px;
+    color: var(--out-text);
+  }
+
+  .text {
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .meta {
+    display: block;
+    margin-top: 4px;
+    text-align: right;
+    font-size: 0.72em;
+    color: var(--meta);
+  }
+
+  .out .meta {
+    color: #ffffffb8;
+  }
+
+  .read {
+    margin-left: 2px;
+    letter-spacing: -0.12em;
+  }
+
+js: |
+  // @var incoming:string = "Did the new component library land?"
+  // @var outgoing:string = "Shipped it this morning. Drag any .kcomponent onto the canvas and it just works."
+
+  const incomingNode = document.querySelector('.in .text');
+  if (incomingNode) incomingNode.textContent = incoming;
+
+  const outgoingNode = document.querySelector('.out .text');
+  if (outgoingNode) outgoingNode.textContent = outgoing;

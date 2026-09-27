@@ -1,34 +1,29 @@
-import {
-	IconAppWindow,
-	IconArrowLeft,
-	IconArrowRight,
-	IconBrandChrome,
-	IconChevronLeft,
-	IconChevronRight,
-	IconFile,
-	IconReload,
-	IconSearch,
-	IconStar,
-	IconX,
-} from '@tabler/icons-react';
 import React, { useRef } from 'react';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
+import {
+	PropertyRow,
+	ToggleButton,
+	ToggleGroup,
+} from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import karbonized from '../../assets/logo.svg';
-import { CloseSvg, MinimizeSvg } from '../Misc/Icons';
+import { BrowserFrame } from './BrowserFrame';
+import { Switch } from '../ui/switch';
+import { IconAppWindow } from '@tabler/icons-react';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { useControlState } from '../../hooks/useControlState';
+import { useResolvedText } from '../../hooks/useProjectVariables';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '../ui/select';
 import { useWorkspaceStore, useControlsStore } from '../../stores';
 import { buildDynamicBackgroundColors } from '../../utils/dynamicBackgroundColors';
+
+/** Toolbar and ink colors of the window themes. */
+const WINDOW_THEMES = [
+	{ label: 'Light', chrome: '#ffffff', ink: '#1f1f1f' },
+	{ label: 'Dark', chrome: '#2b2c30', ink: '#e8eaed' },
+	{ label: 'Midnight', chrome: '#0f1115', ink: '#c9ced6' },
+] as const;
 
 interface Props {
 	id: string;
@@ -39,6 +34,8 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 	const contentImageRef = useRef<HTMLImageElement>(null);
 	const [title, setTitle] = useControlState('Karbonized', `${id}-title`);
 	const [url, setUrl] = useControlState('karbonized.onrender.com', `${id}-url`);
+	const shownTitle = useResolvedText(title);
+	const shownUrl = useResolvedText(url);
 	const [color, setColor] = useControlState('#ffffff', `${id}-color`);
 	const [controlsColor, setControlsColor] = useControlState(
 		'#0e111b',
@@ -55,6 +52,10 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 	);
 
 	const [src, setSrc] = useControlState(karbonized, `${id}-src`);
+	const [windowShadow, setWindowShadow] = useControlState(
+		true,
+		`${id}-windowShadow`,
+	);
 	const setWorkspaceDynamic = useWorkspaceStore(
 		(state) => state.setWorkspaceDynamic,
 	);
@@ -103,74 +104,84 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconAppWindow size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Window</Label>
+								<div className='flex items-center gap-2'>
+									<IconAppWindow />
+									<Label>Window</Label>
 								</div>
 							}
 						>
-							<>
-								<Label className='text-xs text-muted-foreground'>
-									Window Style
-								</Label>
-								<Select value={windowStyle} onValueChange={setWindowStyle}>
-									<SelectTrigger className='w-full'>
-										<SelectValue placeholder='Select style' />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={'mac'}>mac</SelectItem>
-										<SelectItem value={'window'}>window</SelectItem>
-									</SelectContent>
-								</Select>
+							<PropertyRow label='Style'>
+								<ToggleGroup>
+									<ToggleButton
+										label='macOS'
+										active={windowStyle === 'mac'}
+										onClick={() => setWindowStyle('mac')}
+										className='text-[11px]'
+									>
+										macOS
+									</ToggleButton>
+									<ToggleButton
+										label='Windows'
+										active={windowStyle === 'window'}
+										onClick={() => setWindowStyle('window')}
+										className='text-[11px]'
+									>
+										Windows
+									</ToggleButton>
+								</ToggleGroup>
+							</PropertyRow>
 
-								<Label className='text-xs text-muted-foreground'>
-									Window Type
-								</Label>
-								<Select value={windowType} onValueChange={setWindowType}>
-									<SelectTrigger className='w-full'>
-										<SelectValue placeholder='Select type' />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={'normal'}>normal</SelectItem>
-										<SelectItem value={'browser'}>browser</SelectItem>
-									</SelectContent>
-								</Select>
-							</>
-							{/* Title */}
-							<>
-								<Label className='text-xs text-muted-foreground'>Title</Label>
+							<PropertyRow label='Type'>
+								<ToggleGroup>
+									<ToggleButton
+										label='App window'
+										active={windowType === 'normal'}
+										onClick={() => setWindowType('normal')}
+										className='text-[11px]'
+									>
+										App
+									</ToggleButton>
+									<ToggleButton
+										label='Browser window'
+										active={windowType === 'browser'}
+										onClick={() => setWindowType('browser')}
+										className='text-[11px]'
+									>
+										Browser
+									</ToggleButton>
+								</ToggleGroup>
+							</PropertyRow>
+
+							<PropertyRow label='Title'>
 								<Input
 									spellCheck={false}
 									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
 										setTitle(ev.target.value);
 									}}
 									value={title}
-									className='h-8 text-sm'
+									className='h-7 text-xs md:text-xs'
 								></Input>
-							</>
+							</PropertyRow>
 
-							{/* Url */}
 							{windowType === 'browser' && (
-								<>
-									<Label className='text-xs text-muted-foreground'>Url</Label>
+								<PropertyRow label='URL'>
 									<Input
 										spellCheck={false}
 										onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
 											setUrl(ev.target.value);
 										}}
 										value={url}
-										className='h-8 text-sm'
+										className='h-7 text-xs md:text-xs'
 									></Input>
-								</>
+								</PropertyRow>
 							)}
 
-							<>
-								{/* Source */}
-								<Label className='text-xs text-muted-foreground'>Source</Label>
+							<PropertyRow label='Content'>
 								<Input
 									type='file'
 									accept='image/*'
-									className='h-8 text-sm'
+									aria-label='Window content image'
+									className='h-7'
 									onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 										if (e.target.files && e.target.files.length > 0) {
 											const reader = new FileReader();
@@ -181,159 +192,72 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 										}
 									}}
 								></Input>
-							</>
+							</PropertyRow>
 
-							{/* Colors */}
-							<Label className='text-xs text-muted-foreground'>Colors</Label>
-							<>
-								<ColorPicker
-									color={color}
-									onColorChange={setColor}
-									isGradientEnable={false}
-									label='Window Color'
-								></ColorPicker>
+							<PropertyRow label='Theme'>
+								<ToggleGroup>
+									{WINDOW_THEMES.map((theme) => (
+										<ToggleButton
+											key={theme.label}
+											label={`${theme.label} theme`}
+											active={
+												color.toLowerCase() === theme.chrome &&
+												controlsColor.toLowerCase() === theme.ink
+											}
+											onClick={() => {
+												setColor(theme.chrome);
+												setControlsColor(theme.ink);
+											}}
+											className='text-[11px]'
+										>
+											{theme.label}
+										</ToggleButton>
+									))}
+								</ToggleGroup>
+							</PropertyRow>
 
-								<ColorPicker
-									color={controlsColor}
-									onColorChange={setControlsColor}
-									isGradientEnable={false}
-									label='Controls Color'
-								></ColorPicker>
-							</>
+							<ColorPicker
+								color={color}
+								onColorChange={setColor}
+								isGradientEnable={false}
+								label='Window'
+							></ColorPicker>
+
+							<ColorPicker
+								color={controlsColor}
+								onColorChange={setControlsColor}
+								isGradientEnable={false}
+								label='Controls'
+							></ColorPicker>
+
+							<PropertyRow label='Shadow'>
+								<Switch
+									checked={windowShadow}
+									onCheckedChange={(checked) => setWindowShadow(checked)}
+								/>
+							</PropertyRow>
 						</CustomCollapse>
 					</>
 				}
 			>
-				<div className='flex flex-auto flex-col overflow-hidden rounded'>
-					{/* Title */}
-					<div className='flex max-h-12 flex-auto p-1'>
-						<div className='my-auto flex flex-auto flex-row '>
-							<div className='my-auto flex w-1/3 flex-auto flex-row text-neutral-600  '>
-								{windowStyle === 'window' && (
-									<>
-										{windowType === 'normal' ? (
-											<p
-												style={{ color: controlsColor }}
-												className='my-auto ml-2 text-left'
-											>
-												{title}
-											</p>
-										) : (
-											<div className='flex flex-auto flex-row'>
-												<IconBrandChrome
-													className='mx-2 my-auto'
-													size={15}
-												></IconBrandChrome>
-												<div className='flex flex-row  gap-1 rounded bg-slate-500/10 p-2'>
-													<IconFile className='my-auto' size={15}></IconFile>
-													<p className='my-auto text-xs'>{title}</p>
-													<IconX className='my-auto' size={15}></IconX>
-												</div>
-											</div>
-										)}
-									</>
-								)}
-
-								{windowStyle === 'mac' && (
-									<>
-										<div className='flex flex-auto flex-row gap-1 p-1'>
-											<div className='my-auto h-4  w-4 rounded-full bg-red-500 p-1'></div>
-											<div className='my-auto h-4  w-4 rounded-full bg-yellow-300 p-1'></div>
-											<div className='my-auto h-4  w-4 rounded-full  bg-green-500 p-1'></div>
-
-											{/* Browser Buttons Mac */}
-											{windowType === 'browser' && (
-												<div className='my-auto  ml-2 flex flex-row gap-1'>
-													<div className='rounded bg-slate-500/20 p-1'>
-														<IconChevronLeft size={15}></IconChevronLeft>
-													</div>
-
-													<div className='rounded bg-slate-500/20 p-1'>
-														<IconChevronRight size={15}></IconChevronRight>
-													</div>
-												</div>
-											)}
-										</div>
-									</>
-								)}
-							</div>
-
-							<div
-								spellCheck={false}
-								className='my-auto flex w-1/3 flex-auto select-none flex-row text-neutral-600'
-							>
-								{windowStyle === 'mac' && windowType === 'normal' && (
-									<p
-										style={{ color: controlsColor }}
-										className='mx-auto my-auto text-center'
-									>
-										{title}
-									</p>
-								)}
-
-								{windowStyle === 'mac' && windowType === 'browser' && (
-									<>
-										<div className='mx-auto my-auto flex max-h-6 w-full flex-auto flex-row overflow-hidden rounded-full  bg-slate-500/20 p-1'>
-											<IconSearch className='ml-1' size={15}></IconSearch>
-											<p className='my-auto ml-2 h-6 max-h-6 w-56 max-w-fit overflow-hidden text-xs '>
-												{url}
-											</p>
-										</div>
-									</>
-								)}
-							</div>
-
-							{windowStyle === 'mac' ? (
-								<div className='flex w-1/3 flex-auto flex-row'></div>
-							) : (
-								<div className='my-auto mr-2 flex w-1/3 flex-auto flex-row'>
-									<MinimizeSvg
-										style={{ fill: controlsColor }}
-										className='ml-auto h-4 w-4'
-									></MinimizeSvg>
-									<CloseSvg
-										style={{ fill: controlsColor }}
-										className='ml-2 h-4  w-4'
-									></CloseSvg>
-								</div>
-							)}
-						</div>
-					</div>
-
-					{windowStyle === 'window' && windowType === 'browser' && (
-						<div className='flex max-h-10 flex-auto flex-row gap-2'>
-							{/* Browser Controls */}
-							<div
-								className='my-auto  ml-2 flex gap-1 p-1'
-								style={{ color: controlsColor }}
-							>
-								<IconArrowLeft size={14}></IconArrowLeft>
-								<IconArrowRight size={14}></IconArrowRight>
-								<IconReload size={14}></IconReload>
-							</div>
-
-							{/* Search Bar  */}
-							<div
-								className='m-1 flex flex-auto flex-row rounded bg-slate-500/20 p-1'
-								style={{ color: controlsColor }}
-							>
-								<IconSearch className='my-auto ml-1' size={14}></IconSearch>
-								<p className='my-auto ml-2 text-xs'>{url}</p>
-								<IconStar className='my-auto ml-auto mr-1' size={14}></IconStar>
-							</div>
-						</div>
-					)}
-
-					{/* Content */}
-					<div className='flex flex-auto'>
-						<img
-							ref={contentImageRef}
-							className='flex aspect-auto h-full w-full flex-auto'
-							src={src}
-							crossOrigin='anonymous'
-						></img>
-					</div>
-				</div>
+				<BrowserFrame
+					style={windowStyle === 'window' ? 'window' : 'mac'}
+					type={windowType === 'normal' ? 'normal' : 'browser'}
+					title={shownTitle}
+					url={shownUrl}
+					chrome={color}
+					ink={controlsColor}
+					shadow={windowShadow}
+				>
+					<img
+						ref={contentImageRef}
+						alt=''
+						draggable={false}
+						className='absolute inset-0 h-full w-full select-none object-cover object-top'
+						src={src}
+						crossOrigin='anonymous'
+					></img>
+				</BrowserFrame>
 			</ControlTemplate>
 		</>
 	);

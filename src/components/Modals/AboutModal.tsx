@@ -12,7 +12,7 @@ import {
 	DialogDescription,
 	DialogTitle,
 } from '@/components/ui/dialog';
-import karbonized from '../../assets/logo.svg';
+import { KarbonizedLogoFlat } from '../Icons/Icons';
 import { version } from '../../../package.json';
 
 interface Props {
@@ -47,7 +47,10 @@ export const AboutModal: React.FC<Props> = ({ open, onClose }) => {
 			<DialogContent className='sm:max-w-sm'>
 				<div className='flex items-center gap-3 pr-8'>
 					<div className='flex size-11 shrink-0 items-center justify-center rounded-surface border border-border bg-card'>
-						<img className='size-7' src={karbonized} alt='' />
+						<KarbonizedLogoFlat
+							className='size-7 text-foreground'
+							aria-hidden
+						/>
 					</div>
 					<div className='min-w-0'>
 						<div className='flex items-center gap-2'>

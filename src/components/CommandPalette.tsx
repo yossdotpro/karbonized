@@ -97,10 +97,13 @@ export const CommandPalette: React.FC = () => {
 	const setOpen = useCommandPalette((state) => state.setOpen);
 	const registryVersion = useCommandRegistryVersion();
 	const [search, setSearch] = useState('');
+	const [wasOpen, setWasOpen] = useState(open);
 
-	useEffect(() => {
+	// Start with an empty search every time the palette opens.
+	if (open !== wasOpen) {
+		setWasOpen(open);
 		if (!open) setSearch('');
-	}, [open]);
+	}
 
 	const groups = useMemo(() => {
 		if (!open) return [];
