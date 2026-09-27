@@ -787,7 +787,8 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 	{
 		type: 'icon',
 		label: 'Icon',
-		description: 'A Font Awesome icon.',
+		description:
+			'An icon from the Lucide, Brands (Simple Icons), Phosphor or Font Awesome sets.',
 		defaultSize: size(120, 120),
 		minSize: size(20, 20),
 		maxSize: size(800, 800),
@@ -797,7 +798,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				kind: 'string',
 				default: 'FaFontAwesome',
 				description:
-					'react-icons Font Awesome component name, e.g. FaGithub, FaReact, FaHeart.',
+					'Icon name, e.g. LuRocket, SiGithub, PiHeart or FaReact. Find names with search_icons.',
 			},
 			{
 				key: 'iconColor',
@@ -921,7 +922,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		type: 'html',
 		label: 'HTML',
 		description:
-			'A custom component written in HTML, CSS and JavaScript, rendered in a shadow root. Edit its code with update_html_block.',
+			'A custom component in HTML and CSS (JavaScript optional), rendered in a shadow root: cards, stat tiles, badges, icon lists, charts, UI screens, decorative backgrounds. Pass html and css to add_block; edit later with update_html_block. Annotated :root variables (@type:color, number, shadow, boolean, icon) become controls in the panel.',
 		defaultSize: size(400, 300),
 		minSize: size(100, 80),
 		maxSize: size(4000, 4000),

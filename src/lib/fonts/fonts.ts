@@ -365,3 +365,87 @@ export const listSystemFonts = async (): Promise<string[]> => {
 
 	return COMMON_SYSTEM_FONTS.filter(isFontAvailable);
 };
+
+/** Generic and app families that are never fetched from Google Fonts. */
+const LOCAL_FAMILIES = new Set([
+	'serif',
+	'sans-serif',
+	'monospace',
+	'cursive',
+	'fantasy',
+	'system-ui',
+	'ui-sans-serif',
+	'ui-serif',
+	'ui-monospace',
+	'ui-rounded',
+	'emoji',
+	'inherit',
+	'initial',
+	'unset',
+	'noto sans',
+	'noto sans variable',
+	'geist variable',
+	'geist mono variable',
+	'figtree variable',
+]);
+
+/**
+ * Families a stylesheet asks for: every name in its `font-family` lists and
+ * the `family=` parameters of Google Fonts `@import` URLs.
+ */
+export const fontFamiliesInCss = (css: string): string[] => {
+	const names = new Set<string>();
+
+	for (const match of css.matchAll(/font-family\s*:\s*([^;}]+)/gi)) {
+		match[1]
+			.split(',')
+			.map((name) =>
+				name
+					.trim()
+					.replace(/^["']|["']$/g, '')
+					.trim(),
+			)
+			.filter((name) => name !== '' && !name.startsWith('var('))
+			.forEach((name) => names.add(name));
+	}
+
+	for (const match of css.matchAll(
+		/fonts\.googleapis\.com\/css2?\?([^'")\s]+)/gi,
+	)) {
+		for (const param of match[1].split('&')) {
+			if (!param.startsWith('family=')) continue;
+			const family = decodeURIComponent(
+				param.slice('family='.length).split(':')[0].replace(/\+/g, ' '),
+			);
+			if (family) names.add(family);
+		}
+	}
+
+	return Array.from(names).filter(
+		(name) => !LOCAL_FAMILIES.has(name.toLowerCase()),
+	);
+};
+
+/**
+ * Load the Google Fonts a block stylesheet uses into the document. HTML
+ * blocks render in a shadow root, where Chromium ignores `@font-face` (and so
+ * `@import` of a font stylesheet): the font has to live in the page.
+ */
+export const loadFontsUsedInCss = async (css: string): Promise<void> => {
+	const wanted = fontFamiliesInCss(css);
+	if (wanted.length === 0) return;
+
+	const known = new Map(
+		(await loadGoogleCatalog().catch(() => [])).map((font) => [
+			font.family.toLowerCase(),
+			font,
+		]),
+	);
+
+	await Promise.all(
+		wanted
+			.map((name) => known.get(name.toLowerCase()))
+			.filter((font): font is GoogleFont => font !== undefined)
+			.map((font) => loadGoogleFont(font.family, font.weights)),
+	);
+};

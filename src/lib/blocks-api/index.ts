@@ -26,7 +26,12 @@ export interface CustomAction {
 }
 
 // Export CSS utilities
-export { parseCSSVariables, updateCSSVariable, scopeCSS } from './css-parser';
+export {
+	parseCSSVariables,
+	updateCSSVariable,
+	scopeCSS,
+	buildBlockStylesheet,
+} from './css-parser';
 
 // Export JavaScript utilities
 export {

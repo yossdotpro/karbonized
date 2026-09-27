@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { parseCSSVariables, scopeCSS, updateCSSVariable } from './css-parser';
+import {
+	buildBlockStylesheet,
+	hoistImports,
+	parseCSSVariables,
+	scopeCSS,
+	updateCSSVariable,
+	withIconUrls,
+} from './css-parser';
 
 const pick = (css: string) =>
 	parseCSSVariables(css).map(({ name, type, value, unit }) => ({
@@ -95,5 +102,58 @@ describe('scopeCSS', () => {
 		expect(scopeCSS('@media (min-width: 1px) { }', ':host')).toBe(
 			'@media (min-width: 1px) { }',
 		);
+	});
+});
+
+describe('icon variables', () => {
+	const css = `:root {
+	/* @type:icon */
+	--feature-icon: "FaRocket";
+	/* @type:color */
+	--accent: #ff0066;
+}
+.icon { mask: var(--feature-icon) center / contain no-repeat; }`;
+
+	it('parses the icon name without quotes', () => {
+		const icon = parseCSSVariables(css).find(
+			(variable) => variable.name === 'feature-icon',
+		);
+		expect(icon).toMatchObject({ type: 'icon', value: 'FaRocket' });
+	});
+
+	it('replaces resolved icons with their url and leaves the rest', () => {
+		const variables = parseCSSVariables(css);
+		const result = withIconUrls(css, variables, {
+			FaRocket: 'url("data:image/svg+xml;utf8,x")',
+		});
+		expect(result).toContain(
+			'--feature-icon: url("data:image/svg+xml;utf8,x");',
+		);
+		expect(result).toContain('--accent: #ff0066;');
+		expect(withIconUrls(css, variables, {})).toBe(css);
+	});
+
+	it('writes a picked icon back into the CSS', () => {
+		const variables = parseCSSVariables(css);
+		expect(
+			updateCSSVariable(css, 'feature-icon', 'FaHeart', variables),
+		).toContain('--feature-icon: FaHeart;');
+	});
+});
+
+describe('block stylesheet', () => {
+	it('moves @import rules to the top so fonts load', () => {
+		const css = `.title { font-family: 'Inter'; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap');`;
+		const { imports, rest } = hoistImports(css);
+		expect(imports).toHaveLength(1);
+		expect(rest).not.toContain('@import');
+
+		const sheet = buildBlockStylesheet(css);
+		const importAt = sheet.indexOf('family=Inter');
+		const firstRule = sheet.indexOf(':host {');
+		expect(importAt).toBeGreaterThan(-1);
+		expect(importAt).toBeLessThan(firstRule);
+		expect(sheet).toContain(':host .title');
 	});
 });

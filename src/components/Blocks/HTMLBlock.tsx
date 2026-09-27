@@ -22,7 +22,7 @@ import {
 	generateCompiledSource,
 	updateCSSVariable,
 	updateJSVariable,
-	scopeCSS,
+	buildBlockStylesheet,
 	createSafeDOM,
 	fileHandler,
 	fileUtils,
@@ -33,6 +33,8 @@ import {
 	defaultJSContent,
 } from '../../lib/blocks-api/default-content';
 import { useHTMLBlockBindings } from '@/hooks/useHTMLBlockBindings';
+import { useIconUrls } from '@/hooks/useIconUrls';
+import { loadFontsUsedInCss } from '@/lib/fonts/fonts';
 import {
 	HTMLBlockActionsControls,
 	HTMLBlockCSSVariablesControls,
@@ -81,6 +83,12 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 		cssContent,
 		jsContent,
 	);
+	const iconUrls = useIconUrls(cssVariables);
+
+	// Fonts in a shadow root only render when the page has loaded them.
+	useEffect(() => {
+		void loadFontsUsedInCss(cssContent);
+	}, [cssContent]);
 
 	// Function to add dev logs
 	const addDevLog = (type: 'log' | 'warn' | 'error', message: string) => {
@@ -149,23 +157,9 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 	};
 
 	// Generate ShadowDOM content
-	const generateShadowDOMContent = () => {
-		const scopedCSS = scopeCSS(cssContent, ':host');
-		const processedCSS = `
-		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap');
-		:host {
-			display: block;
-			font-family:'Noto Sans', sans-serif;
-			font-weight: 400;
-			all: initial;
-			font-family: 'Noto Sans', sans-serif;
-		}
-		:host * { box-sizing: border-box; }
-		${scopedCSS}
-		`;
-
-		return { processedCSS };
-	};
+	const generateShadowDOMContent = () => ({
+		processedCSS: buildBlockStylesheet(cssContent, cssVariables, iconUrls),
+	});
 
 	// Refresh ShadowDOM
 	const refreshShadowDOM = () => {
@@ -323,7 +317,14 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 			}, 500); // Debounce refresh
 			return () => clearTimeout(timeoutId);
 		}
-	}, [htmlContent, cssContent, jsContent, autoRefresh, allowScriptExecution]);
+	}, [
+		htmlContent,
+		cssContent,
+		jsContent,
+		autoRefresh,
+		allowScriptExecution,
+		iconUrls,
+	]);
 
 	// Initial load
 	useEffect(() => {

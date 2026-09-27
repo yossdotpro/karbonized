@@ -1,6 +1,6 @@
 # Starter pack
 
-Eight `.kcomponent` files that ship with Karbonized. They are the worked
+Nine `.kcomponent` files that ship with Karbonized. They are the worked
 examples of the format: every one is a real block you can drop on the canvas,
 and between them they exercise every binding the properties panel knows how to
 generate.
@@ -18,6 +18,7 @@ import any single file from **File → Import components**.
 | Keyboard Shortcut | 400×150 | a variable-driven keycap row rebuilt from a single string |
 | Progress Ring | 300×300 | a conic gradient driven by a `%` variable; an action that syncs the label |
 | Chat Bubble | 440×230 | two speech bubbles with per-side styling from shared variables |
+| Feature Card | 420×250 | an `@type:icon` variable picked from the icon set and drawn with `.k-icon` |
 
 ## House rules these files follow
 

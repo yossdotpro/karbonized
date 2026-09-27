@@ -43,7 +43,7 @@ import {
 import { useControlsStore, useWorkspaceStore } from '@/stores';
 import {
 	type CustomAction,
-	scopeCSS,
+	buildBlockStylesheet,
 	parseJavaScript,
 	generateActionRegistrations,
 	generateCompiledSource,
@@ -67,6 +67,8 @@ import {
 } from '@/lib/theme/editor-theme';
 import { downloadKComponent } from '@/utils/kcomponentFile';
 import { useHTMLBlockBindings } from '@/hooks/useHTMLBlockBindings';
+import { useIconUrls } from '@/hooks/useIconUrls';
+import { loadFontsUsedInCss } from '@/lib/fonts/fonts';
 import {
 	HTMLBlockActionsControls,
 	HTMLBlockCSSVariablesControls,
@@ -247,6 +249,12 @@ const BlockEditor: React.FC = () => {
 		editorState.cssContent,
 		editorState.jsContent,
 	);
+	const iconUrls = useIconUrls(cssVariables);
+
+	// Fonts in a shadow root only render when the page has loaded them.
+	useEffect(() => {
+		void loadFontsUsedInCss(editorState.cssContent);
+	}, [editorState.cssContent]);
 
 	const files = [
 		{
@@ -418,19 +426,11 @@ const BlockEditor: React.FC = () => {
 
 		const shadowRoot = shadowRootRef.current;
 		actionHandlersRef.current.clear();
-		const scopedCSS = scopeCSS(editorState.cssContent, ':host');
-		const processedCSS = `
-		@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap');
-		:host {
-			display: block;
-			font-family:'Noto Sans', sans-serif;
-			font-weight: 400;
-			all: initial;
-			font-family: 'Noto Sans', sans-serif;
-		}
-		:host * { box-sizing: border-box; }
-		${scopedCSS}
-		`;
+		const processedCSS = buildBlockStylesheet(
+			editorState.cssContent,
+			cssVariables,
+			iconUrls,
+		);
 
 		shadowRoot.innerHTML = '';
 
@@ -545,7 +545,7 @@ const BlockEditor: React.FC = () => {
 	useEffect(() => {
 		const timeoutId = setTimeout(updatePreview, 400);
 		return () => clearTimeout(timeoutId);
-	}, [editorState, showPreview, activePreviewTab]);
+	}, [editorState, showPreview, activePreviewTab, iconUrls]);
 
 	// The shadow root lives on the host element; a new host (after hiding the
 	// preview or switching tabs) needs a fresh shadow root.

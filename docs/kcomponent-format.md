@@ -119,6 +119,31 @@ Generates a shadow editor in the properties panel.
 
 Generates a toggle switch in the properties panel.
 
+#### Icon Variables
+
+```css
+/* @type:icon */
+--feature-icon: LuRocket;
+```
+
+Generates an icon picker in the properties panel (Lucide, Brands, Phosphor and
+Font Awesome sets). When the block renders, the name becomes the image of the
+icon, meant for a mask. Draw it with the built-in `.k-icon` helper, which takes
+the text color and is `1em` square:
+
+```html
+<span class="k-icon" style="--k-icon: var(--feature-icon)"></span>
+```
+
+See [`icon-libraries.md`](icon-libraries.md) for the icon names, custom icon
+sets and more examples.
+
+### Fonts
+
+Name a Google font in `font-family` and the app loads it for the block (a
+`@import` of Google Fonts is also understood). Fonts have to be loaded by the
+page: a shadow root cannot load them by itself.
+
 ### Example CSS
 
 ```yaml

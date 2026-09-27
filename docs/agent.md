@@ -68,6 +68,8 @@ Agent and the MCP server share the same tools:
 
 | Tool                                   | What it does                                                                                                                         |
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `get_design_guide`                     | The design standards (sizes per platform, layout, type, color, HTML block rules, final checklist)                                     |
+| `search_icons`                         | Icon names from Lucide, Brands (Simple Icons), Phosphor and Font Awesome, for icon blocks and `@type:icon` variables                 |
 | `get_workspace`                        | Canvas size, background, selection and every block with its position, size and properties                                            |
 | `create_workspace`                     | New project with a canvas size, opened in the editor                                                                                 |
 | `set_canvas_background`                | Color, gradient, texture, wallpaper or dynamic background, blur and noise                                                            |
@@ -89,6 +91,17 @@ Agent and the MCP server share the same tools:
 | `get_canvas_snapshot`                  | PNG of the canvas (models with image input)                                                                                          |
 | `export_image`                         | Export PNG, JPEG or SVG through the normal save flow                                                                                 |
 | `list_commands` / `run_command`        | Editor commands: undo, duplicate, zoom, snapping, rulers, and the tools the user draws with (shape, brush, nodes, eraser, crop, pan) |
+
+### Design standards
+
+Both Agent and MCP clients design against one guide,
+`src/lib/agent/core/design-guide.ts`: canvas sizes per platform (and safe
+zones for stories), margins and an 8 px grid, a type scale for images seen on a
+phone, contrast and palette rules, when and how to use HTML blocks, and a
+checklist to run against `get_canvas_snapshot` before finishing. It is part of
+the Agent system prompt and of the MCP server instructions, and
+`get_design_guide` returns it for clients that ignore server instructions.
+Change the guide there; the prompt, the instructions and the tool follow.
 
 ### What tools cannot do
 

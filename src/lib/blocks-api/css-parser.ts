@@ -5,7 +5,7 @@
 
 export interface CSSVariable {
 	name: string;
-	type: 'color' | 'number' | 'boolean' | 'string' | 'shadow';
+	type: 'color' | 'number' | 'boolean' | 'string' | 'shadow' | 'icon';
 	value: string | number | boolean;
 	min?: number;
 	max?: number;
@@ -110,6 +110,10 @@ export const parseCSSVariables = (css: string): CSSVariable[] => {
 						break;
 					case 'shadow':
 						parsedValue = value;
+						break;
+					case 'icon':
+						// An icon name such as FaRocket, quoted or not.
+						parsedValue = value.replace(/^["']|["']$/g, '').trim();
 						break;
 					default:
 						parsedValue = value;
@@ -247,4 +251,84 @@ export const scopeCSS = (css: string, scopeSelector: string): string => {
 			return `${scopeSelector} ${trimmed}`;
 		})
 		.replace(/:root/g, scopeSelector);
+};
+
+/**
+ * Replace the value of `icon` variables with the image of the icon (a CSS
+ * `url()`), so the stylesheet can use them with `mask` / `-webkit-mask`.
+ * Icons that are not resolved yet keep their name, which CSS ignores.
+ */
+export const withIconUrls = (
+	css: string,
+	variables: CSSVariable[],
+	urls: Record<string, string>,
+): string =>
+	variables
+		.filter((variable) => variable.type === 'icon')
+		.reduce((result, variable) => {
+			const url = urls[String(variable.value)];
+			if (!url) return result;
+			const pattern = new RegExp(`(--${variable.name}\\s*:\\s*)([^;]+);`);
+			return result.replace(pattern, (_match, prefix: string) => {
+				return `${prefix}${url};`;
+			});
+		}, css);
+
+/**
+ * `@import` rules only work before every other rule. Blocks add their own
+ * base styles first, so pull the imports of the block CSS (e.g. Google
+ * Fonts) out and let the caller put them at the top.
+ */
+export const hoistImports = (
+	css: string,
+): { imports: string[]; rest: string } => {
+	const imports: string[] = [];
+	const rest = css.replace(
+		/@import\s+(?:url\([^)]*\)|"[^"]*"|'[^']*')[^;]*;/g,
+		(rule) => {
+			imports.push(rule.trim());
+			return '';
+		},
+	);
+	return { imports, rest };
+};
+
+/** Base styles of every HTML block, before the block's own CSS. */
+const BLOCK_BASE_CSS = `
+:host {
+	display: block;
+	all: initial;
+	font-family: 'Noto Sans', sans-serif;
+	font-weight: 400;
+}
+:host * { box-sizing: border-box; }
+/* Icon helper: <span class="k-icon" style="--k-icon: var(--my-icon)"></span>
+   takes the color of the text and the size of the font. */
+:host .k-icon {
+	display: inline-block;
+	flex-shrink: 0;
+	width: 1em;
+	height: 1em;
+	background-color: currentColor;
+	-webkit-mask: var(--k-icon) center / contain no-repeat;
+	mask: var(--k-icon) center / contain no-repeat;
+}
+`;
+
+const BASE_FONTS_IMPORT =
+	"@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&display=swap');";
+
+/**
+ * The stylesheet an HTML block renders with: the imports of the block CSS
+ * first (so Google Fonts load), the base styles, then the block CSS scoped
+ * to `:host` with its icon variables resolved.
+ */
+export const buildBlockStylesheet = (
+	css: string,
+	variables: CSSVariable[] = [],
+	iconUrls: Record<string, string> = {},
+): string => {
+	const { imports, rest } = hoistImports(css);
+	const scoped = scopeCSS(withIconUrls(rest, variables, iconUrls), ':host');
+	return [BASE_FONTS_IMPORT, ...imports, BLOCK_BASE_CSS, scoped].join('\n');
 };

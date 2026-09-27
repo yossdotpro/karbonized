@@ -198,7 +198,7 @@ export const addBlockTool = defineTool({
 	name: 'add_block',
 	title: 'Add block',
 	description:
-		'Add a block to the canvas and select it. It is centered on the canvas unless x and y are given. For html blocks, properties may include html, css and js code.',
+		'Add a block to the canvas and select it. It is centered on the canvas unless x and y are given. For html blocks, pass the code as properties html and css (and js only if needed), following the HTML block rules of the design guide, and give width and height that fit the content.',
 	input: z.object({
 		type: z.enum(blockTypes).describe('Block type.'),
 		name: z.string().optional().describe('Layer name.'),
@@ -343,7 +343,7 @@ export const updateHtmlBlockTool = defineTool({
 	name: 'update_html_block',
 	title: 'Edit HTML block',
 	description:
-		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. CSS is scoped to the block. Set the allow-scripts property with update_block to run the JavaScript.',
+		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. CSS is scoped to the block (:root means the block). Google fonts named in font-family are loaded automatically; icons come from /* @type:icon */ variables drawn with <span class="k-icon" style="--k-icon: var(--name)">. JavaScript only runs after setting the allow-scripts property with update_block.',
 	input: z.object({
 		id: z.string(),
 		html: z.string().optional(),

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
 	GOOGLE_FONTS,
-	fontStack,
 	filterFonts,
+	fontFamiliesInCss,
+	fontStack,
 	googleFontHref,
 	isGoogleFont,
 	loadGoogleCatalog,
@@ -107,5 +108,16 @@ describe('filterFonts', () => {
 
 	it('never returns more than the limit', () => {
 		expect(filterFonts(fonts, '', 'all', 2)).toHaveLength(2);
+	});
+});
+
+describe('fontFamiliesInCss', () => {
+	it('finds families in font-family lists and Google Fonts imports', () => {
+		expect(
+			fontFamiliesInCss(`
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap');
+.title { font-family: "Inter", system-ui, sans-serif; }
+.body { font-family: var(--font), 'Noto Sans'; }`),
+		).toEqual(['Inter', 'Space Grotesk']);
 	});
 });
