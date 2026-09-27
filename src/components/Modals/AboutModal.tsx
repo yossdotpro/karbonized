@@ -54,7 +54,9 @@ export const AboutModal: React.FC<Props> = ({ open, onClose }) => {
 					</div>
 					<div className='min-w-0'>
 						<div className='flex items-center gap-2'>
-							<DialogTitle>Karbonized</DialogTitle>
+							<DialogTitle className='font-brand text-base'>
+								Karbonized
+							</DialogTitle>
 							<span className='rounded-[4px] border border-border px-1 font-mono text-[10px] leading-4 text-muted-foreground'>
 								v{version}
 							</span>
