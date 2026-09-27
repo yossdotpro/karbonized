@@ -38,6 +38,9 @@
 - Block "Export layer" uses the same scale and transparency settings
 - Notifications for export, copy and project errors instead of browser alerts
 - **Zoom indicator** in the status bar with presets, zoom to fit and 100%; zoom steps are proportional and the indicator follows pinch and Ctrl+wheel
+- **New start screen**: one-click canvas sizes, open a file, what's new, and **recent projects** with thumbnails that stay available after their tab is closed. The full list of sizes and the custom size moved to a **New project** dialog
+- **New color picker**: opens next to its field, with an eyedropper, a palette, recent colors and a gradient mode with a live preview, two stops and a 0–360° angle
+- **Aligned property panels**: layout, shadow, mask, filters, text, stroke and image settings share one row layout, with inline number fields, the current value of each slider and one-click resets
 - **Block context menu** redesigned: opacity with value, duplicate, arrange (bring to front, forward, backward, send to back), hide, lock, export layer and delete
 - **Snapping toggle** (`Shift+S`, also in the status bar); selection handles and snap guides restyled
 - **Delete / Backspace** remove the selected block from anywhere on the canvas
@@ -58,6 +61,9 @@
 
 ### 🐛 Fixes
 
+- The brush bar's sliders had no width, so the bar showed only overlapping icons
+- The color picker opened at the top-left corner of the window instead of next to its field
+- The status bar showed `NaN` when no block was selected
 - The crop and warp tools did nothing when they were picked while the pan tool was active
 - The crop tool showed no crop handles when the selection handles had not been resolved yet, which also happened while the window was in the background
 - Resizing or rotating several blocks at once could not be undone

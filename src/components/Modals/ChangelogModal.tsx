@@ -23,6 +23,9 @@ const changelog = `
 * HTML block editor redesigned as a code editor (explorer, tabs, preview panel)
 * Shortcuts no longer fire while typing, and conflicting ones were fixed
 * Tools use single keys: V select, H pan, C crop, W warp
+* New start screen with quick canvas sizes and your recent projects
+* New color picker with eyedropper, recent colors and gradient angle
+* Cleaner property panels and a clearer brush bar
 * feat: Create Dynamic Background from Image, Phone, and Window block context menus
 
 ## v 1.12.0 - Release (August 24th, 2023)

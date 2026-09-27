@@ -11,6 +11,7 @@ import { AppContext } from '../AppContext';
 import { useWorkspaceStore, useControlsStore, useUIStore } from '../stores';
 import Selecto from 'react-selecto';
 import { useCommands } from '@/lib/commands/registry';
+import { useRecentsTracker } from '@/lib/persistence/recents';
 import { ShapeBar } from '@/components/Panels/ShapeBar';
 import { Rulers } from '@/components/Base/Rulers';
 import { BrushBar } from '@/components/Panels/BrushBar';
@@ -391,6 +392,8 @@ export const Editor: React.FC = () => {
 			},
 		},
 	]);
+
+	useRecentsTracker();
 
 	/* Redirect to /new if no workspaces exist */
 	useEffect(() => {
