@@ -5,8 +5,12 @@ import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
 import { Label } from '../ui/label';
-import { Slider } from '../ui/slider';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import {
+	PropertyRow,
+	SliderField,
+	ToggleButton,
+	ToggleGroup,
+} from '../CustomControls/PropertyControls';
 import { type StrokeStyle, strokeDashArray } from '@/lib/blocks/shapes';
 import { outlinePath, parsePoints } from '@/lib/canvas/stroke';
 
@@ -70,86 +74,80 @@ export const DrawingBlock: React.FC<Props> = ({ id }) => {
 				<CustomCollapse
 					isOpen
 					menu={
-						<div className='flex items-center gap-2 text-foreground'>
-							<Brush size={18} className='text-muted-foreground' />
-							<Label className='text-sm font-semibold'>Stroke</Label>
+						<div className='flex items-center gap-2'>
+							<Brush />
+							<Label>Stroke</Label>
 						</div>
 					}
 				>
-					<div className='flex flex-row items-center gap-2 text-xs'>
-						<Label className='my-auto w-24 text-xs text-muted-foreground'>
-							Width: {width}
-						</Label>
-						<Slider
-							className='flex-1'
-							min={1}
-							max={80}
-							value={[width]}
-							onValueChange={(value) => {
-								setWidth(value[0]);
-							}}
-						></Slider>
-					</div>
+					<SliderField
+						label='Width'
+						min={1}
+						max={80}
+						unit='px'
+						value={width}
+						onChange={setWidth}
+					/>
 
-					<div className='flex flex-row items-center gap-2 text-xs'>
-						<Label className='my-auto w-24 text-xs text-muted-foreground'>
-							Thinning: {thinning}%
-						</Label>
-						<Slider
-							className='flex-1'
-							min={0}
-							max={100}
-							value={[thinning]}
-							onValueChange={(value) => {
-								setThinning(value[0]);
-							}}
-						></Slider>
-					</div>
+					<SliderField
+						label='Thinning'
+						unit='%'
+						defaultValue={50}
+						value={thinning}
+						onChange={setThinning}
+					/>
 
 					{/* A stroke of a single width can be dashed; an outline cannot */}
-					<ToggleGroup
-						type='single'
-						variant='outline'
-						size='sm'
-						className='w-full'
-						disabled={variable}
-						value={style}
-						onValueChange={(value) => value && setStyle(value as StrokeStyle)}
-					>
-						{(['solid', 'dashed', 'dotted'] as const).map((option) => (
-							<ToggleGroupItem
-								key={option}
-								value={option}
-								className='flex-1 text-xs capitalize'
-							>
-								{option}
-							</ToggleGroupItem>
-						))}
-					</ToggleGroup>
+					<PropertyRow label='Style'>
+						<ToggleGroup
+							className={
+								variable ? 'pointer-events-none opacity-50' : undefined
+							}
+						>
+							{(['solid', 'dashed', 'dotted'] as const).map((option) => (
+								<ToggleButton
+									key={option}
+									label={
+										variable ? 'Set thinning to 0 to dash the stroke' : option
+									}
+									active={style === option}
+									onClick={() => setStyle(option as StrokeStyle)}
+									className='text-[11px] capitalize'
+								>
+									{option}
+								</ToggleButton>
+							))}
+						</ToggleGroup>
+					</PropertyRow>
 
 					<ColorPicker
 						type='HexAlpha'
-						label='Stroke Color'
+						label='Color'
 						isGradientEnable={false}
 						color={color}
 						onColorChange={setColor}
 					></ColorPicker>
 
-					<ToggleGroup
-						type='single'
-						variant='outline'
-						size='sm'
-						className='w-full'
-						value={closed ? 'closed' : 'open'}
-						onValueChange={(value) => value && setClosed(value === 'closed')}
-					>
-						<ToggleGroupItem value='open' className='flex-1 text-xs'>
-							Open
-						</ToggleGroupItem>
-						<ToggleGroupItem value='closed' className='flex-1 text-xs'>
-							Closed
-						</ToggleGroupItem>
-					</ToggleGroup>
+					<PropertyRow label='Path'>
+						<ToggleGroup>
+							<ToggleButton
+								label='Open path'
+								active={!closed}
+								onClick={() => setClosed(false)}
+								className='text-[11px]'
+							>
+								Open
+							</ToggleButton>
+							<ToggleButton
+								label='Closed path'
+								active={closed}
+								onClick={() => setClosed(true)}
+								className='text-[11px]'
+							>
+								Closed
+							</ToggleButton>
+						</ToggleGroup>
+					</PropertyRow>
 
 					{closed && (
 						<ColorPicker

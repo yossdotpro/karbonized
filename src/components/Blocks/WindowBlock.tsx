@@ -190,14 +190,14 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 									color={color}
 									onColorChange={setColor}
 									isGradientEnable={false}
-									label='Window Color'
+									label='Window'
 								></ColorPicker>
 
 								<ColorPicker
 									color={controlsColor}
 									onColorChange={setControlsColor}
 									isGradientEnable={false}
-									label='Controls Color'
+									label='Controls'
 								></ColorPicker>
 							</>
 						</CustomCollapse>

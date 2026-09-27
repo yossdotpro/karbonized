@@ -155,7 +155,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 						>
 							<Label className='text-xs text-muted-foreground'>Language</Label>
 							<Select value={language} onValueChange={setLanguage}>
-								<SelectTrigger className='h-8 text-sm'>
+								<SelectTrigger className='h-8 w-full text-sm'>
 									<SelectValue placeholder='Select language' />
 								</SelectTrigger>
 								<SelectContent>
@@ -171,7 +171,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 
 							<Label className='text-xs text-muted-foreground'>Theme</Label>
 							<Select value={theme.toString()} onValueChange={setTheme}>
-								<SelectTrigger className='h-8 text-sm'>
+								<SelectTrigger className='h-8 w-full text-sm'>
 									<SelectValue placeholder='Select theme' />
 								</SelectTrigger>
 								<SelectContent>
@@ -218,7 +218,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 								Window Style
 							</Label>
 							<Select value={windowStyle} onValueChange={setWindowStyle}>
-								<SelectTrigger className='h-8 text-sm'>
+								<SelectTrigger className='h-8 w-full text-sm'>
 									<SelectValue placeholder='Select window style' />
 								</SelectTrigger>
 								<SelectContent>
@@ -249,7 +249,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 							{/* Background */}
 							{windowStyle !== 'paper' && (
 								<ColorPicker
-									label='Window Color'
+									label='Window'
 									type='HexAlpha'
 									onModeChange={(mode) => {
 										setColorMode(mode);
@@ -275,7 +275,7 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 								color={controlsColor}
 								onColorChange={setControlsColor}
 								isGradientEnable={false}
-								label='Controls Color'
+								label='Controls'
 							></ColorPicker>
 						</CustomCollapse>
 

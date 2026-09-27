@@ -16,15 +16,19 @@ export const CustomCollapse: React.FC<Props> = ({
 	const [open, setOpen] = useState(isOpen);
 
 	return (
-		<div>
+		<div className='border-b border-border'>
 			<button
+				type='button'
+				aria-expanded={open}
 				onClick={() => {
 					setOpen(!open);
 				}}
-				className='group my-auto flex h-9 max-h-9 w-full select-none items-center border-b border-border px-2 text-muted-foreground transition-colors hover:text-foreground [&_label]:text-[13px] [&_label]:font-medium [&_svg]:size-3.5'
+				className={`group my-auto flex h-9 max-h-9 w-full select-none items-center gap-2 px-2 transition-colors hover:text-foreground [&_label]:cursor-pointer [&_label]:text-xs [&_label]:font-medium [&_label]:text-current [&_svg]:size-3.5 [&_svg]:text-current [&>div]:text-current ${
+					open ? 'text-foreground' : 'text-muted-foreground'
+				}`}
 			>
 				{menu}
-				<div className='ml-auto'>
+				<div className='ml-auto text-muted-foreground'>
 					<motion.div
 						animate={{ rotate: open ? 0 : -90 }}
 						transition={{ duration: 0.15, ease: 'easeOut' }}
@@ -42,7 +46,7 @@ export const CustomCollapse: React.FC<Props> = ({
 						transition={{ duration: 0.18, ease: 'easeOut' }}
 						className='overflow-hidden'
 					>
-						<div className='flex select-none flex-col gap-3 px-2 pb-3 pt-2.5'>
+						<div className='flex select-none flex-col gap-2 px-2 pb-3 pt-0.5'>
 							{children}
 						</div>
 					</motion.div>

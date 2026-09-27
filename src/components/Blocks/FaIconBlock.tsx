@@ -84,7 +84,7 @@ const FaIconBlock: React.FC<Props> = ({ id }) => {
 							{/* Icon Color */}
 							<ColorPicker
 								type='HexAlpha'
-								label='Icon Color'
+								label='Color'
 								color={iconColor}
 								isGradientEnable={false}
 								onColorChange={(color) => {

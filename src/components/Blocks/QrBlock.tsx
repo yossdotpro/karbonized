@@ -53,14 +53,14 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 								isGradientEnable={false}
 								color={foregroundColor}
 								onColorChange={setforegroundColor}
-								label='Foreground Color'
+								label='Foreground'
 							></ColorPicker>
 
 							<ColorPicker
 								isGradientEnable={false}
 								color={backgroundColor}
 								onColorChange={setBackgroundColor}
-								label='Background Color'
+								label='Background'
 							></ColorPicker>
 						</CustomCollapse>
 

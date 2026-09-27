@@ -50,7 +50,7 @@ export const CustomBlock: React.FC<Props> = ({ id }) => {
 								color={color}
 								type='HexAlpha'
 								onColorChange={setColor}
-								label='Fill Color'
+								label='Fill'
 							></ColorPicker>
 
 							<ColorPicker
@@ -58,7 +58,7 @@ export const CustomBlock: React.FC<Props> = ({ id }) => {
 								type='HexAlpha'
 								color={bgcolor}
 								onColorChange={setBgColor}
-								label='Background Color'
+								label='Background'
 							></ColorPicker>
 						</CustomCollapse>
 					</>

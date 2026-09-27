@@ -8,8 +8,8 @@ import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { ContextMenuItem } from '../ui/context-menu';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Slider } from '../ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
+import { SliderField } from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import { Label } from '../ui/label';
 import { IMAGE_FIT_OPTIONS, type ImageFit } from '@/lib/blocks/catalog';
@@ -239,63 +239,39 @@ export const ImageBlock: React.FC<Props> = ({ id }) => {
 
 							{fit !== 'fill' && (
 								<>
-									<div className='flex flex-row items-center gap-2 text-xs'>
-										<Label className='my-auto w-20 text-xs text-muted-foreground'>
-											Offset X
-										</Label>
-										<Slider
-											className='flex-1'
-											max={100}
-											value={[focalX]}
-											onValueChange={(value) => {
-												setFocalX(value[0]);
-											}}
-										></Slider>
-									</div>
-									<div className='flex flex-row items-center gap-2 text-xs'>
-										<Label className='my-auto w-20 text-xs text-muted-foreground'>
-											Offset Y
-										</Label>
-										<Slider
-											className='flex-1'
-											max={100}
-											value={[focalY]}
-											onValueChange={(value) => {
-												setFocalY(value[0]);
-											}}
-										></Slider>
-									</div>
+									<SliderField
+										label='Offset X'
+										max={100}
+										unit='%'
+										value={focalX}
+										onChange={setFocalX}
+									/>
+									<SliderField
+										label='Offset Y'
+										max={100}
+										unit='%'
+										value={focalY}
+										onChange={setFocalY}
+									/>
 								</>
 							)}
 
-							<div className='flex flex-row items-center gap-2 text-xs'>
-								<Label className='my-auto w-20 text-xs text-muted-foreground'>
-									Zoom: {zoom}%
-								</Label>
-								<Slider
-									className='flex-1'
-									min={100}
-									max={400}
-									value={[zoom]}
-									onValueChange={(value) => {
-										setZoom(value[0]);
-									}}
-								></Slider>
-							</div>
+							<SliderField
+								label='Zoom'
+								min={100}
+								max={400}
+								unit='%'
+								value={zoom}
+								onChange={setZoom}
+							/>
 
-							<div className='flex flex-row items-center gap-2 text-xs'>
-								<Label className='my-auto w-20 text-xs text-muted-foreground'>
-									Radius
-								</Label>
-								<Slider
-									className='flex-1'
-									max={200}
-									onValueChange={(ev) => {
-										setBorderRadius(ev[0]);
-									}}
-									value={[borderRadius]}
-								></Slider>
-							</div>
+							<SliderField
+								label='Radius'
+								max={200}
+								unit='px'
+								value={borderRadius}
+								onChange={setBorderRadius}
+							/>
 						</CustomCollapse>
 					</>
 				}

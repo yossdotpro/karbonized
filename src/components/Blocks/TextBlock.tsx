@@ -4,20 +4,27 @@ import {
 	AlignJustify,
 	AlignLeft,
 	AlignRight,
+	Bold,
+	Italic,
 	Sparkles,
 	Type,
+	Underline,
 } from 'lucide-react';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { FontPicker } from '../CustomControls/FontPicker';
 import { NumberInput } from '../CustomControls/NumberInput';
+import {
+	FieldInput,
+	PropertyRow,
+	SliderField,
+	ToggleButton,
+	ToggleGroup,
+} from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
 import { Label } from '../ui/label';
-import { Slider } from '../ui/slider';
 import { Textarea } from '../ui/textarea';
-import { Button } from '../ui/button';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
 import {
 	Select,
 	SelectContent,
@@ -181,132 +188,35 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<Type size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Text</Label>
+								<div className='flex items-center gap-2'>
+									<Type />
+									<Label>Text</Label>
 								</div>
 							}
 						>
-							<div className='flex flex-col gap-1.5 text-xs'>
-								<Label className='text-xs text-muted-foreground'>Font</Label>
-								<FontPicker
-									family={fontFamily}
-									onChange={(family, source) => {
-										setFontFamily(family);
-										setFontSource(source);
-									}}
-								/>
-							</div>
+							<Textarea
+								aria-label='Text'
+								className='min-h-16 text-xs md:text-xs'
+								rows={2}
+								onChange={(ev) => {
+									setText(ev.target.value);
+								}}
+								value={text}
+							></Textarea>
 
-							<Label className='text-xs text-muted-foreground'>
-								Text Style
-							</Label>
-							{/* Text */}
-							<div className='mx-auto flex w-full gap-2'>
-								<Button
-									variant={isBold ? 'default' : 'outline'}
-									size='icon'
-									className='flex-1 transition-all duration-200 hover:scale-105'
-									onClick={() => {
-										setIsBold(!isBold);
-									}}
-								>
-									B
-								</Button>
-								<Button
-									variant={isItalic ? 'default' : 'outline'}
-									size='icon'
-									className='flex-1 transition-all duration-200 hover:scale-105'
-									onClick={() => {
-										setIsItalic(!isItalic);
-									}}
-								>
-									I
-								</Button>
-								<Button
-									variant={isUnderline ? 'default' : 'outline'}
-									size='icon'
-									className='flex-1 transition-all duration-200 hover:scale-105'
-									onClick={() => {
-										setIsUnderline(!isUnderline);
-									}}
-								>
-									U
-								</Button>
-							</div>
+							<PropertyRow label='Font'>
+								<div className='min-w-0 flex-1'>
+									<FontPicker
+										family={fontFamily}
+										onChange={(family, source) => {
+											setFontFamily(family);
+											setFontSource(source);
+										}}
+									/>
+								</div>
+							</PropertyRow>
 
-							<div className='flex flex-col gap-1.5 text-xs'>
-								<Label className='text-xs text-muted-foreground'>Text</Label>
-								<Textarea
-									className='min-h-16 text-sm'
-									rows={2}
-									onChange={(ev) => {
-										setText(ev.target.value);
-									}}
-									value={text}
-								></Textarea>
-							</div>
-
-							<div className='flex flex-col gap-1.5 text-xs'>
-								<Label className='text-xs text-muted-foreground'>
-									Resizing
-								</Label>
-								<ToggleGroup
-									type='single'
-									variant='outline'
-									size='sm'
-									className='w-full'
-									value={sizing}
-									onValueChange={(value) =>
-										value && setSizing(value as TextSizing)
-									}
-								>
-									{TEXT_SIZING_OPTIONS.map((option) => (
-										<ToggleGroupItem
-											key={option.value}
-											value={option.value}
-											title={option.hint}
-											className='flex-1 text-xs'
-										>
-											{option.label}
-										</ToggleGroupItem>
-									))}
-								</ToggleGroup>
-							</div>
-
-							<div className='flex flex-col gap-1.5 text-xs'>
-								<Label className='text-xs text-muted-foreground'>
-									Alignment
-								</Label>
-								<ToggleGroup
-									type='single'
-									variant='outline'
-									size='sm'
-									className='w-full'
-									value={textAlign}
-									onValueChange={(value) =>
-										value && setTextAlign(value as TextAlign)
-									}
-								>
-									{TEXT_ALIGN_OPTIONS.map((option) => {
-										const Icon = ALIGN_ICONS[option.value];
-										return (
-											<ToggleGroupItem
-												key={option.value}
-												value={option.value}
-												title={option.label}
-												aria-label={option.label}
-												className='flex-1'
-											>
-												<Icon className='size-4' />
-											</ToggleGroupItem>
-										);
-									})}
-								</ToggleGroup>
-							</div>
-
-							<div className='flex flex-col gap-1.5 text-xs'>
-								<Label className='text-xs text-muted-foreground'>Weight</Label>
+							<PropertyRow label='Weight'>
 								<Select
 									value={String(weight)}
 									onValueChange={(value) => {
@@ -315,7 +225,7 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 										setFontWeight(Number(value));
 									}}
 								>
-									<SelectTrigger className='h-8 text-sm'>
+									<SelectTrigger className='h-7 w-full text-xs'>
 										<SelectValue />
 									</SelectTrigger>
 									<SelectContent>
@@ -326,83 +236,127 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 										))}
 									</SelectContent>
 								</Select>
-							</div>
+							</PropertyRow>
 
-							<div className='flex flex-auto flex-row text-xs'>
-								<Label className='my-auto text-xs text-muted-foreground'>
-									Font Size
-								</Label>
+							<PropertyRow label='Size'>
 								<NumberInput
+									suffix='px'
 									onChange={(number) => {
 										setTextSize(number.toString());
 									}}
 									number={parseInt(textSize)}
 								></NumberInput>
-								<Label className='my-auto ml-2 text-xs text-muted-foreground'>
-									px
-								</Label>
-							</div>
+							</PropertyRow>
 
-							<div className='flex flex-auto flex-row text-xs'>
-								<Label className='my-auto text-xs text-muted-foreground'>
-									Line Height
-								</Label>
-								<NumberInput
-									/* 0 keeps the default line height of the font */
-									onChange={(number) => {
-										setLineHeight(Math.max(0, number) / 10);
+							<div className='grid grid-cols-2 gap-1.5'>
+								<FieldInput
+									label='Line'
+									title='Line height (0 keeps the font default)'
+									suffix='×'
+									step={0.1}
+									value={lineHeight}
+									onChange={(value) => {
+										const next = parseFloat(value);
+										if (Number.isFinite(next)) setLineHeight(Math.max(0, next));
 									}}
-									number={Math.round(lineHeight * 10)}
-								></NumberInput>
-								<Label className='my-auto ml-2 text-xs text-muted-foreground'>
-									×10
-								</Label>
+								/>
+								<FieldInput
+									label='Spacing'
+									title='Letter spacing'
+									suffix='px'
+									value={letterSpacing}
+									onChange={(value) => {
+										const next = parseFloat(value);
+										if (Number.isFinite(next)) setLetterSpacing(next);
+									}}
+								/>
 							</div>
 
-							<div className='flex flex-auto flex-row text-xs'>
-								<Label className='my-auto text-xs text-muted-foreground'>
-									Letter Spacing
-								</Label>
-								<NumberInput
-									onChange={setLetterSpacing}
-									number={letterSpacing}
-								></NumberInput>
-								<Label className='my-auto ml-2 text-xs text-muted-foreground'>
-									px
-								</Label>
-							</div>
+							<PropertyRow label='Style'>
+								<ToggleGroup>
+									<ToggleButton
+										label='Bold'
+										active={isBold}
+										onClick={() => setIsBold(!isBold)}
+									>
+										<Bold />
+									</ToggleButton>
+									<ToggleButton
+										label='Italic'
+										active={isItalic}
+										onClick={() => setIsItalic(!isItalic)}
+									>
+										<Italic />
+									</ToggleButton>
+									<ToggleButton
+										label='Underline'
+										active={isUnderline}
+										onClick={() => setIsUnderline(!isUnderline)}
+									>
+										<Underline />
+									</ToggleButton>
+								</ToggleGroup>
+							</PropertyRow>
+
+							<PropertyRow label='Align'>
+								<ToggleGroup>
+									{TEXT_ALIGN_OPTIONS.map((option) => {
+										const Icon = ALIGN_ICONS[option.value];
+										return (
+											<ToggleButton
+												key={option.value}
+												label={option.label}
+												active={textAlign === option.value}
+												onClick={() => setTextAlign(option.value as TextAlign)}
+											>
+												<Icon />
+											</ToggleButton>
+										);
+									})}
+								</ToggleGroup>
+							</PropertyRow>
+
+							<PropertyRow label='Resizing'>
+								<ToggleGroup>
+									{TEXT_SIZING_OPTIONS.map((option) => (
+										<ToggleButton
+											key={option.value}
+											label={option.hint}
+											active={sizing === option.value}
+											onClick={() => setSizing(option.value as TextSizing)}
+											className='text-[11px]'
+										>
+											{option.label}
+										</ToggleButton>
+									))}
+								</ToggleGroup>
+							</PropertyRow>
 
 							<ColorPicker
 								isGradientEnable={false}
 								color={color}
 								onColorChange={setColor}
-								label='Text Color'
+								label='Color'
 							></ColorPicker>
 						</CustomCollapse>
 
 						{/* Outline and shadow of the letters */}
 						<CustomCollapse
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<Sparkles size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Text effects</Label>
+								<div className='flex items-center gap-2'>
+									<Sparkles />
+									<Label>Text effects</Label>
 								</div>
 							}
 						>
-							<div className='flex flex-row items-center gap-2 text-xs'>
-								<Label className='my-auto w-24 text-xs text-muted-foreground'>
-									Outline: {outlineWidth}
-								</Label>
-								<Slider
-									className='flex-1'
-									min={0}
-									max={20}
-									value={[outlineWidth]}
-									onValueChange={(value) => {
-										setOutlineWidth(value[0]);
-									}}
-								></Slider>
-							</div>
+							<SliderField
+								label='Outline'
+								max={20}
+								unit='px'
+								defaultValue={0}
+								value={outlineWidth}
+								onChange={setOutlineWidth}
+							/>
 
 							{outlineWidth > 0 && (
 								<ColorPicker
@@ -410,44 +364,36 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 									isGradientEnable={false}
 									color={outlineColor}
 									onColorChange={setOutlineColor}
-									label='Outline Color'
+									label='Outline'
 								></ColorPicker>
 							)}
 
-							<div className='flex flex-row items-center gap-2 text-xs'>
-								<Label className='my-auto w-24 text-xs text-muted-foreground'>
-									Shadow blur
-								</Label>
-								<Slider
-									className='flex-1'
-									min={0}
-									max={40}
-									value={[textShadowBlur]}
-									onValueChange={(value) => {
-										setTextShadowBlur(value[0]);
-									}}
-								></Slider>
-							</div>
+							<SliderField
+								label='Shadow'
+								max={40}
+								unit='px'
+								defaultValue={0}
+								value={textShadowBlur}
+								onChange={setTextShadowBlur}
+							/>
 
-							<div className='flex flex-row gap-2 text-xs'>
-								<div className='flex flex-1 flex-row items-center gap-2'>
-									<Label className='my-auto text-xs text-muted-foreground'>
-										X
-									</Label>
-									<NumberInput
-										onChange={setTextShadowX}
-										number={textShadowX}
-									></NumberInput>
-								</div>
-								<div className='flex flex-1 flex-row items-center gap-2'>
-									<Label className='my-auto text-xs text-muted-foreground'>
-										Y
-									</Label>
-									<NumberInput
-										onChange={setTextShadowY}
-										number={textShadowY}
-									></NumberInput>
-								</div>
+							<div className='grid grid-cols-2 gap-1.5'>
+								<FieldInput
+									label='X'
+									value={textShadowX}
+									onChange={(value) => {
+										const next = parseFloat(value);
+										if (Number.isFinite(next)) setTextShadowX(next);
+									}}
+								/>
+								<FieldInput
+									label='Y'
+									value={textShadowY}
+									onChange={(value) => {
+										const next = parseFloat(value);
+										if (Number.isFinite(next)) setTextShadowY(next);
+									}}
+								/>
 							</div>
 
 							<ColorPicker
@@ -455,7 +401,7 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 								isGradientEnable={false}
 								color={textShadowColor}
 								onColorChange={setTextShadowColor}
-								label='Shadow Color'
+								label='Shadow'
 							></ColorPicker>
 						</CustomCollapse>
 					</>

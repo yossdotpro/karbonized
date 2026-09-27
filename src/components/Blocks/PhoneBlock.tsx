@@ -230,21 +230,21 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 										color={borderColor}
 										onColorChange={setBorderColor}
 										isGradientEnable={false}
-										label='Border Color'
+										label='Border'
 									></ColorPicker>
 
 									<ColorPicker
 										color={statusColor}
 										onColorChange={setStatusColor}
 										isGradientEnable={false}
-										label='Status Bar Color'
+										label='Status bar'
 									></ColorPicker>
 
 									<ColorPicker
 										color={statusControlsColor}
 										onColorChange={setStatusControlsColor}
 										isGradientEnable={false}
-										label='Icons Color'
+										label='Icons'
 									></ColorPicker>
 								</div>
 							</CustomCollapse>

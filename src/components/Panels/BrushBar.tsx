@@ -1,9 +1,27 @@
 import React from 'react';
-import { Brush, PenLine, Spline } from 'lucide-react';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { Slider } from '../ui/slider';
-import { Tooltip } from '../CustomControls/Tooltip';
 import { useUIStore } from '@/stores';
+
+/** One setting of the bar: a small label and its value over the control. */
+const Setting: React.FC<{
+	label: string;
+	value: string;
+	title?: string;
+	children: React.ReactNode;
+}> = ({ label, value, title, children }) => (
+	<div className='flex flex-col gap-1.5 px-2.5 py-1' title={title}>
+		<div className='flex items-center justify-between gap-3 text-[10px] leading-none'>
+			<span className='font-medium uppercase tracking-wide text-muted-foreground'>
+				{label}
+			</span>
+			<span className='font-mono tabular-nums text-foreground'>{value}</span>
+		</div>
+		<div className='flex h-4 items-center gap-2'>{children}</div>
+	</div>
+);
+
+const Divider: React.FC = () => <div className='h-8 w-px bg-border' />;
 
 /** Brush settings, shown while the brush tool is active. */
 export const BrushBar: React.FC = () => {
@@ -16,69 +34,89 @@ export const BrushBar: React.FC = () => {
 	const thinning = useUIStore((state) => state.brushThinning);
 	const setThinning = useUIStore((state) => state.setBrushThinning);
 
-	return (
-		<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex w-[26rem] flex-row items-center gap-2 rounded-[10px] border border-border bg-popover px-3 py-1.5 shadow-lg shadow-black/20'>
-			<Tooltip message={`Size: ${size}px`} placement='top'>
-				<div className='flex flex-auto items-center gap-2'>
-					<Brush size={16} className='shrink-0 text-muted-foreground'></Brush>
-					<Slider
-						className='flex flex-auto'
-						min={1}
-						max={80}
-						step={1}
-						value={[size]}
-						onValueChange={(value) => {
-							setSize(value[0]);
-						}}
-					/>
-				</div>
-			</Tooltip>
+	// The dot previews the stroke, capped so it fits the bar.
+	const dot = Math.max(3, Math.min(16, size / 2));
 
-			<Tooltip message={`Smoothing: ${smoothing.toFixed(1)}`} placement='top'>
-				<div className='flex flex-auto items-center gap-2'>
-					<Spline size={16} className='shrink-0 text-muted-foreground'></Spline>
-					<Slider
-						className='flex flex-auto'
-						min={0}
-						max={6}
-						step={0.2}
-						value={[smoothing]}
-						onValueChange={(value) => {
-							setSmoothing(value[0]);
-						}}
-					/>
-				</div>
-			</Tooltip>
+	return (
+		<div className='z-50 mb-12 ml-auto mr-auto mt-auto flex flex-row items-center gap-0.5 rounded-[12px] border border-border bg-popover/95 p-1 shadow-xl shadow-black/20 backdrop-blur'>
+			<span
+				aria-hidden
+				className='flex size-8 shrink-0 items-center justify-center rounded-control bg-muted'
+			>
+				<span
+					className='block rounded-full ring-1 ring-inset ring-black/10 dark:ring-white/20'
+					style={{ width: dot, height: dot, background: color }}
+				/>
+			</span>
+
+			<Setting label='Size' value={`${size}px`}>
+				<Slider
+					aria-label='Brush size'
+					className='w-28'
+					min={1}
+					max={80}
+					step={1}
+					value={[size]}
+					onValueChange={(value) => {
+						setSize(value[0]);
+					}}
+				/>
+			</Setting>
+
+			<Divider />
+
+			<Setting
+				label='Smoothing'
+				value={smoothing.toFixed(1)}
+				title='How much the stroke is smoothed while you draw'
+			>
+				<Slider
+					aria-label='Smoothing'
+					className='w-24'
+					min={0}
+					max={6}
+					step={0.2}
+					value={[smoothing]}
+					onValueChange={(value) => {
+						setSmoothing(value[0]);
+					}}
+				/>
+			</Setting>
+
+			<Divider />
 
 			{/* How much the stroke thins with pressure, or with speed on a mouse */}
-			<Tooltip message={`Thinning: ${thinning}%`} placement='top'>
-				<div className='flex flex-auto items-center gap-2'>
-					<PenLine
-						size={16}
-						className='shrink-0 text-muted-foreground'
-					></PenLine>
-					<Slider
-						className='flex flex-auto'
-						min={0}
-						max={100}
-						step={5}
-						value={[thinning]}
-						onValueChange={(value) => {
-							setThinning(value[0]);
-						}}
-					/>
-				</div>
-			</Tooltip>
+			<Setting
+				label='Thinning'
+				value={`${thinning}%`}
+				title='How much the stroke thins with pen pressure, or with speed on a mouse'
+			>
+				<Slider
+					aria-label='Thinning'
+					className='w-24'
+					min={0}
+					max={100}
+					step={5}
+					value={[thinning]}
+					onValueChange={(value) => {
+						setThinning(value[0]);
+					}}
+				/>
+			</Setting>
 
-			<ColorPicker
-				type='HexAlpha'
-				isGradientEnable={false}
-				color={color}
-				onColorChange={setColor}
-				showLabel={false}
-				placement='top-end'
-				label='Brush color'
-			></ColorPicker>
+			<Divider />
+
+			<div className='px-1'>
+				<ColorPicker
+					type='HexAlpha'
+					isGradientEnable={false}
+					color={color}
+					onColorChange={setColor}
+					showLabel={false}
+					placement='top-end'
+					label='Brush color'
+				></ColorPicker>
+			</div>
 		</div>
 	);
 };

@@ -149,8 +149,10 @@ export const StatusBar: React.FC = () => {
 			<div className='flex items-center gap-1.5'>
 				<Layers className='size-3' />
 				<span className='font-mono tabular-nums'>
-					x: {Math.round(controlPosition?.x as any)} y:{' '}
-					{Math.round(controlPosition?.y as any)}
+					{Number.isFinite(Number(controlPosition?.x)) &&
+					Number.isFinite(Number(controlPosition?.y))
+						? `x: ${Math.round(Number(controlPosition?.x))} y: ${Math.round(Number(controlPosition?.y))}`
+						: 'No selection'}
 				</span>
 			</div>
 
