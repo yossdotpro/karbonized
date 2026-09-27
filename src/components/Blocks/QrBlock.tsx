@@ -2,6 +2,7 @@ import { IconPalette, IconQrcode } from '@tabler/icons-react';
 import React, { useId, useState } from 'react';
 import karbonized from '../../assets/logo.svg';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
+import { PropertyRow } from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { Label } from '../ui/label';
@@ -43,9 +44,9 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconPalette size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Colors</Label>
+								<div className='flex items-center gap-2'>
+									<IconPalette />
+									<Label>Colors</Label>
 								</div>
 							}
 						>
@@ -66,20 +67,21 @@ export const QrControl: React.FC<Props> = ({ id }) => {
 
 						<CustomCollapse
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconQrcode size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>QR Code</Label>
+								<div className='flex items-center gap-2'>
+									<IconQrcode />
+									<Label>QR Code</Label>
 								</div>
 							}
 						>
-							<Label className='text-xs text-muted-foreground'>Text</Label>
-							<Input
-								className='h-8 text-sm'
-								onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
-									setText(ev.target.value);
-								}}
-								value={text}
-							></Input>
+							<PropertyRow label='Text'>
+								<Input
+									className='h-7 text-xs md:text-xs'
+									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
+										setText(ev.target.value);
+									}}
+									value={text}
+								></Input>
+							</PropertyRow>
 						</CustomCollapse>
 					</>
 				}

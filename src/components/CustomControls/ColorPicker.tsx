@@ -548,7 +548,7 @@ export const ColorPicker: React.FC<Props> = (props) => {
 			<div className='flex w-full'>{node}</div>
 		) : showLabel ? (
 			<div className='flex min-h-8 w-full items-center gap-2'>
-				<span className='w-[4.5rem] shrink-0 truncate text-xs capitalize text-muted-foreground'>
+				<span className='w-20 shrink-0 truncate text-xs capitalize text-muted-foreground'>
 					{label}
 				</span>
 				{node}

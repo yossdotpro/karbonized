@@ -39,9 +39,9 @@ export const CustomBlock: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<Palette size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Colors</Label>
+								<div className='flex items-center gap-2'>
+									<Palette />
+									<Label>Colors</Label>
 								</div>
 							}
 						>

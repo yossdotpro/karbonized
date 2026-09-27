@@ -16,15 +16,15 @@ import {
 	DialogTitle,
 	DialogFooter,
 } from '../ui/dialog';
-import { Checkbox } from '../ui/checkbox';
 import karbonized from '../../assets/logo.svg';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
+import { PropertyRow, SliderField } from '../CustomControls/PropertyControls';
+import { Switch } from '../ui/switch';
 import { ControlTemplate } from './ControlTemplate';
 import { useControlState } from '../../hooks/useControlState';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import { Slider } from '../ui/slider';
 import {
 	useControlsStore,
 	useWorkspaceStore,
@@ -173,44 +173,29 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 						{template === 'adaptive' && (
 							<CustomCollapse
 								menu={
-									<div className='flex items-center gap-2 text-foreground'>
-										<IconBorderStyle
-											size={18}
-											className='text-muted-foreground'
-										/>
-										<Label className='text-sm font-semibold'>Borders</Label>
+									<div className='flex items-center gap-2'>
+										<IconBorderStyle />
+										<Label>Borders</Label>
 									</div>
 								}
 							>
 								{/* Phone Radius */}
-								<div className='flex flex-auto p-2 text-xs '>
-									<Label className='my-auto p-2 text-xs text-muted-foreground'>
-										Phone Radius:
-									</Label>
-									<Slider
-										className='my-auto flex-1'
-										onValueChange={(ev) => {
-											setPhoneRadius(ev[0]);
-										}}
-										value={[phoneRadius]}
-										max={30}
-									></Slider>
-								</div>
+								<SliderField
+									label='Corners'
+									max={30}
+									unit='px'
+									value={phoneRadius}
+									onChange={setPhoneRadius}
+								/>
 
 								{/* Screen Radius */}
-								<div className='flex flex-auto p-2 text-xs '>
-									<Label className='my-auto p-2 text-xs text-muted-foreground'>
-										Screen Radius:
-									</Label>
-									<Slider
-										className='my-auto flex-1'
-										onValueChange={(ev) => {
-											setScreenRadius(ev[0]);
-										}}
-										value={[screenRadius]}
-										max={30}
-									></Slider>
-								</div>
+								<SliderField
+									label='Screen'
+									max={30}
+									unit='px'
+									value={screenRadius}
+									onChange={setScreenRadius}
+								/>
 							</CustomCollapse>
 						)}
 
@@ -218,14 +203,13 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 						{template === 'adaptive' && (
 							<CustomCollapse
 								menu={
-									<div className='flex items-center gap-2 text-foreground'>
-										<IconPalette size={18} className='text-muted-foreground' />
-										<Label className='text-sm font-semibold'>Colors</Label>
+									<div className='flex items-center gap-2'>
+										<IconPalette />
+										<Label>Colors</Label>
 									</div>
 								}
 							>
-								{/* Show Line Numbers */}
-								<div className='flex flex-auto flex-col p-2'>
+								<div className='flex flex-col gap-1'>
 									<ColorPicker
 										color={borderColor}
 										onColorChange={setBorderColor}
@@ -254,45 +238,49 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconDeviceMobile
-										size={18}
-										className='text-muted-foreground'
-									/>
-									<Label className='text-sm font-semibold'>Phone Mockup</Label>
+								<div className='flex items-center gap-2'>
+									<IconDeviceMobile />
+									<Label>Phone Mockup</Label>
 								</div>
 							}
 						>
 							{/* Device */}
-							<label className='my-auto text-xs'>Device</label>
 							<button
+								type='button'
+								aria-label='Choose a device'
 								onClick={() => {
 									setShowModal(true);
 								}}
-								className='inline-flex items-center justify-center transition-colors h-20 cursor-pointer rounded-surface bg-muted/60 p-4 hover:bg-accent'
+								className='flex h-16 cursor-pointer items-center gap-3 rounded-surface border border-border bg-muted/40 px-3 text-left transition-colors hover:bg-accent'
 							>
-								<div className='flex gap-2'>
+								<div className='flex min-w-0 flex-1 items-center gap-3'>
 									<img
-										className='mx-auto my-auto flex h-10 flex-auto shadow-2xl'
+										alt=''
+										className='h-11 shrink-0 object-contain'
 										src={
 											devices.find((item) => item.name === template)?.img ??
 											iphone14
 										}
 									></img>
 
-									<p className='my-auto cursor-pointer'>
-										{devices.find((item) => item.name === template)?.name}
-									</p>
+									<span className='min-w-0 flex-1'>
+										<span className='block truncate text-[13px] font-medium text-foreground'>
+											{devices.find((item) => item.name === template)?.name}
+										</span>
+										<span className='block text-[11px] text-muted-foreground'>
+											Change device
+										</span>
+									</span>
 								</div>
 							</button>
 
 							{/* Source */}
-							<>
-								<Label className='text-xs text-muted-foreground'>Image</Label>
+							<PropertyRow label='Screen'>
 								<Input
 									type='file'
 									accept='image/*'
-									className='h-8 text-sm'
+									aria-label='Screen image'
+									className='h-7'
 									onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 										if (e.target.files && e.target.files.length > 0) {
 											const reader = new FileReader();
@@ -303,37 +291,28 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 										}
 									}}
 								></Input>
-							</>
+							</PropertyRow>
 
 							{template === 'adaptive' && (
 								<>
 									{/* Notch Witdh */}
-									<div className='flex flex-auto p-2 text-xs '>
-										<Label className='my-auto p-2 text-xs text-muted-foreground'>
-											Notch Width:
-										</Label>
-										<Slider
-											className='my-auto flex-1'
-											onValueChange={(ev) => {
-												setNotchWidth(ev[0]);
-											}}
-											value={[notchWidth]}
-											max={50}
-										></Slider>
-									</div>
+									<SliderField
+										label='Notch'
+										max={50}
+										unit='px'
+										value={notchWidth}
+										onChange={setNotchWidth}
+									/>
 
 									{/* Drop Design */}
-									<div className='flex flex-col p-5'>
-										<div className='flex flex-row gap-2'>
-											<p className='my-auto text-xs'>Drop</p>
-											<Checkbox
-												onCheckedChange={(checked) => {
-													setDrop(checked as boolean);
-												}}
-												checked={drop}
-											></Checkbox>
-										</div>
-									</div>
+									<PropertyRow label='Drop notch'>
+										<Switch
+											checked={drop}
+											onCheckedChange={(checked) => {
+												setDrop(checked);
+											}}
+										/>
+									</PropertyRow>
 								</>
 							)}
 						</CustomCollapse>

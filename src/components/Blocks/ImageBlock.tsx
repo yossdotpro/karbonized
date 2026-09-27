@@ -8,8 +8,12 @@ import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { ContextMenuItem } from '../ui/context-menu';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { ToggleGroup, ToggleGroupItem } from '../ui/toggle-group';
-import { SliderField } from '../CustomControls/PropertyControls';
+import {
+	PropertyRow,
+	SliderField,
+	ToggleButton,
+	ToggleGroup,
+} from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import { Label } from '../ui/label';
 import { IMAGE_FIT_OPTIONS, type ImageFit } from '@/lib/blocks/catalog';
@@ -176,66 +180,61 @@ export const ImageBlock: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconPhoto size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Image</Label>
+								<div className='flex items-center gap-2'>
+									<IconPhoto />
+									<Label>Image</Label>
 								</div>
 							}
 						>
 							{/* Source */}
-							<Label className='text-xs text-muted-foreground'>Source</Label>
-							<Input
-								type='file'
-								accept='image/*'
-								className='h-8 text-sm'
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-									void loadFile(e.target.files?.[0]);
-								}}
-							></Input>
+							<PropertyRow label='Source'>
+								<Input
+									type='file'
+									accept='image/*'
+									className='h-7 text-xs md:text-xs'
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+										void loadFile(e.target.files?.[0]);
+									}}
+								></Input>
+							</PropertyRow>
 
-							<Label className='text-xs text-muted-foreground'>
-								Or use a URL
-							</Label>
-							<Input
-								className='h-8 text-sm'
-								placeholder='https://…'
-								defaultValue={src.startsWith('data:') ? '' : src}
-								onBlur={(event) => {
-									const value = event.currentTarget.value.trim();
-									if (value !== '') setSrc(value);
-								}}
-							></Input>
+							<PropertyRow label='URL'>
+								<Input
+									className='h-7 text-xs md:text-xs'
+									placeholder='https://…'
+									defaultValue={src.startsWith('data:') ? '' : src}
+									onBlur={(event) => {
+										const value = event.currentTarget.value.trim();
+										if (value !== '') setSrc(value);
+									}}
+								></Input>
+							</PropertyRow>
 
 							<Button
 								variant='outline'
 								size='sm'
-								className='h-8 text-xs'
+								className='h-7 text-xs'
 								onClick={applyOriginalSize}
 							>
 								Use original size
 							</Button>
 
 							{/* Framing */}
-							<Label className='text-xs text-muted-foreground'>Fit</Label>
-							<ToggleGroup
-								type='single'
-								variant='outline'
-								size='sm'
-								className='w-full'
-								value={fit}
-								onValueChange={(value) => value && setFit(value as ImageFit)}
-							>
-								{IMAGE_FIT_OPTIONS.map((option) => (
-									<ToggleGroupItem
-										key={option.value}
-										value={option.value}
-										title={option.hint}
-										className='flex-1 text-xs'
-									>
-										{option.label}
-									</ToggleGroupItem>
-								))}
-							</ToggleGroup>
+							<PropertyRow label='Fit'>
+								<ToggleGroup>
+									{IMAGE_FIT_OPTIONS.map((option) => (
+										<ToggleButton
+											key={option.value}
+											label={option.hint}
+											active={fit === option.value}
+											onClick={() => setFit(option.value as ImageFit)}
+											className='text-[11px]'
+										>
+											{option.label}
+										</ToggleButton>
+									))}
+								</ToggleGroup>
+							</PropertyRow>
 
 							{fit !== 'fill' && (
 								<>

@@ -16,6 +16,8 @@ import {
 	IconX,
 } from '@tabler/icons-react';
 import React, { useEffect } from 'react';
+import { PropertyRow, SliderField } from '../CustomControls/PropertyControls';
+import { Switch } from '../ui/switch';
 import { ControlTemplate } from './ControlTemplate';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
@@ -33,8 +35,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '../ui/select';
-import { Slider } from '../ui/slider';
-import { Checkbox } from '../ui/checkbox';
 
 interface Props {
 	id: string;
@@ -117,87 +117,79 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 						{/* Border  */}
 						<CustomCollapse
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconBorderStyle
-										size={18}
-										className='text-muted-foreground'
-									/>
-									<Label className='text-sm font-semibold'>Borders</Label>
+								<div className='flex items-center gap-2'>
+									<IconBorderStyle />
+									<Label>Borders</Label>
 								</div>
 							}
 						>
-							<div className='flex flex-row flex-wrap text-xs'>
-								<div className='flex flex-auto p-2'>
-									<Label className='my-auto p-2 text-xs text-muted-foreground'>
-										Radius:
-									</Label>
-									<Slider
-										className='my-auto flex-1'
-										onValueChange={(ev) => {
-											setBorder(ev[0]);
-										}}
-										value={[border]}
-										max={22}
-									></Slider>
-								</div>
-							</div>
+							<SliderField
+								label='Radius'
+								max={22}
+								value={border}
+								onChange={setBorder}
+							/>
 						</CustomCollapse>
 
 						{/* Code Settings */}
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconCode size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Code</Label>
+								<div className='flex items-center gap-2'>
+									<IconCode />
+									<Label>Code</Label>
 								</div>
 							}
 						>
-							<Label className='text-xs text-muted-foreground'>Language</Label>
-							<Select value={language} onValueChange={setLanguage}>
-								<SelectTrigger className='h-8 w-full text-sm'>
-									<SelectValue placeholder='Select language' />
-								</SelectTrigger>
-								<SelectContent>
-									{SyntaxHighlighter.supportedLanguages.map((i) => {
-										return (
-											<SelectItem key={i} value={i}>
-												{i}
-											</SelectItem>
-										);
-									})}
-								</SelectContent>
-							</Select>
+							<PropertyRow label='Language'>
+								<Select value={language} onValueChange={setLanguage}>
+									<SelectTrigger className='h-7 w-full text-xs'>
+										<SelectValue placeholder='Select language' />
+									</SelectTrigger>
+									<SelectContent>
+										{SyntaxHighlighter.supportedLanguages.map((i) => {
+											return (
+												<SelectItem key={i} value={i}>
+													{i}
+												</SelectItem>
+											);
+										})}
+									</SelectContent>
+								</Select>
+							</PropertyRow>
 
-							<Label className='text-xs text-muted-foreground'>Theme</Label>
-							<Select value={theme.toString()} onValueChange={setTheme}>
-								<SelectTrigger className='h-8 w-full text-sm'>
-									<SelectValue placeholder='Select theme' />
-								</SelectTrigger>
-								<SelectContent>
-									{themes.map((i) => {
-										return (
-											<SelectItem key={i.label} value={i.label}>
-												{i.label}
-											</SelectItem>
-										);
-									})}
-								</SelectContent>
-							</Select>
+							<PropertyRow label='Theme'>
+								<Select value={theme.toString()} onValueChange={setTheme}>
+									<SelectTrigger className='h-7 w-full text-xs'>
+										<SelectValue placeholder='Select theme' />
+									</SelectTrigger>
+									<SelectContent>
+										{themes.map((i) => {
+											return (
+												<SelectItem key={i.label} value={i.label}>
+													{i.label}
+												</SelectItem>
+											);
+										})}
+									</SelectContent>
+								</Select>
+							</PropertyRow>
 
-							<Label className='text-xs text-muted-foreground'>Title</Label>
-							<Input
-								className='h-8 text-sm'
-								value={title}
-								onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
-									setTitle(ev.currentTarget.value);
-								}}
-							></Input>
+							<PropertyRow label='Title'>
+								<Input
+									className='h-7 text-xs md:text-xs'
+									value={title}
+									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
+										setTitle(ev.currentTarget.value);
+									}}
+								></Input>
+							</PropertyRow>
 
-							<Label className='text-xs text-muted-foreground'>Code</Label>
 							<textarea
 								spellCheck={false}
-								className='flex h-32 flex-auto resize-none rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+								aria-label='Code'
+								placeholder='Paste your code…'
+								className='flex h-40 flex-auto resize-y rounded-control border border-input bg-transparent px-2.5 py-2 font-mono text-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/20'
 								value={code}
 								onChange={(ev: React.ChangeEvent<HTMLTextAreaElement>) => {
 									setCode(ev.target.value);
@@ -208,43 +200,39 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 						{/* Window Settings */}
 						<CustomCollapse
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconAppWindow size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Window</Label>
+								<div className='flex items-center gap-2'>
+									<IconAppWindow />
+									<Label>Window</Label>
 								</div>
 							}
 						>
-							<Label className='text-xs text-muted-foreground'>
-								Window Style
-							</Label>
-							<Select value={windowStyle} onValueChange={setWindowStyle}>
-								<SelectTrigger className='h-8 w-full text-sm'>
-									<SelectValue placeholder='Select window style' />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value={'mac'}>macOS</SelectItem>
-									<SelectItem value={'windows'}>Windows 11</SelectItem>
-									<SelectItem value={'retro'}>Retro</SelectItem>
-									<SelectItem value={'paper'}>Paper</SelectItem>
-									<SelectItem value={'GTK'}>GTK</SelectItem>
-									<SelectItem value={'gnome'}>GNOME</SelectItem>
-									<SelectItem value={'pixel'}>Pixel</SelectItem>
-									<SelectItem value={'konsole'}>Konsole</SelectItem>
-								</SelectContent>
-							</Select>
+							<PropertyRow label='Style'>
+								<Select value={windowStyle} onValueChange={setWindowStyle}>
+									<SelectTrigger className='h-7 w-full text-xs'>
+										<SelectValue placeholder='Select window style' />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value={'mac'}>macOS</SelectItem>
+										<SelectItem value={'windows'}>Windows 11</SelectItem>
+										<SelectItem value={'retro'}>Retro</SelectItem>
+										<SelectItem value={'paper'}>Paper</SelectItem>
+										<SelectItem value={'GTK'}>GTK</SelectItem>
+										<SelectItem value={'gnome'}>GNOME</SelectItem>
+										<SelectItem value={'pixel'}>Pixel</SelectItem>
+										<SelectItem value={'konsole'}>Konsole</SelectItem>
+									</SelectContent>
+								</Select>
+							</PropertyRow>
 
 							{/* Show Tabs */}
-							<div className='m-2 flex flex-row gap-2'>
-								<Label className='my-auto text-xs text-muted-foreground'>
-									Show Tabs
-								</Label>
-								<Checkbox
-									onCheckedChange={(checked) => {
-										setShowTabs(checked as boolean);
-									}}
+							<PropertyRow label='Tabs'>
+								<Switch
 									checked={showTabs}
-								></Checkbox>
-							</div>
+									onCheckedChange={(checked) => {
+										setShowTabs(checked);
+									}}
+								/>
+							</PropertyRow>
 
 							{/* Background */}
 							{windowStyle !== 'paper' && (
@@ -282,41 +270,31 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 						{/* Other Options */}
 						<CustomCollapse
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconDots size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Other Options</Label>
+								<div className='flex items-center gap-2'>
+									<IconDots />
+									<Label>Other Options</Label>
 								</div>
 							}
 						>
 							{/* Show Line Numbers */}
-							<div className='flex flex-col'>
-								<div className='m-2 flex flex-row gap-2'>
-									<Label className='my-auto text-xs text-muted-foreground'>
-										Show Line Numbers
-									</Label>
-									<Checkbox
-										onCheckedChange={(checked) => {
-											setShowLineNumbers(checked as boolean);
-										}}
-										checked={showLineNumbers}
-									></Checkbox>
-								</div>
-							</div>
+							<PropertyRow label='Line numbers'>
+								<Switch
+									checked={showLineNumbers}
+									onCheckedChange={(checked) => {
+										setShowLineNumbers(checked);
+									}}
+								/>
+							</PropertyRow>
 
 							{/* Wrap Lines */}
-							<div className='flex flex-col'>
-								<div className='m-2 flex flex-row gap-2'>
-									<Label className='my-auto text-xs text-muted-foreground'>
-										Wrap Lines
-									</Label>
-									<Checkbox
-										onCheckedChange={(checked) => {
-											setWrapLines(checked as boolean);
-										}}
-										checked={wrapLines}
-									></Checkbox>
-								</div>
-							</div>
+							<PropertyRow label='Wrap lines'>
+								<Switch
+									checked={wrapLines}
+									onCheckedChange={(checked) => {
+										setWrapLines(checked);
+									}}
+								/>
+							</PropertyRow>
 						</CustomCollapse>
 					</>
 				}

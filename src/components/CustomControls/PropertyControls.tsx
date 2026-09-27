@@ -16,7 +16,7 @@ export const PropertyRow: React.FC<{
 	className?: string;
 }> = ({ label, children, className }) => (
 	<div className={cn('flex min-h-8 items-center gap-2', className)}>
-		<span className='w-[4.5rem] shrink-0 truncate text-xs text-muted-foreground'>
+		<span className='w-20 shrink-0 truncate text-xs text-muted-foreground'>
 			{label}
 		</span>
 		<div className='flex min-w-0 flex-1 items-center gap-1.5'>{children}</div>

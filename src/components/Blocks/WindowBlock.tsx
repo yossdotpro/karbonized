@@ -13,6 +13,11 @@ import {
 } from '@tabler/icons-react';
 import React, { useRef } from 'react';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
+import {
+	PropertyRow,
+	ToggleButton,
+	ToggleGroup,
+} from '../CustomControls/PropertyControls';
 import { ControlTemplate } from './ControlTemplate';
 import karbonized from '../../assets/logo.svg';
 import { CloseSvg, MinimizeSvg } from '../Misc/Icons';
@@ -20,13 +25,6 @@ import { ColorPicker } from '../CustomControls/ColorPicker';
 import { useControlState } from '../../hooks/useControlState';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from '../ui/select';
 import { useWorkspaceStore, useControlsStore } from '../../stores';
 import { buildDynamicBackgroundColors } from '../../utils/dynamicBackgroundColors';
 
@@ -103,74 +101,84 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 						<CustomCollapse
 							isOpen
 							menu={
-								<div className='flex items-center gap-2 text-foreground'>
-									<IconAppWindow size={18} className='text-muted-foreground' />
-									<Label className='text-sm font-semibold'>Window</Label>
+								<div className='flex items-center gap-2'>
+									<IconAppWindow />
+									<Label>Window</Label>
 								</div>
 							}
 						>
-							<>
-								<Label className='text-xs text-muted-foreground'>
-									Window Style
-								</Label>
-								<Select value={windowStyle} onValueChange={setWindowStyle}>
-									<SelectTrigger className='w-full'>
-										<SelectValue placeholder='Select style' />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={'mac'}>mac</SelectItem>
-										<SelectItem value={'window'}>window</SelectItem>
-									</SelectContent>
-								</Select>
+							<PropertyRow label='Style'>
+								<ToggleGroup>
+									<ToggleButton
+										label='macOS'
+										active={windowStyle === 'mac'}
+										onClick={() => setWindowStyle('mac')}
+										className='text-[11px]'
+									>
+										macOS
+									</ToggleButton>
+									<ToggleButton
+										label='Windows'
+										active={windowStyle === 'window'}
+										onClick={() => setWindowStyle('window')}
+										className='text-[11px]'
+									>
+										Windows
+									</ToggleButton>
+								</ToggleGroup>
+							</PropertyRow>
 
-								<Label className='text-xs text-muted-foreground'>
-									Window Type
-								</Label>
-								<Select value={windowType} onValueChange={setWindowType}>
-									<SelectTrigger className='w-full'>
-										<SelectValue placeholder='Select type' />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value={'normal'}>normal</SelectItem>
-										<SelectItem value={'browser'}>browser</SelectItem>
-									</SelectContent>
-								</Select>
-							</>
-							{/* Title */}
-							<>
-								<Label className='text-xs text-muted-foreground'>Title</Label>
+							<PropertyRow label='Type'>
+								<ToggleGroup>
+									<ToggleButton
+										label='App window'
+										active={windowType === 'normal'}
+										onClick={() => setWindowType('normal')}
+										className='text-[11px]'
+									>
+										App
+									</ToggleButton>
+									<ToggleButton
+										label='Browser window'
+										active={windowType === 'browser'}
+										onClick={() => setWindowType('browser')}
+										className='text-[11px]'
+									>
+										Browser
+									</ToggleButton>
+								</ToggleGroup>
+							</PropertyRow>
+
+							<PropertyRow label='Title'>
 								<Input
 									spellCheck={false}
 									onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
 										setTitle(ev.target.value);
 									}}
 									value={title}
-									className='h-8 text-sm'
+									className='h-7 text-xs md:text-xs'
 								></Input>
-							</>
+							</PropertyRow>
 
-							{/* Url */}
 							{windowType === 'browser' && (
-								<>
-									<Label className='text-xs text-muted-foreground'>Url</Label>
+								<PropertyRow label='URL'>
 									<Input
 										spellCheck={false}
 										onChange={(ev: React.ChangeEvent<HTMLInputElement>) => {
 											setUrl(ev.target.value);
 										}}
 										value={url}
-										className='h-8 text-sm'
+										className='h-7 text-xs md:text-xs'
 									></Input>
-								</>
+								</PropertyRow>
 							)}
 
-							<>
-								{/* Source */}
-								<Label className='text-xs text-muted-foreground'>Source</Label>
+							<PropertyRow label='Content'>
 								<Input
 									type='file'
 									accept='image/*'
-									className='h-8 text-sm'
+									aria-label='Window content image'
+									className='h-7'
 									onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
 										if (e.target.files && e.target.files.length > 0) {
 											const reader = new FileReader();
@@ -181,25 +189,21 @@ export const WindowBlock: React.FC<Props> = ({ id }) => {
 										}
 									}}
 								></Input>
-							</>
+							</PropertyRow>
 
-							{/* Colors */}
-							<Label className='text-xs text-muted-foreground'>Colors</Label>
-							<>
-								<ColorPicker
-									color={color}
-									onColorChange={setColor}
-									isGradientEnable={false}
-									label='Window'
-								></ColorPicker>
+							<ColorPicker
+								color={color}
+								onColorChange={setColor}
+								isGradientEnable={false}
+								label='Window'
+							></ColorPicker>
 
-								<ColorPicker
-									color={controlsColor}
-									onColorChange={setControlsColor}
-									isGradientEnable={false}
-									label='Controls'
-								></ColorPicker>
-							</>
+							<ColorPicker
+								color={controlsColor}
+								onColorChange={setControlsColor}
+								isGradientEnable={false}
+								label='Controls'
+							></ColorPicker>
 						</CustomCollapse>
 					</>
 				}
