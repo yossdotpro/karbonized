@@ -8,7 +8,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/yossthedev/karbonized"
+		"url": "https://github.com/yossdotpro/karbonized"
 	},
 	"license": "MIT",
 	"main": "build/src/index.js",
