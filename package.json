@@ -24,7 +24,7 @@
 		"electron:build": "vite build -c vite.electron.config.ts && electron-builder",
 		"build:win": "npm run build:electron && electron-builder --win --config",
 		"build:mac": "npm run build:electron && electron-builder --mac --config",
-		"build:linux": "npm run build:electron && electron-builder --linux --config -c.snap.publish=github",
+		"build:linux": "npm run build:electron && electron-builder --linux",
 		"android:build": "yarn build && npx cap sync && cd android && gradle build && cd ..",
 		"android:icons": "npx capacitor-assets generate --android --iconBackgroundColor '#141313' --logoSplashScale '0.6'",
 		"lint": "eslint src",
