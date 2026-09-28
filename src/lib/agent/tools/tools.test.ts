@@ -343,6 +343,31 @@ describe('executeTool', () => {
 		expect(placed).toMatchObject({ type: 'image', width: 200, height: 50 });
 	});
 
+	it('tells the model when an html block misses its variables', async () => {
+		const bare = JSON.parse(
+			text(
+				await run('add_block', {
+					type: 'html',
+					width: 1280,
+					height: 720,
+					properties: {
+						html: '<div class="card">Hi</div>',
+						css: '.card { color: red; }',
+					},
+				}),
+			),
+		);
+		expect(bare.hints.join(' ')).toMatch(/declares no variables/);
+		expect(bare.hints.join(' ')).toMatch(/covers 100% of the canvas/);
+
+		const fixed = await run('update_html_block', {
+			id: bare.id,
+			css: ':root { /* @type:color */ --a: #111111; /* @type:color */ --b: #222222; /* @type:number min:0 max:40 step:1 unit:px */ --r: 8px; } .card { color: var(--a); }',
+		});
+		expect(text(fixed)).toMatch(/covers 100%/);
+		expect(text(fixed)).not.toMatch(/declares no variables/);
+	});
+
 	it('reads the workspace with long values shortened', async () => {
 		const image = `data:image/png;base64,${'A'.repeat(4096)}`;
 		await run('add_block', { type: 'image', properties: { src: image } });

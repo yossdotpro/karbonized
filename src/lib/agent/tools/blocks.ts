@@ -11,6 +11,7 @@ import {
 	distributeBlocks,
 	getHtmlBlockCode,
 	requireBlock,
+	requireWorkspace,
 	reorderBlock,
 	selectBlocks,
 	setHtmlBlockCode,
@@ -21,6 +22,7 @@ import {
 import { languages } from '@/utils/Languages';
 import { themes } from '@/utils/PrismThemes';
 import { ToolError, defineTool } from './registry';
+import { htmlBlockHints } from './html-hints';
 
 const blockTypes = BLOCK_TYPES.map((spec) => spec.type) as [
 	string,
@@ -131,6 +133,22 @@ export const compactValue = (value: unknown): unknown => {
 	return `${value.slice(0, MAX_VALUE_LENGTH)}… [${value.length} characters]`;
 };
 
+/** What is wrong with an HTML block, for the model to fix (see html-hints). */
+const hintsFor = (id: string): string[] => {
+	const { html, css } = getHtmlBlockCode(id);
+	const { width, height } = summarizeBlock(requireBlock(id));
+	const workspace = requireWorkspace();
+	return htmlBlockHints({
+		html,
+		css,
+		box: { width, height },
+		canvas: {
+			width: parseFloat(workspace.workspaceWidth),
+			height: parseFloat(workspace.workspaceHeight),
+		},
+	});
+};
+
 export const compactBlock = (id: string) => {
 	const summary = summarizeBlock(requireBlock(id));
 	return {
@@ -198,7 +216,7 @@ export const addBlockTool = defineTool({
 	name: 'add_block',
 	title: 'Add block',
 	description:
-		'Add a block to the canvas and select it. It is centered on the canvas unless x and y are given. For html blocks, pass the code as properties html and css (and js only if needed), following the HTML block rules of the design guide, and give width and height that fit the content.',
+		'Add one block to the canvas and select it. It is centered on the canvas unless x and y are given. Build a design with one call per piece (hero, each text, each component) rather than one block for everything. For html blocks: one component, width and height that fit it, properties html and css (js only if needed), and a :root block of annotated variables (/* @type:color */, number, shadow, icon, boolean) for everything a user may tweak, as in the design guide. The result lists hints when an html block breaks these rules.',
 	input: z.object({
 		type: z.enum(blockTypes).describe('Block type.'),
 		name: z.string().optional().describe('Layer name.'),
@@ -215,7 +233,10 @@ export const addBlockTool = defineTool({
 		if (await waitForBlock(block.id)) {
 			await new Promise((resolve) => setTimeout(resolve, 80));
 		}
-		return compactBlock(block.id);
+		const summary = compactBlock(block.id);
+		if (block.type !== 'html') return summary;
+		const hints = hintsFor(block.id);
+		return hints.length > 0 ? { ...summary, hints } : summary;
 	},
 });
 
@@ -343,7 +364,7 @@ export const updateHtmlBlockTool = defineTool({
 	name: 'update_html_block',
 	title: 'Edit HTML block',
 	description:
-		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. CSS is scoped to the block (:root means the block). Google fonts named in font-family are loaded automatically; icons come from /* @type:icon */ variables drawn with <span class="k-icon" style="--k-icon: var(--name)">. JavaScript only runs after setting the allow-scripts property with update_block.',
+		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. Keep the annotated :root variables (/* @type:color */ --accent: #f43f5e; …) that make it adjustable from the panel. CSS is scoped to the block (:root means the block). Google fonts named in font-family are loaded automatically; icons come from /* @type:icon */ variables drawn with <span class="k-icon" style="--k-icon: var(--name)">. JavaScript only runs after setting the allow-scripts property with update_block.',
 	input: z.object({
 		id: z.string(),
 		html: z.string().optional(),
@@ -356,7 +377,10 @@ export const updateHtmlBlockTool = defineTool({
 			throw new ToolError('Give at least one of html, css or js.');
 		}
 		setHtmlBlockCode(id, { html, css, js });
-		return `Updated the code of ${id}.`;
+		const hints = hintsFor(id);
+		return hints.length > 0
+			? { updated: id, hints }
+			: `Updated the code of ${id}.`;
 	},
 });
 

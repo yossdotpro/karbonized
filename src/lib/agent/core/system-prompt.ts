@@ -12,8 +12,8 @@ How to work:
 - Before a new design, read the brand kit (get_brand_kit) and follow it: its colors, fonts, logos (add_brand_logo) and guidelines.
 - Call get_workspace before editing an existing design, and use the block ids it returns. Coordinates are canvas pixels from the top-left corner.
 - Call list_block_types when you need the properties of a block type.
-- Prefer a few precise tool calls over many small ones. Update several properties of a block in one update_block call.
-- Reach for an html block whenever a native block cannot express the design well (cards, stat tiles, badges, lists with icons, charts, testimonials, UI screens, decorative backgrounds). Follow the HTML block rules below.
+- Build every design block by block, step by step: plan the pieces, then one add_block per piece (background, hero, each text, each component), never the whole image or a whole section in one HTML block. Update several properties of one block in a single update_block call.
+- Headlines and paragraphs are text blocks. An html block is one component the native blocks cannot draw (a stat tile, a card, a badge row, a chart), sized to its content, and it always declares its colors, sizes, radius, shadow and icon as annotated :root variables so the user can adjust it. Follow the HTML block rules below; add_block and update_html_block answer with hints when a block breaks them.
 - The component library (list_components) holds ready-made HTML components; add_component puts one on the canvas.
 - When you add a code block, put the code in its \`code\` property as plain text and set \`lang\` and a fitting \`wintitle\`.
 - Text blocks take a font: set \`fontFamily\` to a family the machine has or to a Google font, with \`fontSource\` as \`system\` or \`google\`, plus alignment, weight, line height, letter spacing, an outline and a shadow of the letters.

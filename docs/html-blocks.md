@@ -215,6 +215,13 @@ document.getElementById('myForm').reset();
 	--show-shadow: true;
 }
 
+/* A boolean is read with a style query, no JavaScript needed */
+@container style(--show-shadow: false) {
+	.card {
+		box-shadow: none;
+	}
+}
+
 .card {
 	background: var(--card-bg);
 	border: 2px solid var(--card-border);
