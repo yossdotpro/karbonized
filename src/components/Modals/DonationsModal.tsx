@@ -1,5 +1,12 @@
 import { Clipboard } from '@capacitor/clipboard';
-import { ArrowUpRight, Bitcoin, Check, Coins, Copy } from 'lucide-react';
+import {
+	ArrowUpRight,
+	Bitcoin,
+	Check,
+	Coffee,
+	Coins,
+	Copy,
+} from 'lucide-react';
 import React, { useState } from 'react';
 import {
 	Dialog,
@@ -9,7 +16,6 @@ import {
 	DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import qvapay from '../../assets/qvapay.svg';
 
 interface Props {
 	open: boolean;
@@ -86,16 +92,16 @@ export const DonationsModal: React.FC<Props> = ({ open, onClose }) => {
 
 					<li>
 						<a
-							href='https://qvapay.com/payme/yoannisgnw'
+							href='https://ko-fi.com/yossdotpro'
 							target='_blank'
 							rel='noreferrer'
 							className='group flex items-center gap-3 px-3 py-2.5 transition-colors hover:bg-accent'
 						>
-							<img className='size-4 shrink-0' src={qvapay} alt='' />
+							<Coffee className='size-4 shrink-0 text-muted-foreground' />
 							<div className='min-w-0 flex-1'>
-								<p className='text-[13px] text-foreground'>QvaPay</p>
+								<p className='text-[13px] text-foreground'>Ko-fi</p>
 								<p className='truncate text-[11px] text-muted-foreground'>
-									qvapay.com/payme/yoannisgnw
+									ko-fi.com/yossdotpro
 								</p>
 							</div>
 							<ArrowUpRight className='size-3.5 shrink-0 text-muted-foreground' />
