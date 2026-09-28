@@ -9,8 +9,8 @@ export const MCP_INSTRUCTIONS = `Karbonized is an editor for social media graphi
 
 - Call get_workspace before editing an existing design and use the block ids it returns. Coordinates are canvas pixels from the top-left.
 - Read the user's brand kit with get_brand_kit before a new design and use its colors, fonts and logos (add_brand_logo).
-- For a new design, set the canvas size first (create_workspace or set_canvas_size), then the background, then blocks.
-- Use html blocks (HTML + CSS) for anything native blocks cannot express: cards, stat tiles, badges, icon lists, charts, testimonials, UI screens.
+- For a new design, set the canvas size first (create_workspace or set_canvas_size), then the background, then build it block by block: one add_block per piece (hero, each text, each component), never the whole image in one HTML block.
+- Headlines and paragraphs are text blocks. Use an html block for one component native blocks cannot draw (a stat tile, a card, a badge row, a chart), sized to its content, and declare its colors, sizes, radius, shadow and icon as annotated :root variables (see the HTML block rules below). add_block and update_html_block answer with hints when a block breaks these rules.
 - Find icon names with search_icons; never guess them. Icon packs (.kcomponent files with type: icon-pack) add icons named <prefix>:<name>.
 - Check the result with get_canvas_snapshot and fix what fails the checklist below.
 - Designs can be templates: get_workspace lists project variables, and blocks show {{name}} as their value. To make a new version, change the values with set_variables instead of editing blocks.

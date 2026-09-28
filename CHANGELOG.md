@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### 🚀 Features
+
+- **Agent and MCP clients build designs block by block**: the design guide now says what each block is for, asks for text blocks for the copy and one HTML block per component, and gives proven layouts with an example plan. HTML blocks must declare their colors, sizes, radius, shadow, icon and show/hide flags as annotated `:root` variables, with a worked example; `add_block` and `update_html_block` answer with hints when a block misses them or grows into a whole section
+
+### 🐛 Fixes
+
+- The Linux release failed while uploading the snap to the Snap Store (snapcraft renamed `push` to `upload`); the snap now goes to the GitHub release with the other packages
+
 ## v 2.0.0 - Release (September 27th, 2026)
 
 ### 🚀 Features

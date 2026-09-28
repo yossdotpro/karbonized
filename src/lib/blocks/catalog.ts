@@ -930,7 +930,7 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 		type: 'html',
 		label: 'HTML',
 		description:
-			'A custom component in HTML and CSS (JavaScript optional), rendered in a shadow root: cards, stat tiles, badges, icon lists, charts, UI screens, decorative backgrounds. Pass html and css to add_block; edit later with update_html_block. Annotated :root variables (@type:color, number, shadow, boolean, icon) become controls in the panel.',
+			'One custom component in HTML and CSS (JavaScript optional), rendered in a shadow root and sized to its content: a stat tile, a card, a badge row, a checklist, a chart in inline SVG, a small UI screen. Not for headlines or paragraphs (text blocks), backgrounds (set_canvas_background) or whole layouts. Pass html and css to add_block; edit later with update_html_block. Declare its colors, sizes, radius, shadow and icon as annotated :root variables (/* @type:color */, /* @type:number min: max: step: unit:px */, /* @type:shadow */, /* @type:icon */, /* @type:boolean */): they become controls in the panel.',
 		defaultSize: size(400, 300),
 		minSize: size(100, 80),
 		maxSize: size(4000, 4000),

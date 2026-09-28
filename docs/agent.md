@@ -106,6 +106,15 @@ the Agent system prompt and of the MCP server instructions, and
 `get_design_guide` returns it for clients that ignore server instructions.
 Change the guide there; the prompt, the instructions and the tool follow.
 
+The guide asks models to build a design block by block: the background with
+`set_canvas_background`, every headline and paragraph as a text block, and one
+HTML block per component (a stat tile, a card, a badge row, a chart), sized to
+its content and declaring its colors, sizes, radius, shadow and icon as
+annotated `:root` variables. `add_block` and `update_html_block` check the
+last two rules (`src/lib/agent/tools/html-hints.ts`) and answer with `hints`
+when an HTML block declares no variables, covers most of the canvas or holds
+paragraphs of text, so the model fixes it in the same turn.
+
 ### Brand kit
 
 File → **Brand kit…** (or the command palette) holds the colors, fonts,
