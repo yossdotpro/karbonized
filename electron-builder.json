@@ -2,7 +2,7 @@
  * @see https://www.electron.build/configuration/configuration
  */
 {
-	"appId": "com.yossthedev.karbonized",
+	"appId": "com.yossdotpro.karbonized",
 	"publish": {
 		"provider": "github",
 		"protocol": "https",

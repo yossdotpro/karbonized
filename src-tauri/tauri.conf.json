@@ -52,7 +52,7 @@
 				"icons/icon.icns",
 				"icons/icon.ico"
 			],
-			"identifier": "com.yossthedev.karbonized",
+			"identifier": "com.yossdotpro.karbonized",
 			"longDescription": "The programmable image editor: design code shots, mockups and social images with blocks, with code or with your AI agent",
 			"macOS": {
 				"entitlements": null,

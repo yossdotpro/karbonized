@@ -6,7 +6,7 @@
 	"main": "dist-electron/main.js",
 	"author": {
 		"name": "Yoannis Sánchez Soto",
-		"email": "yossthedev@gmail.com",
+		"email": "contact@yoss.pro",
 		"url": "http://yoss.pro/"
 	},
 	"description": "The programmable image editor",
