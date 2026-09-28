@@ -95,10 +95,10 @@ export const AboutModal: React.FC<Props> = ({ open, onClose }) => {
 						<a
 							target='_blank'
 							className='text-foreground underline-offset-4 hover:underline'
-							href='https://twitter.com/yossthedev'
+							href='https://twitter.com/yossdotpro'
 							rel='noreferrer'
 						>
-							@yossthedev
+							@yossdotpro
 						</a>
 					</span>
 					<span>Apache-2.0</span>

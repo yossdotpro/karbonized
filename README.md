@@ -3,7 +3,7 @@
 ![carbonizedscreen](./img/screen.png)
 <p align="center">
 Karbonized is a visual editor for creating images of code snippets, mockups and social graphics. Arrange blocks — code, text, images, devices, shapes, QR codes and your own HTML components — on a canvas and export the result in seconds.</p>
-<p align="center"><b>Free</b> and <b>Open Source</b>. Made with 💙 and ReactJS in 🇨🇺</p>
+<p align="center"><b>Free</b> and <b>Open Source</b>. Made with 💙 and ReactJS.</p>
 
 <div align="center">
 <img src="https://img.shields.io/badge/version-2.0-111?style=for-the-badge" alt="Version 2.0">

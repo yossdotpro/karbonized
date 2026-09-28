@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">karbonized</string>
     <string name="title_activity_main">karbonized</string>
-    <string name="package_name">com.yossthedev.karbonized</string>
-    <string name="custom_url_scheme">com.yossthedev.karbonized</string>
+    <string name="package_name">com.yossdotpro.karbonized</string>
+    <string name="custom_url_scheme">com.yossdotpro.karbonized</string>
 </resources>

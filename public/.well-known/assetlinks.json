@@ -1,6 +1,6 @@
 [{
         "relation": ["delegate_permission/common.handle_all_urls"],
-        "target" : { "namespace": "android_app", "package_name": "com.yossthedev.karbonized.twa",
+        "target" : { "namespace": "android_app", "package_name": "com.yossdotpro.karbonized.twa",
                      "sha256_cert_fingerprints": ["D5:ED:EB:50:A9:CB:B4:76:4E:D2:1E:72:C5:CB:FD:02:2C:14:89:DB:76:C8:FB:CB:38:D5:1D:D7:08:F8:52:39"] }
       }
 ]

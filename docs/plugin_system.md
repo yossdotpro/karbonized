@@ -32,7 +32,7 @@ The **info.json** stores the information of your new plugin its structure is as 
 ``` json
 {
     "name":"My New Plugin",
-    "author":"@yossthedev",
+    "author":"@yossdotpro",
     "description": "An Awesome Description",
     "version":"1.0.0"
 }
