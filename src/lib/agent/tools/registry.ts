@@ -127,6 +127,53 @@ const settleEditor = () =>
 const describeError = (error: unknown): string =>
 	error instanceof Error ? error.message : String(error);
 
+/**
+ * Models tend to build a whole design blind. After a few changes without a
+ * look at the canvas, the result of the next change reminds them to check it.
+ */
+const SNAPSHOT_TOOL = 'get_canvas_snapshot';
+export const CHANGES_BEFORE_LOOK = 5;
+let changesSinceLook = 0;
+
+export const LOOK_REMINDER = `You have made ${CHANGES_BEFORE_LOOK} changes since you last looked at the canvas: call ${SNAPSHOT_TOOL}, compare the image with the checklist of the design guide and fix what fails before going on.`;
+
+/** Count a change and say whether it is time to look at the canvas. */
+const shouldRemindToLook = (
+	tools: readonly ToolDefinition[],
+	tool: ToolDefinition,
+	context: ToolContext,
+): boolean => {
+	if (tool.name === SNAPSHOT_TOOL) {
+		changesSinceLook = 0;
+		return false;
+	}
+	if (
+		!tool.mutates ||
+		!context.supportsImages ||
+		!tools.some((item) => item.name === SNAPSHOT_TOOL)
+	) {
+		return false;
+	}
+
+	changesSinceLook += 1;
+	if (changesSinceLook < CHANGES_BEFORE_LOOK) return false;
+	changesSinceLook = 0;
+	return true;
+};
+
+const withLookReminder = (value: unknown): unknown => {
+	if (typeof value === 'string') return `${value}\n\n${LOOK_REMINDER}`;
+	if (
+		typeof value === 'object' &&
+		value !== null &&
+		!Array.isArray(value) &&
+		!isToolResult(value)
+	) {
+		return { ...value, reminder: LOOK_REMINDER };
+	}
+	return value;
+};
+
 /** Validate the arguments and run a tool. Never throws. */
 export const executeTool = async (
 	tools: readonly ToolDefinition[],
@@ -187,7 +234,10 @@ export const executeTool = async (
 		}
 
 		const settled = tool.settle ? await tool.settle(output, context) : output;
-		return { result: toToolResult(settled), historyEntry: collapseCall() };
+		const result = shouldRemindToLook(tools, tool, context)
+			? withLookReminder(settled)
+			: settled;
+		return { result: toToolResult(result), historyEntry: collapseCall() };
 	} catch (error) {
 		return {
 			result: errorResult(describeError(error)),

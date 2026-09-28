@@ -26,6 +26,38 @@ describe('design guidance', () => {
 	});
 });
 
+describe('search_fonts', () => {
+	it('finds families with their weights', async () => {
+		const result = JSON.parse(
+			await text('search_fonts', { query: 'space grotesk' }),
+		);
+		expect(result.fonts[0]).toMatchObject({
+			family: 'Space Grotesk',
+			category: 'sans',
+		});
+		expect(result.fonts[0].weights).toContain(700);
+	});
+
+	it('filters by kind and weights', async () => {
+		const result = JSON.parse(
+			await text('search_fonts', { kind: 'serif', weights: [800], limit: 5 }),
+		);
+		expect(result.fonts).toHaveLength(5);
+		for (const font of result.fonts) {
+			expect(font.category).toBe('serif');
+			expect(font.weights).toContain(800);
+		}
+	});
+
+	it('says when nothing matches', async () => {
+		const result = JSON.parse(
+			await text('search_fonts', { query: 'zzzz-no-font' }),
+		);
+		expect(result.fonts).toEqual([]);
+		expect(result.hint).toMatch(/No match/);
+	});
+});
+
 describe('search_icons', () => {
 	it('returns icon names', async () => {
 		const result = JSON.parse(await text('search_icons', { query: 'rocket' }));

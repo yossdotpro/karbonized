@@ -56,7 +56,10 @@ export const getCanvasSnapshotTool = defineTool({
 		}
 
 		const workspace = requireWorkspace();
-		const dataUrl = await renderImage(workspaceElement(), {
+		const element = workspaceElement();
+		// Fonts picked a moment ago may still be loading: show them, not the fallback.
+		await document.fonts?.ready;
+		const dataUrl = await renderImage(element, {
 			format: 'png',
 			scale: snapshotScale(
 				parseFloat(workspace.workspaceWidth),

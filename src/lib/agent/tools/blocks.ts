@@ -21,7 +21,10 @@ import {
 } from '@/lib/editor/actions';
 import { languages } from '@/utils/Languages';
 import { themes } from '@/utils/PrismThemes';
+import { defaultJSContent } from '@/lib/blocks-api/default-content';
+import { loadGoogleCatalog } from '@/lib/fonts/fonts';
 import { ToolError, defineTool } from './registry';
+import { cssFontHints, textFontHints } from './font-hints';
 import { htmlBlockHints } from './html-hints';
 
 const blockTypes = BLOCK_TYPES.map((spec) => spec.type) as [
@@ -133,20 +136,51 @@ export const compactValue = (value: unknown): unknown => {
 	return `${value.slice(0, MAX_VALUE_LENGTH)}… [${value.length} characters]`;
 };
 
-/** What is wrong with an HTML block, for the model to fix (see html-hints). */
-const hintsFor = (id: string): string[] => {
-	const { html, css } = getHtmlBlockCode(id);
-	const { width, height } = summarizeBlock(requireBlock(id));
+/**
+ * What is wrong with a text or HTML block, for the model to fix: its fonts
+ * (see font-hints) and, for HTML, its structure (see html-hints).
+ */
+const hintsFor = async (id: string): Promise<string[]> => {
+	const summary = summarizeBlock(requireBlock(id));
+	if (summary.type !== 'text' && summary.type !== 'html') return [];
+
+	const catalog = await loadGoogleCatalog().catch(() => []);
+	if (summary.type === 'text') {
+		return textFontHints(summary.properties, catalog);
+	}
+
+	const { html, css, js } = getHtmlBlockCode(id);
 	const workspace = requireWorkspace();
-	return htmlBlockHints({
-		html,
-		css,
-		box: { width, height },
-		canvas: {
-			width: parseFloat(workspace.workspaceWidth),
-			height: parseFloat(workspace.workspaceHeight),
-		},
-	});
+	const scriptsOff =
+		js.trim() !== '' &&
+		js !== defaultJSContent &&
+		summary.properties['allow-scripts'] !== true
+			? [
+					'The block has JavaScript but allow-scripts is off, so it does not run: set the allow-scripts property to true with update_block.',
+				]
+			: [];
+	return [
+		...scriptsOff,
+		...htmlBlockHints({
+			html,
+			css,
+			box: { width: summary.width, height: summary.height },
+			canvas: {
+				width: parseFloat(workspace.workspaceWidth),
+				height: parseFloat(workspace.workspaceHeight),
+			},
+		}),
+		...cssFontHints(css, catalog),
+	];
+};
+
+/** A tool result with the hints of a block, when it has any. */
+const withHints = async <T extends object>(
+	id: string,
+	result: T,
+): Promise<T | (T & { hints: string[] })> => {
+	const hints = await hintsFor(id);
+	return hints.length > 0 ? { ...result, hints } : result;
 };
 
 export const compactBlock = (id: string) => {
@@ -216,7 +250,7 @@ export const addBlockTool = defineTool({
 	name: 'add_block',
 	title: 'Add block',
 	description:
-		'Add one block to the canvas and select it. It is centered on the canvas unless x and y are given. Build a design with one call per piece (hero, each text, each component) rather than one block for everything. For html blocks: one component, width and height that fit it, properties html and css (js only if needed), and a :root block of annotated variables (/* @type:color */, number, shadow, icon, boolean) for everything a user may tweak, as in the design guide. The result lists hints when an html block breaks these rules.',
+		'Add one block to the canvas and select it. It is centered on the canvas unless x and y are given. Build a design with one call per piece (hero, each text, each component) rather than one block for everything. For html blocks: one component, width and height that fit it, properties html and css (js only if needed), and a :root block of annotated variables (/* @type:color */, number, shadow, icon, boolean) for everything a user may tweak, as in the design guide. The result lists hints when an html block breaks these rules or a font cannot load (text blocks: fontFamily from search_fonts with fontSource "google" and a fontWeight the family has).',
 	input: z.object({
 		type: z.enum(blockTypes).describe('Block type.'),
 		name: z.string().optional().describe('Layer name.'),
@@ -233,10 +267,7 @@ export const addBlockTool = defineTool({
 		if (await waitForBlock(block.id)) {
 			await new Promise((resolve) => setTimeout(resolve, 80));
 		}
-		const summary = compactBlock(block.id);
-		if (block.type !== 'html') return summary;
-		const hints = hintsFor(block.id);
-		return hints.length > 0 ? { ...summary, hints } : summary;
+		return await withHints(block.id, compactBlock(block.id));
 	},
 });
 
@@ -244,7 +275,7 @@ export const updateBlockTool = defineTool({
 	name: 'update_block',
 	title: 'Update block',
 	description:
-		'Change the name, position, size, rotation, visibility, lock or properties of a block. Only the given fields change.',
+		'Change the name, position, size, rotation, visibility, lock or properties of a block. Only the given fields change. The result lists hints when the font of a text block cannot load or lacks the weight.',
 	input: z.object({
 		id: z.string().describe('Block id.'),
 		name: z.string().optional(),
@@ -261,7 +292,7 @@ export const updateBlockTool = defineTool({
 		updateBlock(id, { ...args, properties: values });
 		return id;
 	},
-	settle: (id) => compactBlock(id),
+	settle: async (id) => await withHints(id, compactBlock(id)),
 });
 
 export const deleteBlocksTool = defineTool({
@@ -364,7 +395,7 @@ export const updateHtmlBlockTool = defineTool({
 	name: 'update_html_block',
 	title: 'Edit HTML block',
 	description:
-		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. Keep the annotated :root variables (/* @type:color */ --accent: #f43f5e; …) that make it adjustable from the panel. CSS is scoped to the block (:root means the block). Google fonts named in font-family are loaded automatically; icons come from /* @type:icon */ variables drawn with <span class="k-icon" style="--k-icon: var(--name)">. JavaScript only runs after setting the allow-scripts property with update_block.',
+		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. Keep the annotated :root variables (/* @type:color */ --accent: #f43f5e; …) that make it adjustable from the panel. CSS is scoped to the block (:root means the block). Google fonts named in font-family are loaded automatically; icons come from /* @type:icon */ variables drawn with <span class="k-icon" style="--k-icon: var(--name)">. JavaScript only runs after setting the allow-scripts property with update_block; declare its data as // @var name:type = value lines so the user can edit it from the panel.',
 	input: z.object({
 		id: z.string(),
 		html: z.string().optional(),
@@ -377,7 +408,10 @@ export const updateHtmlBlockTool = defineTool({
 			throw new ToolError('Give at least one of html, css or js.');
 		}
 		setHtmlBlockCode(id, { html, css, js });
-		const hints = hintsFor(id);
+		return id;
+	},
+	settle: async (id) => {
+		const hints = await hintsFor(id);
 		return hints.length > 0
 			? { updated: id, hints }
 			: `Updated the code of ${id}.`;

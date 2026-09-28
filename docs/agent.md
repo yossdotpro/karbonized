@@ -70,6 +70,7 @@ Agent and the MCP server share the same tools:
 | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `get_design_guide`                     | The design standards (sizes per platform, layout, type, color, HTML block rules, final checklist)                                    |
 | `search_icons`                         | Icon names (Font Awesome and installed icon packs) for icon blocks and `@type:icon` variables                                        |
+| `search_fonts`                         | Google Fonts families by name, kind and weights, with the weights each one has                                                       |
 | `get_brand_kit`                        | The brand kit: named colors, fonts, logos (without the images) and guidelines                                                        |
 | `add_brand_logo`                       | Place a logo of the brand kit as an image block, by id or variant, keeping its proportions                                           |
 | `get_workspace`                        | Canvas size, background, selection and every block with its position, size and properties                                            |
@@ -113,7 +114,22 @@ its content and declaring its colors, sizes, radius, shadow and icon as
 annotated `:root` variables. `add_block` and `update_html_block` check the
 last two rules (`src/lib/agent/tools/html-hints.ts`) and answer with `hints`
 when an HTML block declares no variables, covers most of the canvas or holds
-paragraphs of text, so the model fixes it in the same turn.
+paragraphs of text, so the model fixes it in the same turn. Content that
+repeats (list items, chart data, rows) goes in `// @var` JS variables that the
+block script renders, with `allow-scripts` on, so the user edits the data from
+the panel; the hints flag a block whose script cannot run.
+
+Fonts: the guide sends models to `search_fonts` (the whole Google Fonts
+catalog, with the weights of each family), gives pairings by tone and asks for
+`fontSource: "google"`. `add_block`, `update_block` and `update_html_block`
+answer with `hints` when a family is not in Google Fonts, is not set to load or
+lacks the weight (`src/lib/agent/tools/font-hints.ts`).
+
+Models are asked to look at the canvas while they build, not only at the end.
+After a few changes without a `get_canvas_snapshot` call, the result of the next
+change carries a `reminder` to look (`CHANGES_BEFORE_LOOK` in
+`src/lib/agent/tools/registry.ts`); callers without image input never get it.
+The snapshot waits for pending fonts so it does not show the fallback.
 
 ### Brand kit
 

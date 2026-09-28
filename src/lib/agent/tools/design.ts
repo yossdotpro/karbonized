@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DESIGN_GUIDE } from '../core/design-guide';
+import { loadGoogleCatalog } from '@/lib/fonts/fonts';
 import { listIconSets, searchIcons } from '@/lib/icons/icons';
 import { ToolError, defineTool } from './registry';
 
@@ -59,4 +60,59 @@ export const searchIconsTool = defineTool({
 	},
 });
 
-export const designTools = [getDesignGuideTool, searchIconsTool];
+const FONT_KINDS = ['sans', 'serif', 'display', 'handwriting', 'mono'] as const;
+
+export const searchFontsTool = defineTool({
+	name: 'search_fonts',
+	title: 'Search fonts',
+	description: [
+		'Find Google Fonts families for text blocks (fontFamily with fontSource "google") and the font-family of HTML blocks. The whole catalog (about 2000 families) is available and loads on its own.',
+		'Returns each family with its kind and the weights it really has, most used first. Browse by kind without a query to see the popular ones, or search a name.',
+	].join(' '),
+	input: z.object({
+		query: z
+			.string()
+			.optional()
+			.describe(
+				'Part of a family name, e.g. "grotesk", "serif display", "mono".',
+			),
+		kind: z
+			.enum(FONT_KINDS)
+			.optional()
+			.describe(
+				'sans (UI, clean headlines), serif (editorial, elegant), display (posters, big bold headlines), handwriting (personal, playful), mono (code, numbers, tech).',
+			),
+		weights: z
+			.array(z.number().int().min(100).max(900))
+			.optional()
+			.describe('Only families that have all these weights, e.g. [400, 800].'),
+		limit: z.number().int().min(1).max(100).optional(),
+	}),
+	mutates: false,
+	execute: async ({ query, kind, weights, limit }) => {
+		const catalog = await loadGoogleCatalog();
+		const needed = weights ?? [];
+		const words = (query ?? '').toLowerCase().split(/\s+/).filter(Boolean);
+
+		const fonts = catalog
+			.filter(
+				(font) =>
+					(kind === undefined || font.category === kind) &&
+					words.every((word) => font.family.toLowerCase().includes(word)) &&
+					needed.every((weight) => font.weights.includes(weight)),
+			)
+			.slice(0, limit ?? 30);
+
+		if (fonts.length > 0) return { fonts };
+		return {
+			fonts,
+			hint: 'No match. Search a shorter part of the name, drop the weights or browse a kind without a query.',
+		};
+	},
+});
+
+export const designTools = [
+	getDesignGuideTool,
+	searchIconsTool,
+	searchFontsTool,
+];
