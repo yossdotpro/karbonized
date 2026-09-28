@@ -23,8 +23,8 @@ interface Props {
 const links = [
 	{
 		label: 'Source code',
-		detail: 'github.com/yossthedev/karbonized',
-		href: 'https://github.com/yossthedev/karbonized',
+		detail: 'github.com/yossdotpro/karbonized',
+		href: 'https://github.com/yossdotpro/karbonized',
 		icon: IconBrandGithub,
 	},
 	{

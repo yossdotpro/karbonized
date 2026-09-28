@@ -11,7 +11,7 @@ Karbonized is a visual editor for creating images of code snippets, mockups and 
 <img src="https://img.shields.io/badge/Electron-47848F?logo=electron&logoColor=fff&style=for-the-badge" alt="Electron Badge">
 <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff&style=for-the-badge" alt="TypeScript Badge">
 <img src="https://img.shields.io/badge/Tailwind%20CSS-06B6D4?logo=tailwindcss&logoColor=fff&style=for-the-badge" alt="Tailwind CSS Badge">
-<img alt="Licence" src="https://img.shields.io/github/license/yossTheDev/karbonized?style=for-the-badge">
+<img alt="Licence" src="https://img.shields.io/github/license/yossdotpro/karbonized?style=for-the-badge">
 </div>
 
 ## ✨ What's new in 2.0
@@ -156,4 +156,4 @@ This project is under [Apache-2.0](http://www.apache.org/licenses/LICENSE-2.0) L
 
 ## 👥 Contribution
 
-Contributions, bug reports and ideas are welcome — open an [issue](https://github.com/yossTheDev/karbonized/issues) or a pull request.
+Contributions, bug reports and ideas are welcome — open an [issue](https://github.com/yossdotpro/karbonized/issues) or a pull request.

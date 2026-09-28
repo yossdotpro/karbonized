@@ -200,7 +200,7 @@ export const StatusBar: React.FC = () => {
 				asChild
 			>
 				<a
-					href='https://github.com/yossthedev/karbonized/'
+					href='https://github.com/yossdotpro/karbonized/'
 					target={'_blank'}
 					rel='noreferrer'
 				>
