@@ -343,6 +343,95 @@ describe('executeTool', () => {
 		expect(placed).toMatchObject({ type: 'image', width: 200, height: 50 });
 	});
 
+	it('creates and edits the brand kit', async () => {
+		useBrandStore.setState({ hydrated: true, kit: EMPTY_BRAND_KIT });
+
+		const created = JSON.parse(
+			text(
+				await run('update_brand_kit', {
+					name: 'Acme',
+					colors: [
+						{ name: 'Primary', value: '#6366F1' },
+						{ name: 'Ink', value: '#111' },
+					],
+					fonts: {
+						heading: { family: 'space grotesk' },
+						code: { family: 'Menlo', source: 'system' },
+					},
+					notes: 'Sentence case.',
+				}),
+			),
+		);
+		expect(created.brandKit).toMatchObject({
+			name: 'Acme',
+			colors: [
+				{ name: 'Primary', value: '#6366f1' },
+				{ name: 'Ink', value: '#111111' },
+			],
+			fonts: {
+				heading: { family: 'Space Grotesk', source: 'google' },
+				code: { family: 'Menlo', source: 'system' },
+			},
+			notes: 'Sentence case.',
+		});
+
+		// Fonts that do not exist and colors that are not hex are refused.
+		expect(
+			(
+				await run('update_brand_kit', {
+					fonts: { body: { family: 'Not A Real Font' } },
+				})
+			).result.isError,
+		).toBe(true);
+		expect(
+			(await run('update_brand_kit', { colors: [{ name: 'X', value: 'red' }] }))
+				.result.isError,
+		).toBe(true);
+
+		const saved = JSON.parse(
+			text(
+				await run('save_brand_logo', {
+					name: 'Acme mark',
+					svg: '<svg viewBox="0 0 120 40" onload="alert(1)"><script>alert(1)</script><rect width="120" height="40" fill="#6366f1"/></svg>',
+				}),
+			),
+		);
+		expect(saved.logo).toMatchObject({
+			name: 'Acme mark',
+			variant: 'primary',
+			width: 120,
+			height: 40,
+		});
+		const stored = useBrandStore.getState().kit.logos[0];
+		const markup = atob(stored.src.split(',')[1]);
+		expect(markup).toContain('<rect');
+		expect(markup).not.toMatch(/script|onload/);
+
+		expect(
+			(await run('save_brand_logo', { name: 'Bad', svg: '<svg><rect/></svg>' }))
+				.result.isError,
+		).toBe(true);
+
+		// Other fields stay when one changes; logos are retagged and removed.
+		await run('update_brand_kit', {
+			fonts: { code: null },
+			logos: [{ id: stored.id, variant: 'mark' }],
+		});
+		let kit = useBrandStore.getState().kit;
+		expect(kit.fonts).toEqual({
+			heading: { family: 'Space Grotesk', source: 'google' },
+		});
+		expect(kit.colors).toHaveLength(2);
+		expect(kit.logos[0].variant).toBe('mark');
+
+		await run('update_brand_kit', { removeLogos: [stored.id] });
+		kit = useBrandStore.getState().kit;
+		expect(kit.logos).toEqual([]);
+		expect(
+			(await run('update_brand_kit', { removeLogos: ['nope'] })).result.isError,
+		).toBe(true);
+	});
+
 	it('refuses html blocks without css and js variables', async () => {
 		const refused = await run('add_block', {
 			type: 'html',

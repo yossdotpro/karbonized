@@ -95,6 +95,17 @@ export const MenuBar: React.FC = () => {
 	const [showDonations, setShowDonations] = useState(false);
 	const [showImportComponents, setShowImportComponents] = useState(false);
 	const [showBrandKit, setShowBrandKit] = useState(false);
+	/* In the editor the brand kit has its own tab in the properties panel;
+	   elsewhere it opens in a dialog. */
+	const openBrandKit = () => {
+		if (location.pathname !== '/editor') {
+			setShowBrandKit(true);
+			return;
+		}
+		const ui = useUIStore.getState();
+		ui.setSelectedTab('brand');
+		ui.setPropertiesOpen(true);
+	};
 
 	/* KComponent Store */
 	/* The library dialog itself lives in the editor's left panel. */
@@ -328,7 +339,7 @@ export const MenuBar: React.FC = () => {
 			group: 'File',
 			icon: SwatchBook,
 			keywords: ['brand', 'colors', 'fonts', 'logo', 'palette'],
-			run: () => setShowBrandKit(true),
+			run: openBrandKit,
 		},
 		{
 			id: 'workspace.clean',
@@ -468,9 +479,7 @@ export const MenuBar: React.FC = () => {
 							</MenubarItem>
 
 							<MenubarSeparator />
-							<MenubarItem onClick={() => setShowBrandKit(true)}>
-								Brand Kit…
-							</MenubarItem>
+							<MenubarItem onClick={openBrandKit}>Brand Kit…</MenubarItem>
 						</MenubarContent>
 					</MenubarMenu>
 

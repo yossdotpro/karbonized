@@ -16,7 +16,6 @@ import { useWorkspaceStore, useUIStore } from '../../stores';
 import { Wallpapers } from '../../utils/wallpapers';
 import { ColorPicker } from '../CustomControls/ColorPicker';
 import { CustomCollapse } from '../CustomControls/CustomCollapse';
-import { VariablesSection } from './VariablesSection';
 import { ScrollArea } from '../ui/scroll-area';
 import {
 	textures,
@@ -151,8 +150,6 @@ export const WorkspacePanel: React.FC = () => {
 					</div>
 				</>
 			</CustomCollapse>
-
-			<VariablesSection />
 
 			{/* Background Type */}
 			<CustomCollapse

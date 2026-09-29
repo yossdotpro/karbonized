@@ -161,7 +161,7 @@ container.replaceChildren(...list.map((bar) => {
 - Use short lowercase names (title, subtitle, code, date, author). Dates take YYYY-MM-DD or "today" and a format (long, medium, short, iso).
 
 ## Workflow
-1. Read the brand kit with get_brand_kit. When it has colors, fonts, logos or guidelines, they come first: use them instead of the palettes and fonts suggested here, and place the logo with add_brand_logo when the design calls for one.
+1. Read the brand kit with get_brand_kit. When it has colors, fonts, logos or guidelines, they come first: use them instead of the palettes and fonts suggested here, and place the logo with add_brand_logo when the design calls for one. When the user gives you their brand (colors, fonts, logo, tone) or asks for a brand kit, save it with update_brand_kit and save_brand_logo so every later design follows it.
 2. Understand the goal: platform, message, audience. Choose the size, palette and fonts (search_fonts) before adding blocks.
 3. Plan the blocks: list each piece with its type and its box (x, y, width, height) on the grid, using one of the layouts above.
 4. Build it step by step, one add_block per piece, from the back: background, hero, headline and text, supporting pieces.
