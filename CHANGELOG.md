@@ -4,7 +4,7 @@
 
 ### 🚀 Features
 
-- **Brand kit panel**: the brand kit has its own tab in the properties panel, next to the workspace settings; File → **Brand kit…** opens it (outside the editor it still opens in a dialog)
+- **Brand kit panel**: the brand kit has its own tab in the properties panel, next to the workspace settings and organized like them, in collapsible sections (name, colors, fonts, logos, guidelines) that show how many items each holds; File → **Brand kit…** opens it (outside the editor it still opens in a dialog)
 - **Agent and MCP clients create and edit the brand kit**: `update_brand_kit` sets the name, palette, fonts by role (checked against Google Fonts), logo names and uses and the guidelines; `save_brand_logo` adds a logo from SVG markup, a data URL or an image block of the canvas. They do it when the user gives them their brand or asks for one
 - **Variables tab**: project variables moved out of the workspace settings to their own tab of the properties panel
 - **Every HTML block Agent and MCP clients write has CSS and JS variables**: the look as annotated `:root` variables and the content (labels, values, lists) as `// @var` JS variables that the script renders, so both are edited from the panel. `add_block`, `update_block` and `update_html_block` refuse a block without them, with a script that declares a variable twice or with a list that is not a JSON list of strings, say what to fix and turn scripts on for the block

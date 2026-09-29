@@ -14,8 +14,8 @@ export const BrandKitPanel: React.FC = () => {
 	const importInput = useRef<HTMLInputElement>(null);
 
 	return (
-		<div className='flex flex-col gap-4 px-1 pb-3'>
-			<p className='text-[11px] leading-relaxed text-muted-foreground'>
+		<div className='flex flex-col pb-3'>
+			<p className='px-2 pb-2 text-[11px] leading-relaxed text-muted-foreground'>
 				Your colors, fonts and logos. The color and font pickers offer them
 				first, and Agent and MCP clients read them (and can fill them in) before
 				designing.
@@ -23,7 +23,7 @@ export const BrandKitPanel: React.FC = () => {
 
 			<BrandKitEditor compact />
 
-			<div className='flex gap-1 border-t border-border pt-3'>
+			<div className='flex gap-1 px-1 pt-2'>
 				<input
 					ref={importInput}
 					type='file'
