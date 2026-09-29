@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v 2.1.0 - Release (September 29th, 2026)
 
 ### 🚀 Features
 
