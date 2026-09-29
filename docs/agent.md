@@ -110,14 +110,20 @@ Change the guide there; the prompt, the instructions and the tool follow.
 The guide asks models to build a design block by block: the background with
 `set_canvas_background`, every headline and paragraph as a text block, and one
 HTML block per component (a stat tile, a card, a badge row, a chart), sized to
-its content and declaring its colors, sizes, radius, shadow and icon as
-annotated `:root` variables. `add_block` and `update_html_block` check the
-last two rules (`src/lib/agent/tools/html-hints.ts`) and answer with `hints`
-when an HTML block declares no variables, covers most of the canvas or holds
-paragraphs of text, so the model fixes it in the same turn. Content that
-repeats (list items, chart data, rows) goes in `// @var` JS variables that the
-block script renders, with `allow-scripts` on, so the user edits the data from
-the panel; the hints flag a block whose script cannot run.
+its content.
+
+Every HTML block a model writes has html, css and js
+(`src/lib/agent/tools/html-contract.ts`): the look as annotated `:root`
+variables in the CSS and the content (labels, values, list items, chart data)
+as `// @var` JS variables that the script writes into the markup, so the user
+edits both from the panel. `add_block`, `update_block` and `update_html_block`
+refuse code without them, with a script that declares a `// @var` again, or
+with an array or object value that is not JSON (an array must be a list of
+strings, which is what the panel edits), and say what to fix; they turn
+`allow-scripts` on for the block. They also answer with `hints`
+(`src/lib/agent/tools/html-hints.ts`) when an HTML block has too few
+variables, covers most of the canvas or holds paragraphs of text, so the model
+fixes it in the same turn.
 
 Fonts: the guide sends models to `search_fonts` (the whole Google Fonts
 catalog, with the weights of each family), gives pairings by tone and asks for

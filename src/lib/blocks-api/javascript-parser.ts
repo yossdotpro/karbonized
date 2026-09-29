@@ -244,7 +244,9 @@ const getDefaultValueForType = (type: JSVariable['type']) => {
 };
 
 // Helper function to parse JavaScript values based on type
-const parseJSValue = (value: string, type: JSVariable['type']) => {
+const parseJSValue = (raw: string, type: JSVariable['type']) => {
+	// A semicolon after the value is a habit of writing code, not part of it.
+	const value = raw.replace(/;\s*$/, '').trim();
 	try {
 		switch (type) {
 			case 'number': {

@@ -46,3 +46,13 @@ export const themes: Style[] = [
 	{ label: 'vscDarkPlus', theme: prismThemes.vscDarkPlus },
 	{ label: 'xonokai', theme: prismThemes.xonokai },
 ];
+
+/** The background a theme paints its code on, which code blocks start from. */
+export const codeThemeBackground = (label: string): string | undefined => {
+	const theme = themes.find((value) => value.label === label)?.theme;
+	if (!theme) return undefined;
+	const background =
+		theme[':not(pre) > code[class*="language-"]']?.background ??
+		theme['code[class*="language-"]']?.background;
+	return typeof background === 'string' ? background : undefined;
+};

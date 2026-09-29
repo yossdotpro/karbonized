@@ -99,6 +99,8 @@ export const RightPanel: React.FC = () => {
 			groupResizeBehavior='preserve-pixel-size'
 		>
 			<div
+				// Zoom to fit leaves the canvas clear of it.
+				data-canvas-overlay
 				className={`pointer-events-auto mr-auto flex h-full w-full gap-1.5 overflow-hidden border-l border-border bg-sidebar p-1.5 text-foreground`}
 			>
 				{/* Selectors */}

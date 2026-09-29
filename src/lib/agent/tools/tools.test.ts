@@ -343,29 +343,55 @@ describe('executeTool', () => {
 		expect(placed).toMatchObject({ type: 'image', width: 200, height: 50 });
 	});
 
-	it('tells the model when an html block misses its variables', async () => {
-		const bare = JSON.parse(
+	it('refuses html blocks without css and js variables', async () => {
+		const refused = await run('add_block', {
+			type: 'html',
+			properties: {
+				html: '<div class="card">Hi</div>',
+				css: '.card { color: red; }',
+			},
+		});
+		expect(refused.result.isError).toBe(true);
+		expect(text(refused)).toMatch(/no annotated :root variables/);
+		expect(text(refused)).toMatch(/js is missing/);
+		expect(workspace().controls).toHaveLength(0);
+	});
+
+	it('turns scripts on for html blocks and hints at what to improve', async () => {
+		const added = JSON.parse(
 			text(
 				await run('add_block', {
 					type: 'html',
 					width: 1280,
 					height: 720,
 					properties: {
-						html: '<div class="card">Hi</div>',
-						css: '.card { color: red; }',
+						html: '<div class="card"><p class="label"></p></div>',
+						css: ':root { /* @type:color */ --a: #111111; } .card { color: var(--a); }',
+						js: '// @var label:string = "Hi"\ndocument.querySelector(".label").textContent = label;',
+						'allow-scripts': false,
 					},
 				}),
 			),
 		);
-		expect(bare.hints.join(' ')).toMatch(/declares no variables/);
-		expect(bare.hints.join(' ')).toMatch(/covers 100% of the canvas/);
+		expect(added.properties['allow-scripts']).toBe(true);
+		expect(added.hints.join(' ')).toMatch(/Only 1 value is adjustable/);
+		expect(added.hints.join(' ')).toMatch(/covers 100% of the canvas/);
+
+		// Taking the js variables out is refused and leaves the block as it was.
+		const refused = await run('update_html_block', {
+			id: added.id,
+			js: 'console.log("hi");',
+		});
+		expect(refused.result.isError).toBe(true);
+		expect(text(refused)).toMatch(/no \/\/ @var variables/);
 
 		const fixed = await run('update_html_block', {
-			id: bare.id,
+			id: added.id,
 			css: ':root { /* @type:color */ --a: #111111; /* @type:color */ --b: #222222; /* @type:number min:0 max:40 step:1 unit:px */ --r: 8px; } .card { color: var(--a); }',
 		});
+		expect(fixed.result.isError).toBeFalsy();
 		expect(text(fixed)).toMatch(/covers 100%/);
-		expect(text(fixed)).not.toMatch(/declares no variables/);
+		expect(text(fixed)).not.toMatch(/adjustable/);
 	});
 
 	it('reads the workspace with long values shortened', async () => {

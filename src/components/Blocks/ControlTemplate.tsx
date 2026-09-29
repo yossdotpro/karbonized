@@ -186,7 +186,9 @@ export const ControlTemplate: React.FC<ControlProps> = ({
 	useLayoutEffect(() => {
 		syncContentSize.current = () => {
 			const element = document.getElementById(id);
-			if (!element) return;
+			// Not laid out: hidden while another page loads (React hides the
+			// canvas with display: none), so it measures 0 × 0.
+			if (!element || element.getClientRects().length === 0) return;
 
 			const next = { w: element.offsetWidth, h: element.offsetHeight };
 			if (next.w === Number(size.w) && next.h === Number(size.h)) return;

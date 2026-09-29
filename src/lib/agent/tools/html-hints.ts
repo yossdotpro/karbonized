@@ -1,4 +1,5 @@
 import { parseCSSVariables } from '@/lib/blocks-api/css-parser';
+import { CSS_ANNOTATION } from './html-contract';
 
 /**
  * Feedback on an HTML block a model just wrote, returned with the tool
@@ -7,9 +8,6 @@ import { parseCSSVariables } from '@/lib/blocks-api/css-parser';
  * block that holds the whole image, or declares nothing, is the common way
  * models get this wrong.
  */
-
-const ANNOTATION =
-	/\/\*\s*@type:\s*(color|number|shadow|boolean|icon|string)\b/g;
 
 /** Share of the canvas area above which an HTML block is a whole section. */
 const MAX_AREA_SHARE = 0.45;
@@ -33,7 +31,7 @@ export const htmlBlockHints = (input: {
 	canvas?: { width: number; height: number };
 }): string[] => {
 	const hints: string[] = [];
-	const annotated = input.css.match(ANNOTATION)?.length ?? 0;
+	const annotated = input.css.match(CSS_ANNOTATION)?.length ?? 0;
 	const variables = parseCSSVariables(input.css).length;
 
 	if (annotated === 0) {

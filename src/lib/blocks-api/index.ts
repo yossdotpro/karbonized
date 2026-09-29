@@ -55,3 +55,4 @@ export * from './css-parser';
 export * from './javascript-parser';
 export * from './safe-dom';
 export * from './file-handler';
+export { createScopedDocument } from './scoped-document';

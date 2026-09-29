@@ -60,6 +60,17 @@ describe('parseJavaScript', () => {
 		expect(variables[0].value).toEqual({});
 	});
 
+	it('reads values written with a semicolon after them', () => {
+		const { variables } = parseJavaScript(
+			'// @var bars:array = ["Mon: 42", "Tue: 68"];\n// @var max:number = 90;\n// @var title:string = "Signups";',
+		);
+		expect(variables.map((variable) => variable.value)).toEqual([
+			['Mon: 42', 'Tue: 68'],
+			90,
+			'Signups',
+		]);
+	});
+
 	it('splits setup code from actions', () => {
 		const parsed = parseJavaScript(
 			[
