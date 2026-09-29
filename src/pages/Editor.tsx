@@ -26,6 +26,8 @@ import {
 	selectAllControls,
 } from '@/lib/canvas/selection';
 import {
+	canvasInsets,
+	centerViewer,
 	fitViewer,
 	setViewerZoom,
 	useViewStore,
@@ -149,13 +151,16 @@ export const Editor: React.FC = () => {
 	const centerView = (): void => {
 		if (currentWorkspace === undefined) return;
 
+		const container = document.querySelector<HTMLElement>('.viewer');
 		fitViewer(
 			viewerRef,
 			{
 				width: parseFloat(currentWorkspace.workspaceWidth),
 				height: parseFloat(currentWorkspace.workspaceHeight),
 			},
-			document.querySelector<HTMLElement>('.viewer'),
+			container,
+			// The toolbar and the properties panel float over the canvas.
+			canvasInsets(container),
 		);
 	};
 
@@ -388,7 +393,10 @@ export const Editor: React.FC = () => {
 			keywords: ['reset', 'actual size'],
 			run: () => {
 				setViewerZoom(viewerRef, 1);
-				requestAnimationFrame(() => viewerRef.current?.scrollCenter());
+				centerViewer(
+					viewerRef,
+					canvasInsets(document.querySelector<HTMLElement>('.viewer')),
+				);
 			},
 		},
 	]);

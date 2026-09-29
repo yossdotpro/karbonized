@@ -34,6 +34,7 @@ import {
 	SelectValue,
 } from '../ui/select';
 import { cn } from '@/lib/utils';
+import { useUIStore } from '@/stores';
 import {
 	type TextAlign,
 	type TextSizing,
@@ -160,6 +161,10 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 	};
 
 	const weight = isBold ? 700 : fontWeight;
+
+	/* The hover and editing outlines are editor chrome: an export copies the
+	   computed style of the paragraph, hover included, so drop them then. */
+	const isExporting = useUIStore((state) => state.isExporting);
 
 	return (
 		<>
@@ -449,14 +454,16 @@ export const TextControl: React.FC<Props> = ({ id }) => {
 					className={cn(
 						// A block box, not a flex one, so `text-align` reaches the lines.
 						// An outline, not a border: the hover must not resize the block.
-						'my-auto block w-full flex-auto select-none overflow-hidden whitespace-pre-wrap hover:outline hover:outline-1 hover:outline-blue-500',
+						'my-auto block w-full flex-auto select-none overflow-hidden whitespace-pre-wrap',
+						!isExporting &&
+							'hover:outline hover:outline-1 hover:outline-blue-500',
 						sizing !== 'fixed' && 'break-words',
 						// The app font only styles bold text that uses no font of its own.
 						isBold && fontFamily === '' && 'poppins-font-family',
 						isItalic && 'italic',
 						isUnderline && 'underline',
-						editing &&
-							'cursor-text select-text outline outline-1 outline-blue-500',
+						editing && 'cursor-text select-text',
+						editing && !isExporting && 'outline outline-1 outline-blue-500',
 					)}
 				>
 					{editing ? undefined : shownText}

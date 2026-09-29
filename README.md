@@ -18,7 +18,7 @@ Karbonized is a visual editor for creating images of code snippets, mockups and 
 
 * **Agent, the design assistant** — describe the image you want and Agent builds it on the canvas, with Anthropic, OpenAI, Gemini, OpenRouter or local models (Ollama, LM Studio). It follows design standards made for social media, and everything it did undoes in one step.
 * **MCP server** — Claude Desktop, Claude Code, Cursor and other MCP clients can design with Karbonized. They start it in the background when it is not open, and exports land in a folder without any dialog.
-* **Templates with variables** — write `{{title}}`, `{{date}}` or `{{code}}` in any block and fill them from the Workspace panel (or let Agent do it): the next post is a new value, not a redesign.
+* **Templates with variables** — write `{{title}}`, `{{date}}` or `{{code}}` in any block and fill them from the Variables panel (or let Agent do it): the next post is a new value, not a redesign.
 * **Brand kit** — your colors, fonts, logos and guidelines in one place. The pickers offer them first and Agent reads them before designing.
 * **Drawing tools** — a vector brush that follows pen pressure, shapes drawn by dragging, node editing, an eraser, rulers and guides.
 * **Components and icon packs** — a reworked `.kcomponent` library with a starter pack, and icon packs that anyone can make from a folder of SVGs.

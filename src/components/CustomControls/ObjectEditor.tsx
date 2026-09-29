@@ -1,305 +1,192 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Plus, X, Edit2, Check, RotateCcw, FileJson, Eye } from 'lucide-react';
+import { Braces, List, Plus, X } from 'lucide-react';
+import { cn } from '@/components/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DraftInput } from './DraftInput';
 
 interface Props {
-	value: Record<string, any>;
-	onChange: (value: Record<string, any>) => void;
-	placeholder?: string;
+	value: Record<string, unknown>;
+	onChange: (value: Record<string, unknown>) => void;
 	label?: string;
 }
 
+/** How a value shows in its field: text as is, anything else as JSON. */
+const toText = (value: unknown): string =>
+	typeof value === 'string' ? value : JSON.stringify(value);
+
+/**
+ * Read a typed field back with the type the value had: numbers stay
+ * numbers, booleans booleans and nested values JSON when the text allows.
+ */
+export const fromText = (text: string, previous: unknown): unknown => {
+	if (typeof previous === 'string') return text;
+	if (typeof previous === 'number') {
+		const number = Number(text);
+		return text.trim() !== '' && Number.isFinite(number) ? number : text;
+	}
+	try {
+		return JSON.parse(text);
+	} catch {
+		return text;
+	}
+};
+
+/** The whole object as JSON, applied when it is valid and the field is left. */
+const JsonField: React.FC<{
+	value: Record<string, unknown>;
+	onChange: (value: Record<string, unknown>) => void;
+}> = ({ value, onChange }) => {
+	const formatted = JSON.stringify(value, null, 2);
+	const [draft, setDraft] = useState(formatted);
+	const [synced, setSynced] = useState(formatted);
+	if (formatted !== synced) {
+		setSynced(formatted);
+		setDraft(formatted);
+	}
+
+	let parsed: unknown;
+	let valid = true;
+	try {
+		parsed = JSON.parse(draft);
+		valid =
+			typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+	} catch {
+		valid = false;
+	}
+
+	return (
+		<div className='space-y-1'>
+			<Textarea
+				value={draft}
+				onChange={(event) => setDraft(event.currentTarget.value)}
+				onBlur={() => {
+					if (valid && draft !== formatted) {
+						onChange(parsed as Record<string, unknown>);
+					}
+				}}
+				aria-invalid={!valid}
+				spellCheck={false}
+				className='min-h-28 font-mono text-xs md:text-xs'
+			/>
+			{!valid && (
+				<p className='text-[11px] text-destructive'>
+					Not a valid JSON object: it is applied once it is.
+				</p>
+			)}
+		</div>
+	);
+};
+
+/**
+ * Key and value pairs, one row each: change a value in place, remove a
+ * pair, add one at the end, or edit the whole object as JSON.
+ */
 export const ObjectEditor: React.FC<Props> = ({
 	value = {},
 	onChange,
-	placeholder = 'Add key-value pairs...',
 	label,
 }) => {
+	const [asJson, setAsJson] = useState(false);
 	const [newKey, setNewKey] = useState('');
 	const [newValue, setNewValue] = useState('');
-	const [editingKey, setEditingKey] = useState<string | null>(null);
-	const [editingValue, setEditingValue] = useState<any>('');
-	const [showJsonView, setShowJsonView] = useState(false);
-	const [jsonText, setJsonText] = useState('');
-
 	const entries = Object.entries(value);
 
-	const addPair = () => {
-		if (newKey.trim() && newValue.trim()) {
-			const newObject = { ...value, [newKey.trim()]: newValue.trim() };
-			onChange(newObject);
-			setNewKey('');
-			setNewValue('');
-		}
+	const add = () => {
+		const key = newKey.trim();
+		if (key === '') return;
+		onChange({ ...value, [key]: fromText(newValue, undefined) });
+		setNewKey('');
+		setNewValue('');
 	};
 
-	const removePair = (key: string) => {
-		const newObject = { ...value };
-		delete newObject[key];
-		onChange(newObject);
-	};
-
-	const startEditing = (key: string) => {
-		setEditingKey(key);
-		setEditingValue(value[key]);
-	};
-
-	const saveEdit = () => {
-		if (editingKey && editingValue !== null) {
-			const newObject = { ...value, [editingKey]: editingValue };
-			onChange(newObject);
-			setEditingKey(null);
-			setEditingValue('');
-		}
-	};
-
-	const cancelEdit = () => {
-		setEditingKey(null);
-		setEditingValue('');
-	};
-
-	const handleKeyPress = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') {
-			addPair();
-		}
-	};
-
-	const handleEditKeyPress = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') {
-			saveEdit();
-		} else if (e.key === 'Escape') {
-			cancelEdit();
-		}
-	};
-
-	const clearAll = () => {
-		onChange({});
-	};
-
-	const toggleJsonView = () => {
-		if (!showJsonView) {
-			setJsonText(JSON.stringify(value, null, 2));
-		}
-		setShowJsonView(!showJsonView);
-	};
-
-	const handleJsonChange = (text: string) => {
-		setJsonText(text);
-		try {
-			const parsed = JSON.parse(text);
-			onChange(parsed);
-		} catch (error) {
-			// Invalid JSON, don't update
-		}
-	};
-
-	const formatValue = (val: any): string => {
-		if (typeof val === 'object') {
-			return JSON.stringify(val, null, 2);
-		}
-		return String(val);
+	const remove = (key: string) => {
+		const next = { ...value };
+		delete next[key];
+		onChange(next);
 	};
 
 	return (
-		<div className='space-y-3'>
-			{label && (
-				<Label className='text-xs text-muted-foreground'>{label}</Label>
-			)}
-
-			{!showJsonView ? (
-				<>
-					{/* Add new key-value pair */}
-					<div className='flex gap-2'>
-						<Input
-							value={newKey}
-							onChange={(e) => setNewKey(e.target.value)}
-							onKeyPress={handleKeyPress}
-							placeholder='Key'
-							className='text-sm'
-						/>
-						<Input
-							value={newValue}
-							onChange={(e) => setNewValue(e.target.value)}
-							onKeyPress={handleKeyPress}
-							placeholder='Value'
-							className='text-sm'
-						/>
-						<Button
-							onClick={addPair}
-							size='sm'
-							variant='outline'
-							disabled={!newKey.trim() || !newValue.trim()}
-						>
-							<Plus className='h-4 w-4' />
-						</Button>
-					</div>
-
-					{/* Key-value pairs list */}
-					{entries.length > 0 && (
-						<div className='space-y-2'>
-							<div className='flex items-center justify-between'>
-								<span className='text-xs text-muted-foreground'>
-									{entries.length} propert{entries.length !== 1 ? 'ies' : 'y'}
-								</span>
-								<div className='flex gap-1'>
-									<Button
-										onClick={toggleJsonView}
-										size='sm'
-										variant='ghost'
-										className='h-6 px-2 text-xs'
-									>
-										<FileJson className='h-3 w-3 mr-1' />
-										JSON
-									</Button>
-									<Button
-										onClick={clearAll}
-										size='sm'
-										variant='ghost'
-										className='h-6 px-2 text-xs'
-									>
-										<RotateCcw className='h-3 w-3 mr-1' />
-										Clear
-									</Button>
-								</div>
-							</div>
-
-							<div className='space-y-2 max-h-48 overflow-y-auto'>
-								{entries.map(([key, val]) => (
-									<div
-										key={key}
-										className='flex items-center gap-2 p-2 border rounded-control'
-									>
-										<span className='text-xs font-mono text-muted-foreground min-w-0 truncate'>
-											{key}:
-										</span>
-
-										{editingKey === key ? (
-											<div className='flex-1 flex gap-1'>
-												{typeof val === 'object' ? (
-													<Textarea
-														value={
-															typeof editingValue === 'string'
-																? editingValue
-																: JSON.stringify(editingValue, null, 2)
-														}
-														onChange={(e) => {
-															try {
-																const parsed = JSON.parse(e.target.value);
-																setEditingValue(parsed);
-															} catch {
-																setEditingValue(e.target.value);
-															}
-														}}
-														onKeyPress={handleEditKeyPress}
-														onBlur={saveEdit}
-														className='text-xs h-16 min-h-16'
-														autoFocus
-													/>
-												) : (
-													<Input
-														value={String(editingValue)}
-														onChange={(e) => setEditingValue(e.target.value)}
-														onKeyPress={handleEditKeyPress}
-														onBlur={saveEdit}
-														className='text-xs h-6'
-														autoFocus
-													/>
-												)}
-											</div>
-										) : (
-											<span className='flex-1 text-xs font-mono truncate'>
-												{formatValue(val)}
-											</span>
-										)}
-
-										<div className='flex items-center gap-1'>
-											{editingKey === key ? (
-												<>
-													<Button
-														onClick={saveEdit}
-														size='sm'
-														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-emerald-500/15'
-													>
-														<Check className='h-3 w-3 text-emerald-500' />
-													</Button>
-													<Button
-														onClick={cancelEdit}
-														size='sm'
-														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-destructive/15'
-													>
-														<X className='h-3 w-3 text-destructive' />
-													</Button>
-												</>
-											) : (
-												<>
-													<Button
-														onClick={() => startEditing(key)}
-														size='sm'
-														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-accent'
-													>
-														<Edit2 className='h-3 w-3 text-muted-foreground' />
-													</Button>
-													<Button
-														onClick={() => removePair(key)}
-														size='sm'
-														variant='ghost'
-														className='h-4 w-4 p-0 hover:bg-destructive/15'
-													>
-														<X className='h-3 w-3 text-destructive' />
-													</Button>
-												</>
-											)}
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
+		<div className='space-y-1.5'>
+			<div className='flex min-h-6 items-center gap-2'>
+				{label && (
+					<span className='min-w-0 flex-1 truncate text-xs text-muted-foreground'>
+						{label}
+					</span>
+				)}
+				<button
+					type='button'
+					onClick={() => setAsJson(!asJson)}
+					title={asJson ? 'Edit as fields' : 'Edit as JSON'}
+					className='ml-auto flex h-6 items-center gap-1 rounded-[5px] px-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+				>
+					{asJson ? (
+						<List className='size-3.5' />
+					) : (
+						<Braces className='size-3.5' />
 					)}
+					{asJson ? 'Fields' : 'JSON'}
+				</button>
+			</div>
 
-					{entries.length === 0 && (
-						<div className='text-center text-xs text-muted-foreground py-4 border border-dashed border-border rounded-control'>
-							No properties yet. Add your first key-value pair above.
-						</div>
-					)}
-				</>
+			{asJson ? (
+				<JsonField value={value} onChange={onChange} />
 			) : (
 				<>
-					{/* JSON View */}
-					<div className='space-y-2'>
-						<div className='flex items-center justify-between'>
-							<span className='text-xs text-muted-foreground'>JSON View</span>
-							<Button
-								onClick={toggleJsonView}
-								size='sm'
-								variant='ghost'
-								className='h-6 px-2 text-xs'
+					{entries.map(([key, item]) => (
+						<div key={key} className='group flex items-center gap-1.5'>
+							<span
+								title={key}
+								className='w-20 shrink-0 truncate font-mono text-[11px] text-muted-foreground'
 							>
-								<Eye className='h-3 w-3 mr-1' />
-								Visual
-							</Button>
+								{key}
+							</span>
+							<DraftInput
+								aria-label={key}
+								value={toText(item)}
+								onCommit={(text) =>
+									onChange({ ...value, [key]: fromText(text, item) })
+								}
+								className={cn(typeof item !== 'string' && 'font-mono')}
+							/>
+							<button
+								type='button'
+								title='Remove'
+								aria-label={`Remove ${key}`}
+								onClick={() => remove(key)}
+								className='flex size-6 shrink-0 items-center justify-center rounded-[5px] text-muted-foreground opacity-60 transition hover:bg-destructive/15 hover:text-destructive group-focus-within:opacity-100 group-hover:opacity-100'
+							>
+								<X className='size-3.5' />
+							</button>
 						</div>
+					))}
 
-						<Textarea
-							value={jsonText}
-							onChange={(e) => handleJsonChange(e.target.value)}
-							className='font-mono text-xs min-h-32'
-							placeholder='{"key": "value"}'
+					<div className='flex items-center gap-1.5'>
+						<input
+							aria-label='New key'
+							placeholder='key'
+							value={newKey}
+							onChange={(event) => setNewKey(event.currentTarget.value)}
+							onKeyDown={(event) => event.key === 'Enter' && add()}
+							className='h-7 w-20 shrink-0 rounded-control border border-dashed border-border bg-transparent px-2 font-mono text-[11px] outline-none placeholder:text-muted-foreground focus-visible:border-ring'
 						/>
-
-						<Alert>
-							<FileJson className='h-4 w-4' />
-							<AlertDescription className='text-xs'>
-								Editing JSON directly. Invalid JSON will not be applied.
-							</AlertDescription>
-						</Alert>
+						<input
+							aria-label='New value'
+							placeholder='value'
+							value={newValue}
+							onChange={(event) => setNewValue(event.currentTarget.value)}
+							onKeyDown={(event) => event.key === 'Enter' && add()}
+							className='h-7 min-w-0 flex-1 rounded-control border border-dashed border-border bg-transparent px-2 text-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring'
+						/>
+						<button
+							type='button'
+							title='Add'
+							aria-label='Add'
+							disabled={newKey.trim() === ''}
+							onClick={add}
+							className='flex size-6 shrink-0 items-center justify-center rounded-[5px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30'
+						>
+							<Plus className='size-3.5' />
+						</button>
 					</div>
 				</>
 			)}

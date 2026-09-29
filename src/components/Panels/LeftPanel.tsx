@@ -231,8 +231,11 @@ export const LeftPanel: React.FC = () => {
 			className='pointer-events-auto z-30 mr-auto flex h-full w-5/6 grow-0 flex-col justify-center gap-1 overflow-hidden p-2 py-4 text-foreground md:w-fit md:max-w-40'
 			ref={containerRef}
 		>
-			{/* Controls */}
-			<div className='flex w-fit flex-col items-center gap-0.5 rounded-[10px] border border-border bg-popover p-1 text-foreground shadow-lg shadow-black/5 dark:shadow-black/30'>
+			{/* Controls. Zoom to fit leaves the canvas clear of them. */}
+			<div
+				data-canvas-overlay
+				className='flex w-fit flex-col items-center gap-0.5 rounded-[10px] border border-border bg-popover p-1 text-foreground shadow-lg shadow-black/5 dark:shadow-black/30'
+			>
 				{visibleTools.map((tool, index) => (
 					<React.Fragment key={tool.id}>
 						<Tooltip message={tool.label} shortcut={tool.shortcut}>

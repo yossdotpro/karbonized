@@ -51,7 +51,8 @@ export interface LayerSnapshot {
 export type LayerMovePosition = 'before' | 'after' | 'inside';
 export type LayerStepDirection = 'forward' | 'backward';
 export type LayerEdgePosition = 'front' | 'back';
-export type SelectedTab = 'hierarchy' | 'control' | 'workspace' | 'extensions';
+export type SelectedTab =
+	'hierarchy' | 'control' | 'workspace' | 'variables' | 'brand' | 'extensions';
 export type HistorySignal = 'redo' | 'undo' | '';
 
 export interface ControlSize {

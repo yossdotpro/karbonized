@@ -7,6 +7,18 @@ import {
 import default_logo from '../assets/logo.svg';
 import { isBatchHistory } from '../stores/history-store';
 
+const serialize = (value: unknown): string => {
+	if (typeof value === 'string') return value;
+	return JSON.stringify(value);
+};
+
+/** Projects saved by old versions point image blocks at the bundled logo. */
+const restoredValue = <T>(id: string, value: unknown): T =>
+	id.endsWith('-src') &&
+	(value === '/src/assets/logo.svg' || value === '/src/assets/karbonized.svg')
+		? (default_logo as T)
+		: (value as T);
+
 export function useControlState<T>(
 	initialState: T,
 	id: string,
@@ -39,40 +51,28 @@ export function useControlState<T>(
 	const setPastHistory = useHistoryStore((state) => state.setPast);
 	const setFutureHistory = useHistoryStore((state) => state.setFuture);
 
-	const serialize = (value: unknown): string => {
-		if (typeof value === 'string') return value;
-		return JSON.stringify(value);
-	};
-
-	const [state, setState] = useState(initialState);
+	/* Start from the value the block already has: a pending initial value, or
+	   the stored one when the block mounts again (after the block editor, a
+	   workspace switch…). Starting from the default would paint the default
+	   for a frame, and the save effect below would write it over the stored
+	   value before the stored value is read back. */
+	const [state, setState] = useState<T>(() => {
+		const pending = initialProperty?.value ?? null;
+		if (pending) return restoredValue<T>(id, pending);
+		return storedProperty !== undefined
+			? (storedProperty.value as T)
+			: initialState;
+	});
 
 	/* Set Initial Properties */
 	useEffect(() => {
 		const prop = initialProperty?.value ?? null;
 		if (prop) {
-			const nextValue =
-				id.endsWith('-src') &&
-				(prop === '/src/assets/logo.svg' ||
-					prop === '/src/assets/karbonized.svg')
-					? (default_logo as T)
-					: (prop as T);
-
-			if (serialize(nextValue) === serialize(state)) {
-				removeInitialProperty(id);
-				return;
-			}
-
-			if (
-				id.endsWith('-src') &&
-				(prop === '/src/assets/logo.svg' ||
-					prop === '/src/assets/karbonized.svg')
-			) {
+			const nextValue = restoredValue<T>(id, prop);
+			if (serialize(nextValue) !== serialize(state)) {
 				// eslint-disable-next-line react-hooks/set-state-in-effect -- mirrors the controls store
-				setState(default_logo as T);
-			} else {
-				setState(prop);
+				setState(nextValue);
 			}
-
 			removeInitialProperty(id);
 		}
 	}, [id, initialProperty, removeInitialProperty, state]);

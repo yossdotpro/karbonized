@@ -14,6 +14,7 @@ import {
 	requireWorkspace,
 	reorderBlock,
 	selectBlocks,
+	setBlockProperties,
 	setHtmlBlockCode,
 	summarizeBlock,
 	updateBlock,
@@ -26,6 +27,7 @@ import { loadGoogleCatalog } from '@/lib/fonts/fonts';
 import { ToolError, defineTool } from './registry';
 import { cssFontHints, textFontHints } from './font-hints';
 import { htmlBlockHints } from './html-hints';
+import { htmlBlockContractErrors } from './html-contract';
 
 const blockTypes = BLOCK_TYPES.map((spec) => spec.type) as [
 	string,
@@ -121,6 +123,29 @@ export const validateBlockProperties = (
 
 	if (errors.length > 0) throw new ToolError(errors.join('\n'));
 	return values;
+};
+
+type HtmlCode = { html?: string; css?: string; js?: string };
+
+const pickHtmlCode = (values: Record<string, unknown>): HtmlCode =>
+	Object.fromEntries(
+		HTML_CODE_KEYS.filter((key) => typeof values[key] === 'string').map(
+			(key) => [key, values[key]],
+		),
+	);
+
+/**
+ * Refuse HTML code that breaks the contract of html-contract: annotated CSS
+ * variables for the look and // @var JS variables for the content. `code` is
+ * the whole code the block will have.
+ */
+const requireHtmlContract = (code: HtmlCode): void => {
+	const errors = htmlBlockContractErrors(code);
+	if (errors.length > 0) {
+		throw new ToolError(
+			['The HTML block was not changed:', ...errors].join('\n'),
+		);
+	}
 };
 
 const MAX_VALUE_LENGTH = 300;
@@ -250,7 +275,7 @@ export const addBlockTool = defineTool({
 	name: 'add_block',
 	title: 'Add block',
 	description:
-		'Add one block to the canvas and select it. It is centered on the canvas unless x and y are given. Build a design with one call per piece (hero, each text, each component) rather than one block for everything. For html blocks: one component, width and height that fit it, properties html and css (js only if needed), and a :root block of annotated variables (/* @type:color */, number, shadow, icon, boolean) for everything a user may tweak, as in the design guide. The result lists hints when an html block breaks these rules or a font cannot load (text blocks: fontFamily from search_fonts with fontSource "google" and a fontWeight the family has).',
+		'Add one block to the canvas and select it. It is centered on the canvas unless x and y are given. Build a design with one call per piece (hero, each text, each component) rather than one block for everything. For html blocks: one component, width and height that fit it, and properties html, css and js, all three required: the css starts with a :root block of annotated variables (/* @type:color */, number, shadow, icon, boolean) for everything a user may tweak, and the js declares the content (labels, values, lists) as // @var name:type = value lines and writes it into the markup, as in the design guide. Scripts are turned on for it. An html block without them is refused with what is missing. The result lists hints when an html block breaks these rules or a font cannot load (text blocks: fontFamily from search_fonts with fontSource "google" and a fontWeight the family has).',
 	input: z.object({
 		type: z.enum(blockTypes).describe('Block type.'),
 		name: z.string().optional().describe('Layer name.'),
@@ -260,6 +285,11 @@ export const addBlockTool = defineTool({
 	mutates: true,
 	execute: (args) => {
 		const values = validateBlockProperties(args.type, args.properties);
+		if (args.type === 'html') {
+			requireHtmlContract(pickHtmlCode(values));
+			// Its script renders the JS variables.
+			values['allow-scripts'] = true;
+		}
 		return addBlock({ ...args, properties: values });
 	},
 	settle: async (block) => {
@@ -289,6 +319,11 @@ export const updateBlockTool = defineTool({
 	execute: ({ id, ...args }) => {
 		const block = requireBlock(id);
 		const values = validateBlockProperties(block.type, args.properties);
+		const code = pickHtmlCode(values);
+		if (block.type === 'html' && Object.keys(code).length > 0) {
+			requireHtmlContract({ ...getHtmlBlockCode(id), ...code });
+			values['allow-scripts'] = true;
+		}
 		updateBlock(id, { ...args, properties: values });
 		return id;
 	},
@@ -395,7 +430,7 @@ export const updateHtmlBlockTool = defineTool({
 	name: 'update_html_block',
 	title: 'Edit HTML block',
 	description:
-		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. Keep the annotated :root variables (/* @type:color */ --accent: #f43f5e; …) that make it adjustable from the panel. CSS is scoped to the block (:root means the block). Google fonts named in font-family are loaded automatically; icons come from /* @type:icon */ variables drawn with <span class="k-icon" style="--k-icon: var(--name)">. JavaScript only runs after setting the allow-scripts property with update_block; declare its data as // @var name:type = value lines so the user can edit it from the panel.',
+		'Replace the HTML, CSS and/or JavaScript code of an HTML block. Omitted parts are kept. Keep the annotated :root variables (/* @type:color */ --accent: #f43f5e; …) that make it adjustable from the panel. CSS is scoped to the block (:root means the block). Google fonts named in font-family are loaded automatically; icons come from /* @type:icon */ variables drawn with <span class="k-icon" style="--k-icon: var(--name)">. The JavaScript declares the content as // @var name:type = value lines (JSON values on one line) and writes it into the markup; scripts are turned on for the block. The resulting block must keep both the annotated CSS variables and the // @var lines, or the change is refused.',
 	input: z.object({
 		id: z.string(),
 		html: z.string().optional(),
@@ -407,7 +442,13 @@ export const updateHtmlBlockTool = defineTool({
 		if (html === undefined && css === undefined && js === undefined) {
 			throw new ToolError('Give at least one of html, css or js.');
 		}
-		setHtmlBlockCode(id, { html, css, js });
+		const code = pickHtmlCode({ html, css, js });
+		requireHtmlContract({ ...getHtmlBlockCode(id), ...code });
+		setHtmlBlockCode(id, code);
+		// Its script renders the JS variables.
+		if (summarizeBlock(requireBlock(id)).properties['allow-scripts'] !== true) {
+			setBlockProperties(id, { 'allow-scripts': true });
+		}
 		return id;
 	},
 	settle: async (id) => {

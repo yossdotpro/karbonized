@@ -26,6 +26,7 @@ import {
 	updateJSVariable,
 	buildBlockStylesheet,
 	createSafeDOM,
+	createScopedDocument,
 	fileHandler,
 	fileUtils,
 } from '../../lib/blocks-api';
@@ -102,42 +103,6 @@ export const HTMLBlock: React.FC<Props> = ({ id }) => {
 	// Clear dev logs
 	const clearDevLogs = () => {
 		setDevLogs([]);
-	};
-
-	const createScopedDocument = (
-		shadowRoot: ShadowRoot,
-		host: HTMLDivElement,
-	): Document & ShadowRoot => {
-		const globalDocument = window.document;
-
-		return new Proxy(globalDocument, {
-			get(target, prop) {
-				switch (prop) {
-					case 'querySelector':
-						return shadowRoot.querySelector.bind(shadowRoot);
-					case 'querySelectorAll':
-						return shadowRoot.querySelectorAll.bind(shadowRoot);
-					case 'getElementById':
-						return shadowRoot.getElementById?.bind(shadowRoot);
-					case 'body':
-						return shadowRoot;
-					case 'head':
-						return shadowRoot;
-					case 'documentElement':
-						return host;
-					case 'activeElement':
-						return shadowRoot.activeElement;
-					case 'addEventListener':
-						return shadowRoot.addEventListener.bind(shadowRoot);
-					case 'removeEventListener':
-						return shadowRoot.removeEventListener.bind(shadowRoot);
-					case 'dispatchEvent':
-						return shadowRoot.dispatchEvent.bind(shadowRoot);
-					default:
-						return Reflect.get(target, prop, target);
-				}
-			},
-		}) as Document & ShadowRoot;
 	};
 
 	// Update CSS content when variables change

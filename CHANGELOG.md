@@ -1,5 +1,24 @@
 # Changelog
 
+## v 2.1.0 - Release (September 29th, 2026)
+
+### 🚀 Features
+
+- **Brand kit panel**: the brand kit has its own tab in the properties panel, next to the workspace settings and organized like them, in collapsible sections (name, colors, fonts, logos, guidelines) that show how many items each holds; File → **Brand kit…** opens it (outside the editor it still opens in a dialog)
+- **Agent and MCP clients create and edit the brand kit**: `update_brand_kit` sets the name, palette, fonts by role (checked against Google Fonts), logo names and uses and the guidelines; `save_brand_logo` adds a logo from SVG markup, a data URL or an image block of the canvas. They do it when the user gives them their brand or asks for one
+- **Variables tab**: project variables moved out of the workspace settings to their own tab of the properties panel
+- **Every HTML block Agent and MCP clients write has CSS and JS variables**: the look as annotated `:root` variables and the content (labels, values, lists) as `// @var` JS variables that the script renders, so both are edited from the panel. `add_block`, `update_block` and `update_html_block` refuse a block without them, with a script that declares a variable twice or with a list that is not a JSON list of strings, say what to fix and turn scripts on for the block
+- **Easier property panel for HTML blocks**: variables read as names ("Value size", not `--value-size`) in rows that line up with the other panels; numbers take a typed value next to the slider, lists edit each item in its own field (Enter applies, reorder, remove, add), objects edit each value in place or as JSON, and the shadow editor is a compact set of rows
+
+### 🐛 Fixes
+
+- The properties panel could not scroll to its end: its scroll area took the full height of the panel under the title and the align bar, so the last part of a tab with several sections open stayed hidden
+- Going to the block editor and back (or anything else that shows the canvas again) could lose block positions and other values: every block painted its defaults for a frame and wrote them over its saved values before reading them back. Blocks now start from their saved values, and a custom background of a code block survives
+- The first render of a code block showed raw `<pre><code>` markup before the code
+- A text block exported while selected (or under the pointer) kept its blue outline in the image
+- **Zoom to fit** and **Zoom to 100%** ignored the panels floating over the canvas: with Agent open the canvas ended up under the properties panel. They now fit and center it in the space left free
+- HTML block scripts could not build elements: `document.createElement` threw "Illegal invocation", so lists rendered from a JS array stayed empty. Editing a list whose items were numbers did nothing, and a `// @var` value followed by a semicolon read as empty
+
 ## v 2.0.0 - Release (September 28th, 2026)
 
 ### 🚀 Features

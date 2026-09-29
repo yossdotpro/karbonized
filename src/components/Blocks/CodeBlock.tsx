@@ -15,7 +15,7 @@ import {
 	IconTerminal,
 	IconX,
 } from '@tabler/icons-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { PropertyRow, SliderField } from '../CustomControls/PropertyControls';
 import { Switch } from '../ui/switch';
 import { ControlTemplate } from './ControlTemplate';
@@ -25,8 +25,9 @@ import { ColorPicker } from '../CustomControls/ColorPicker';
 import { CloseSvg, MinimizeSvg } from '../Misc/Icons';
 import { LanguajeTabIcon } from './LanguajeTabIcon';
 import { useControlState } from '../../hooks/useControlState';
+import { useControlsStore, useWorkspaceStore } from '@/stores';
 import { useResolvedText } from '../../hooks/useProjectVariables';
-import { themes } from '../../utils/PrismThemes';
+import { codeThemeBackground, themes } from '../../utils/PrismThemes';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import {
@@ -46,11 +47,12 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 
 	const [theme, setTheme] = useControlState('coldarkDark', `${id}-theme`);
 	const [language, setLanguage] = useControlState('jsx', `${id}-lang`);
-	const [code, setCode] = useControlState(
-		`<pre><code class="language-${language}"></code></pre>`,
-		`${id}-code`,
+	const [code, setCode] = useControlState('', `${id}-code`);
+	// A new block starts on the background of its theme.
+	const [color, setColor] = useControlState(
+		codeThemeBackground(theme) ?? '#111b28',
+		`${id}-bgcolor`,
 	);
-	const [color, setColor] = useControlState('#111b28', `${id}-bgcolor`);
 	const [controlsColor, setControlsColor] = useControlState(
 		'#b4b4b4',
 		`${id}-ccolor`,
@@ -86,18 +88,40 @@ const CodeControl: React.FC<Props> = ({ id }) => {
 		return themes.find((value) => value.label === theme)?.theme;
 	};
 
-	/* Handle Change Theme Colors */
+	/* A new block keeps the background it starts on, so Agent and saved
+	   projects read the color it shows rather than the catalog default. */
 	useEffect(() => {
-		const newTheme = themes.find((value) => value.label === theme)?.theme;
-
-		setColor(
-			(newTheme as any)[':not(pre) > code[class*="language-"]'].background ||
-				(newTheme as any)[`code[class*="language-"]`].background,
+		const key = `${id}-bgcolor`;
+		const { ControlProperties, initialProperties, addControlProperty } =
+			useControlsStore.getState();
+		const known = [...ControlProperties, ...initialProperties].some(
+			(item) => item.id === key,
 		);
+		if (!known) {
+			addControlProperty(
+				{ id: key, value: color },
+				useWorkspaceStore.getState().currentWorkspaceID,
+			);
+		}
+		// Only the color the block mounted with.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [id]);
+
+	/* Picking a theme or the paper style resets the background to theme it.
+	   Only when they change: mounting again (after the block editor, a
+	   workspace switch, a project load) keeps the background the user chose. */
+	const shownTheme = useRef(theme);
+	useEffect(() => {
+		if (shownTheme.current === theme) return;
+		shownTheme.current = theme;
+		const background = codeThemeBackground(theme);
+		if (background) setColor(background);
 	}, [theme]);
 
-	/* Handle Window Style Change - Set color for paper style */
+	const shownWindowStyle = useRef(windowStyle);
 	useEffect(() => {
+		if (shownWindowStyle.current === windowStyle) return;
+		shownWindowStyle.current = windowStyle;
 		if (windowStyle === 'paper') {
 			setColor('#fbfaf7');
 		}

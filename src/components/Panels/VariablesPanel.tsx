@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import {
-	AlignLeft,
-	Braces,
-	CalendarDays,
-	Plus,
-	Trash2,
-	Type,
-} from 'lucide-react';
+import { AlignLeft, CalendarDays, Plus, Trash2, Type } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -26,7 +18,6 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select';
-import { CustomCollapse } from '../CustomControls/CustomCollapse';
 import { useProjectVariables } from '@/hooks/useProjectVariables';
 import { setProjectVariables } from '@/lib/editor/actions';
 import {
@@ -218,8 +209,11 @@ const VariableRow: React.FC<{
 	);
 };
 
-/** Project variables: the slots a template fills (`{{name}}` in blocks). */
-export const VariablesSection: React.FC = () => {
+/**
+ * Project variables: the slots a template fills (`{{name}}` in blocks). They
+ * have their own tab in the properties panel.
+ */
+export const VariablesPanel: React.FC = () => {
 	const variables = useProjectVariables();
 
 	const add = (kind: VariableKind) => {
@@ -237,22 +231,7 @@ export const VariablesSection: React.FC = () => {
 	};
 
 	return (
-		<CustomCollapse
-			isOpen={variables.length > 0}
-			menu={
-				<div className='flex items-center gap-2'>
-					<Braces size={16} />
-					<Label className='text-sm font-semibold text-foreground'>
-						Variables
-					</Label>
-					{variables.length > 0 && (
-						<span className='text-xs text-muted-foreground'>
-							{variables.length}
-						</span>
-					)}
-				</div>
-			}
-		>
+		<div className='flex flex-col gap-2 px-1 pb-3'>
 			<p className='text-[11px] leading-relaxed text-muted-foreground'>
 				Write <code className='font-mono text-foreground'>{'{{name}}'}</code> in
 				a text, code, window, QR or HTML block and it shows the value. Change
@@ -303,6 +282,6 @@ export const VariablesSection: React.FC = () => {
 					})}
 				</DropdownMenuContent>
 			</DropdownMenu>
-		</CustomCollapse>
+		</div>
 	);
 };

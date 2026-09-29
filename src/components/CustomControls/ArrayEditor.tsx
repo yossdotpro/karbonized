@@ -1,192 +1,146 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Plus, X, Edit2, Check, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, X } from 'lucide-react';
+import { cn } from '@/components/lib/utils';
+import { DraftInput } from './DraftInput';
 
 interface Props {
-	value: string[];
+	/** Items that are not strings (numbers written by hand) are edited as text. */
+	value: unknown[];
 	onChange: (value: string[]) => void;
 	placeholder?: string;
 	label?: string;
 }
 
+const IconButton: React.FC<{
+	label: string;
+	onClick: () => void;
+	disabled?: boolean;
+	className?: string;
+	children: React.ReactNode;
+}> = ({ label, onClick, disabled, className, children }) => (
+	<button
+		type='button'
+		title={label}
+		aria-label={label}
+		disabled={disabled}
+		onClick={onClick}
+		className={cn(
+			'flex size-6 shrink-0 items-center justify-center rounded-[5px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-30 [&_svg]:size-3.5',
+			className,
+		)}
+	>
+		{children}
+	</button>
+);
+
+/**
+ * A list of text items, one field per item: edit in place (Enter or leaving
+ * the field applies it), reorder, remove, and add at the end.
+ */
 export const ArrayEditor: React.FC<Props> = ({
 	value = [],
 	onChange,
-	placeholder = 'Add items...',
+	placeholder = 'New item',
 	label,
 }) => {
-	const [newItem, setNewItem] = useState('');
-	const [editingIndex, setEditingIndex] = useState<number | null>(null);
-	const [editingValue, setEditingValue] = useState('');
+	const items = value.map((item) =>
+		typeof item === 'string' ? item : JSON.stringify(item),
+	);
+	const [adding, setAdding] = useState(false);
+	// Remounts the new item's field after each add, so it starts empty.
+	const [addedCount, setAddedCount] = useState(0);
 
-	const addItem = () => {
-		if (newItem.trim()) {
-			const newValue = [...value, newItem.trim()];
-			onChange(newValue);
-			setNewItem('');
-		}
-	};
+	const replace = (index: number, text: string) =>
+		onChange(items.map((item, current) => (current === index ? text : item)));
 
-	const removeItem = (index: number) => {
-		const newValue = value.filter((_, i) => i !== index);
-		onChange(newValue);
-	};
+	const remove = (index: number) =>
+		onChange(items.filter((_, current) => current !== index));
 
-	const startEditing = (index: number) => {
-		setEditingIndex(index);
-		setEditingValue(value[index]);
-	};
-
-	const saveEdit = () => {
-		if (editingIndex !== null && editingValue.trim()) {
-			const newValue = [...value];
-			newValue[editingIndex] = editingValue.trim();
-			onChange(newValue);
-			setEditingIndex(null);
-			setEditingValue('');
-		}
-	};
-
-	const cancelEdit = () => {
-		setEditingIndex(null);
-		setEditingValue('');
-	};
-
-	const handleKeyPress = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') {
-			addItem();
-		}
-	};
-
-	const handleEditKeyPress = (e: React.KeyboardEvent) => {
-		if (e.key === 'Enter') {
-			saveEdit();
-		} else if (e.key === 'Escape') {
-			cancelEdit();
-		}
-	};
-
-	const clearAll = () => {
-		onChange([]);
+	const move = (index: number, offset: -1 | 1) => {
+		const next = [...items];
+		const [item] = next.splice(index, 1);
+		next.splice(index + offset, 0, item);
+		onChange(next);
 	};
 
 	return (
-		<div className='space-y-3'>
-			{label && (
-				<Label className='text-xs text-muted-foreground'>{label}</Label>
-			)}
-
-			{/* Add new item */}
-			<div className='flex gap-2'>
-				<Input
-					value={newItem}
-					onChange={(e) => setNewItem(e.target.value)}
-					onKeyPress={handleKeyPress}
-					placeholder={placeholder}
-					className='text-sm'
-				/>
-				<Button
-					onClick={addItem}
-					size='sm'
-					variant='outline'
-					disabled={!newItem.trim()}
-				>
-					<Plus className='h-4 w-4' />
-				</Button>
+		<div className='space-y-1.5'>
+			<div className='flex min-h-6 items-center gap-2'>
+				{label && (
+					<span className='min-w-0 flex-1 truncate text-xs text-muted-foreground'>
+						{label}
+					</span>
+				)}
+				<span className='ml-auto text-[11px] tabular-nums text-muted-foreground'>
+					{items.length} item{items.length === 1 ? '' : 's'}
+				</span>
 			</div>
 
-			{/* Items list */}
-			{value.length > 0 && (
-				<div className='space-y-2'>
-					<div className='flex items-center justify-between'>
-						<span className='text-xs text-muted-foreground'>
-							{value.length} item{value.length !== 1 ? 's' : ''}
-						</span>
-						<Button
-							onClick={clearAll}
-							size='sm'
-							variant='ghost'
-							className='h-6 px-2 text-xs'
-						>
-							<RotateCcw className='h-3 w-3 mr-1' />
-							Clear All
-						</Button>
-					</div>
-
-					<div className='flex flex-wrap gap-2'>
-						{value.map((item, index) => (
-							<Badge
-								key={index}
-								variant='secondary'
-								className='flex items-center gap-1 pr-1'
-							>
-								{editingIndex === index ? (
-									<Input
-										value={editingValue}
-										onChange={(e) => setEditingValue(e.target.value)}
-										onKeyPress={handleEditKeyPress}
-										onBlur={saveEdit}
-										className='h-5 w-20 text-xs'
-										autoFocus
-									/>
-								) : (
-									<span className='text-xs'>{item}</span>
-								)}
-
-								<div className='flex items-center gap-1 ml-1'>
-									{editingIndex === index ? (
-										<>
-											<Button
-												onClick={saveEdit}
-												size='sm'
-												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-emerald-500/15'
-											>
-												<Check className='h-3 w-3 text-emerald-500' />
-											</Button>
-											<Button
-												onClick={cancelEdit}
-												size='sm'
-												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-destructive/15'
-											>
-												<X className='h-3 w-3 text-destructive' />
-											</Button>
-										</>
-									) : (
-										<>
-											<Button
-												onClick={() => startEditing(index)}
-												size='sm'
-												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-accent'
-											>
-												<Edit2 className='h-3 w-3 text-muted-foreground' />
-											</Button>
-											<Button
-												onClick={() => removeItem(index)}
-												size='sm'
-												variant='ghost'
-												className='h-4 w-4 p-0 hover:bg-destructive/15'
-											>
-												<X className='h-3 w-3 text-destructive' />
-											</Button>
-										</>
-									)}
-								</div>
-							</Badge>
-						))}
-					</div>
-				</div>
+			{items.length > 0 && (
+				<ol className='space-y-1'>
+					{items.map((item, index) => (
+						<li key={index} className='group flex items-center gap-1'>
+							<span className='w-4 shrink-0 text-right font-mono text-[10px] tabular-nums text-muted-foreground'>
+								{index + 1}
+							</span>
+							<DraftInput
+								aria-label={`${label ?? 'Item'} ${index + 1}`}
+								value={item}
+								onCommit={(text) => replace(index, text)}
+							/>
+							<div className='flex shrink-0 opacity-60 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100'>
+								<IconButton
+									label='Move up'
+									disabled={index === 0}
+									onClick={() => move(index, -1)}
+								>
+									<ChevronUp />
+								</IconButton>
+								<IconButton
+									label='Move down'
+									disabled={index === items.length - 1}
+									onClick={() => move(index, 1)}
+								>
+									<ChevronDown />
+								</IconButton>
+								<IconButton
+									label='Remove'
+									onClick={() => remove(index)}
+									className='hover:bg-destructive/15 hover:text-destructive'
+								>
+									<X />
+								</IconButton>
+							</div>
+						</li>
+					))}
+				</ol>
 			)}
 
-			{value.length === 0 && (
-				<div className='text-center text-xs text-muted-foreground py-4 border border-dashed border-border rounded-control'>
-					No items yet. Add your first item above.
+			{adding ? (
+				<div className='flex items-center gap-1 pl-5'>
+					<DraftInput
+						key={addedCount}
+						autoFocus
+						aria-label={`New ${label ?? 'item'}`}
+						placeholder={placeholder}
+						value=''
+						onCommit={(text) => {
+							if (text.trim() === '') return;
+							onChange([...items, text]);
+							setAddedCount((count) => count + 1);
+						}}
+						onBlur={() => setAdding(false)}
+					/>
 				</div>
+			) : (
+				<button
+					type='button'
+					onClick={() => setAdding(true)}
+					className='flex h-7 w-full items-center justify-center gap-1.5 rounded-control border border-dashed border-border text-xs text-muted-foreground transition-colors hover:border-ring/60 hover:text-foreground'
+				>
+					<Plus className='size-3.5' />
+					Add item
+				</button>
 			)}
 		</div>
 	);

@@ -72,6 +72,8 @@ Agent and the MCP server share the same tools:
 | `search_icons`                         | Icon names (Font Awesome and installed icon packs) for icon blocks and `@type:icon` variables                                        |
 | `search_fonts`                         | Google Fonts families by name, kind and weights, with the weights each one has                                                       |
 | `get_brand_kit`                        | The brand kit: named colors, fonts, logos (without the images) and guidelines                                                        |
+| `update_brand_kit`                     | Create or change the brand kit: name, palette, fonts by role (checked against Google Fonts), logo names and uses, guidelines         |
+| `save_brand_logo`                      | Add a logo to the brand kit from SVG markup (cleaned of scripts), a `data:image/…` URL or an image block of the canvas                |
 | `add_brand_logo`                       | Place a logo of the brand kit as an image block, by id or variant, keeping its proportions                                           |
 | `get_workspace`                        | Canvas size, background, selection and every block with its position, size and properties                                            |
 | `create_workspace`                     | New project with a canvas size, opened in the editor                                                                                 |
@@ -110,14 +112,20 @@ Change the guide there; the prompt, the instructions and the tool follow.
 The guide asks models to build a design block by block: the background with
 `set_canvas_background`, every headline and paragraph as a text block, and one
 HTML block per component (a stat tile, a card, a badge row, a chart), sized to
-its content and declaring its colors, sizes, radius, shadow and icon as
-annotated `:root` variables. `add_block` and `update_html_block` check the
-last two rules (`src/lib/agent/tools/html-hints.ts`) and answer with `hints`
-when an HTML block declares no variables, covers most of the canvas or holds
-paragraphs of text, so the model fixes it in the same turn. Content that
-repeats (list items, chart data, rows) goes in `// @var` JS variables that the
-block script renders, with `allow-scripts` on, so the user edits the data from
-the panel; the hints flag a block whose script cannot run.
+its content.
+
+Every HTML block a model writes has html, css and js
+(`src/lib/agent/tools/html-contract.ts`): the look as annotated `:root`
+variables in the CSS and the content (labels, values, list items, chart data)
+as `// @var` JS variables that the script writes into the markup, so the user
+edits both from the panel. `add_block`, `update_block` and `update_html_block`
+refuse code without them, with a script that declares a `// @var` again, or
+with an array or object value that is not JSON (an array must be a list of
+strings, which is what the panel edits), and say what to fix; they turn
+`allow-scripts` on for the block. They also answer with `hints`
+(`src/lib/agent/tools/html-hints.ts`) when an HTML block has too few
+variables, covers most of the canvas or holds paragraphs of text, so the model
+fixes it in the same turn.
 
 Fonts: the guide sends models to `search_fonts` (the whole Google Fonts
 catalog, with the weights of each family), gives pairings by tone and asks for
@@ -133,18 +141,22 @@ The snapshot waits for pending fonts so it does not show the fallback.
 
 ### Brand kit
 
-File → **Brand kit…** (or the command palette) holds the colors, fonts,
-logos and guidelines of the user's brand. The color picker shows the brand
-colors first and the font picker the brand fonts. Agent and MCP clients are
-told to call `get_brand_kit` before a new design and to follow it over the
-palettes of the design guide; `add_brand_logo` places a logo without sending
-the image through the model. A kit can be exported and imported as a
+The **Brand kit** tab of the properties panel (also File → **Brand kit…** or
+the command palette, which open it; outside the editor it opens in a dialog)
+holds the colors, fonts, logos and guidelines of the user's brand. The color
+picker shows the brand colors first and the font picker the brand fonts. Agent
+and MCP clients are told to call `get_brand_kit` before a new design and to
+follow it over the palettes of the design guide; `add_brand_logo` places a
+logo without sending the image through the model. When the user gives them
+their brand or asks for one, they save it with `update_brand_kit` and
+`save_brand_logo` (`src/lib/agent/tools/brand.ts`); those changes are saved at
+once, show in the tab, and are not part of the canvas undo. A kit can be exported and imported as a
 `.kbrand` file (JSON). It is stored in IndexedDB (`src/stores/brand-store.ts`,
 model in `src/lib/brand/brand-kit.ts`).
 
 ### Templates and project variables
 
-A project can hold variables (Canvas panel → **Variables**): named texts,
+A project can hold variables (the **Variables** tab of the properties panel): named texts,
 long texts and dates. Any text, code, window, QR or HTML block that contains
 `{{name}}` shows the value instead; the block keeps the placeholder, so the
 same design becomes a template. Changing a value is one undo step.
