@@ -172,7 +172,9 @@ export const updateBrandKitTool = defineTool({
 			.object({ heading: fontInput, body: fontInput, code: fontInput })
 			.partial()
 			.optional()
-			.describe('Fonts by role. null removes the font of that role.'),
+			.describe(
+				'Fonts by role, each { family: "Space Grotesk", source?: "google" | "system" }, e.g. { heading: { family: "Space Grotesk" }, code: null }. null removes the font of that role; roles left out stay.',
+			),
 		logos: z
 			.array(
 				z.object({
