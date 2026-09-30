@@ -1,5 +1,8 @@
 import { contextBridge, ipcRenderer, app, shell } from 'electron';
-import type { FilesBridge } from '../src/lib/persistence/desktop-files';
+import type {
+	FilesBridge,
+	OpenedFile,
+} from '../src/lib/persistence/desktop-files';
 import type {
 	AgentBridge,
 	HttpBridgeEvent,
@@ -112,6 +115,13 @@ const files: FilesBridge = {
 	chooseExportFolder: () =>
 		ipcRenderer.invoke('karbonized:files:choose-export-folder'),
 	reveal: (path) => ipcRenderer.invoke('karbonized:files:reveal', path),
+	onOpen: (listener) => {
+		const unsubscribe = subscribe<OpenedFile>('karbonized:files:opened')(
+			listener,
+		);
+		ipcRenderer.send('karbonized:files:opened-ready');
+		return unsubscribe;
+	},
 };
 
 contextBridge.exposeInMainWorld('karbonized', { agent, files });

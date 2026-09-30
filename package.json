@@ -28,6 +28,7 @@
 		"android:build": "yarn build && npx cap sync && cd android && gradle build && cd ..",
 		"android:icons": "npx capacitor-assets generate --android --iconBackgroundColor '#141313' --logoSplashScale '0.6'",
 		"lint": "eslint src",
+		"file-icons": "electron scripts/build-file-icons.cjs",
 		"icon-pack": "node scripts/build-icon-pack.mjs",
 		"test": "vitest run",
 		"test:watch": "vitest",

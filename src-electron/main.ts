@@ -7,6 +7,7 @@ import { dirname } from 'path';
 import { registerAgentHttp } from './agent/http';
 import { registerFiles } from './files';
 import { type McpServerHandle, registerMcpServer } from './mcp/server';
+import { openFilesFrom, registerOpenFiles } from './open-files';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -65,6 +66,7 @@ const shouldStartInBackground = () =>
 // second MCP server would find its port taken anyway).
 const isPrimaryInstance = app.requestSingleInstanceLock();
 if (!isPrimaryInstance) app.quit();
+else registerOpenFiles();
 
 let quitting = false;
 app.on('before-quit', () => {
@@ -167,6 +169,8 @@ app.whenReady().then(async () => {
 	win.on('show', updateTray);
 
 	app.on('second-instance', (_event, argv) => {
+		// A file opened from the file manager opens here, in the running app.
+		openFilesFrom(argv);
 		if (!argv.includes('--background')) showWindow();
 	});
 	// macOS: clicking the Dock icon brings the window back.

@@ -45,7 +45,7 @@ export const BrandKitPanel: React.FC = () => {
 				<Button
 					variant='ghost'
 					size='sm'
-					onClick={() => exportBrandKitFile(useBrandStore.getState().kit)}
+					onClick={() => void exportBrandKitFile(useBrandStore.getState().kit)}
 				>
 					<Download />
 					Export

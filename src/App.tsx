@@ -14,6 +14,7 @@ import { useScreenDirection } from './hooks/useScreenDirection';
 import { useTheme } from './hooks/useTheme';
 import './utils.css';
 import { isElectron } from './utils/isElectron';
+import { getFilesBridge } from './lib/persistence/desktop-files';
 import { Spinner } from '@/components/ui/spinner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
@@ -37,6 +38,9 @@ const ContextualMenuBar = React.lazy(
 );
 const McpBridge = React.lazy(
 	async () => await import('./components/Agent/McpBridge'),
+);
+const OpenedFiles = React.lazy(
+	async () => await import('./components/Base/OpenedFiles'),
 );
 
 const AppShell: React.FC<{
@@ -189,6 +193,12 @@ const App: React.FC = () => {
 							{getAgentBridge() && (
 								<Suspense>
 									<McpBridge />
+								</Suspense>
+							)}
+							{/* Files opened with the app from the file manager (desktop only) */}
+							{getFilesBridge()?.onOpen && (
+								<Suspense>
+									<OpenedFiles />
 								</Suspense>
 							)}
 						</SessionGate>

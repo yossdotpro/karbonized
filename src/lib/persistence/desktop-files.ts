@@ -34,6 +34,18 @@ export interface FilesBridge {
 	chooseExportFolder?: () => Promise<string | null>;
 	/** Show an exported file (or the export folder) in the file manager. */
 	reveal?: (path: string) => Promise<void>;
+	/**
+	 * Files opened with the app from the file manager (`.kproject`,
+	 * `.kbrand`). Subscribing tells the main process the editor can take them,
+	 * so the ones that launched the app arrive now.
+	 */
+	onOpen?: (listener: (file: OpenedFile) => void) => () => void;
+}
+
+export interface OpenedFile {
+	/** The file name, without its folder. */
+	name: string;
+	text: string;
 }
 
 export const getFilesBridge = (): FilesBridge | undefined =>

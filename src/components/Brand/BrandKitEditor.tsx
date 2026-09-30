@@ -38,6 +38,7 @@ import {
 	normalizeBrandKit,
 } from '@/lib/brand/brand-kit';
 import { DEFAULT_FONT_FAMILY } from '@/lib/fonts/fonts';
+import { getFilesBridge } from '@/lib/persistence/desktop-files';
 
 const ROLE_LABELS: Record<BrandFontRole, string> = {
 	heading: 'Headings',
@@ -78,29 +79,59 @@ const naturalSize = (src: string) =>
 		image.src = src;
 	});
 
-/** Download the kit as a `.kbrand` file. */
-export const exportBrandKitFile = (kit: BrandKit): void => {
-	const blob = new Blob([JSON.stringify(kit, null, 2)], {
-		type: 'application/json',
-	});
+/**
+ * Save the kit as a `.kbrand` file: a "Save as" dialog on the desktop (a
+ * download there would be named after its `blob:` id), a download on the web.
+ */
+export const exportBrandKitFile = async (kit: BrandKit): Promise<void> => {
+	const text = JSON.stringify(kit, null, 2);
+	const fileName = `${kit.name.trim() || 'brand'}${BRAND_FILE_EXTENSION}`;
+	const desktop = getFilesBridge();
+
+	if (desktop !== undefined) {
+		try {
+			await desktop.saveText({
+				defaultName: fileName,
+				text,
+				extensions: [BRAND_FILE_EXTENSION.replace('.', '')],
+				filterName: 'Karbonized brand kit',
+			});
+		} catch {
+			toast.error('Could not save the brand kit');
+		}
+		return;
+	}
+
+	const blob = new Blob([text], { type: 'application/json' });
 	const link = document.createElement('a');
 	link.href = URL.createObjectURL(blob);
-	link.download = `${kit.name.trim() || 'brand'}${BRAND_FILE_EXTENSION}`;
+	link.download = fileName;
 	link.click();
 	setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 };
 
-/** Replace the kit with the one in a `.kbrand` file. */
+/**
+ * Replace the kit with the one in a `.kbrand` file. The toast can put the
+ * previous kit back, since the brand kit is not part of the canvas undo.
+ */
 export const importBrandKitFile = async (
 	file: File | undefined,
-): Promise<void> => {
-	if (!file) return;
+): Promise<boolean> => {
+	if (!file) return false;
 	try {
 		const next = normalizeBrandKit(JSON.parse(await file.text()));
+		const previous = useBrandStore.getState().kit;
 		useBrandStore.getState().setKit(next);
-		toast.success(`Brand kit ${next.name || file.name} imported`);
+		toast.success(`Brand kit ${next.name || file.name} imported`, {
+			action: {
+				label: 'Undo',
+				onClick: () => useBrandStore.getState().setKit(previous),
+			},
+		});
+		return true;
 	} catch {
-		toast.error('That file is not a brand kit');
+		toast.error('That file is not a brand kit', { description: file.name });
+		return false;
 	}
 };
 

@@ -14,6 +14,24 @@
 	},
 	"files": ["dist", "dist-electron"],
 	"asarUnpack": ["dist-electron/mcp-stdio.cjs"],
+	"fileAssociations": [
+		{
+			"ext": "kproject",
+			"name": "Karbonized Project",
+			"description": "Karbonized project",
+			"mimeType": "application/x-karbonized-project",
+			"role": "Editor",
+			"icon": "src-electron/assets/file-kproject"
+		},
+		{
+			"ext": "kbrand",
+			"name": "Karbonized Brand Kit",
+			"description": "Karbonized brand kit",
+			"mimeType": "application/x-karbonized-brand",
+			"role": "Editor",
+			"icon": "src-electron/assets/file-kbrand"
+		}
+	],
 	"mac": {
 		"artifactName": "${productName}_${version}.${ext}",
 		"target": ["dmg"],
