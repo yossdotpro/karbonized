@@ -120,17 +120,17 @@ const DeviceStage: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 		return () => observer.disconnect();
 	}, []);
 
+	// The stage is taken out of the flow and the device is centered on it: a
+	// device in the flow keeps its 320×620 layout size (a transform does not
+	// change it), which held the block at that size and kept it from shrinking
 	return (
-		<div
-			ref={ref}
-			className='relative flex h-full w-full flex-auto items-center justify-center'
-		>
+		<div ref={ref} className='absolute inset-0 overflow-hidden'>
 			<div
-				className='relative flex shrink-0 flex-col'
+				className='absolute left-1/2 top-1/2 flex flex-col'
 				style={{
 					width: DEVICE_SIZE.width,
 					height: DEVICE_SIZE.height,
-					transform: `scale(${scale})`,
+					transform: `translate(-50%, -50%) scale(${scale})`,
 					transformOrigin: 'center',
 				}}
 			>
@@ -369,7 +369,7 @@ export const PhoneBlock: React.FC<Props> = ({ id }) => {
 					</>
 				}
 			>
-				<div className='relative flex flex-auto flex-col'>
+				<div className='relative flex min-h-0 min-w-0 flex-auto flex-col'>
 					{/* Adaptive Model */}
 					{template === 'adaptive' && (
 						<>

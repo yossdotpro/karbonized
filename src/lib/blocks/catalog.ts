@@ -629,7 +629,8 @@ export const BLOCK_TYPES: readonly BlockTypeSpec[] = [
 				kind: 'enum',
 				default: 'iPhone X',
 				options: ['adaptive', 'iPhone X', 'iPhone 14', 'iPhone 14 Pro'],
-				description: 'Device frame. Fixed models are limited to 318×618.',
+				description:
+					'Device frame. Device models keep their proportions and scale to the block; adaptive fills it.',
 			},
 			{
 				key: 'src',
