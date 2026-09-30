@@ -312,6 +312,10 @@ describe('executeTool', () => {
 	});
 
 	it('reads the brand kit and places its logo', async () => {
+		// Still loading: placing a logo says so instead of "no logo".
+		useBrandStore.setState({ hydrated: false, kit: EMPTY_BRAND_KIT });
+		expect(text(await run('add_brand_logo', {}))).toContain('still loading');
+
 		useBrandStore.setState({ hydrated: true, kit: EMPTY_BRAND_KIT });
 		expect(JSON.parse(text(await run('get_brand_kit', {})))).toMatchObject({
 			empty: true,

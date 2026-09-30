@@ -71,7 +71,14 @@ export const addBrandLogoTool = defineTool({
 	}),
 	mutates: true,
 	execute: ({ logo, x, y, width }) => {
-		const { kit } = useBrandStore.getState();
+		// Mutating tools run synchronously, so the kit cannot be awaited here;
+		// right after launch it may still be on its way from IndexedDB.
+		const { kit, hydrated } = useBrandStore.getState();
+		if (!hydrated) {
+			throw new ToolError(
+				'The brand kit is still loading. Call get_brand_kit, then try again.',
+			);
+		}
 		const found = pickLogo(kit, logo);
 		if (!found) {
 			throw new ToolError(
