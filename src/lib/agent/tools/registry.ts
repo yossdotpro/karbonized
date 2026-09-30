@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { useHistoryStore } from '@/stores';
 import type { History } from '@/types';
+import { beginToolActivity } from '../activity';
 
 /**
  * Tools: the actions Agent and MCP clients can run in the editor.
@@ -199,6 +200,9 @@ export const executeTool = async (
 		};
 	}
 
+	// The editor shows that Agent or an MCP client is using the canvas.
+	const endActivity = beginToolActivity(context.source, tool.title);
+
 	const history = useHistoryStore.getState();
 	const before = new Set(history.pastHistory);
 
@@ -243,5 +247,7 @@ export const executeTool = async (
 			result: errorResult(describeError(error)),
 			historyEntry: collapseCall(),
 		};
+	} finally {
+		endActivity();
 	}
 };

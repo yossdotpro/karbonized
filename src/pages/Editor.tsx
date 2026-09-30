@@ -18,6 +18,7 @@ import { BrushBar } from '@/components/Panels/BrushBar';
 import { isEditableTarget } from '@/lib/commands/shortcuts';
 import { redo, undo } from '@/lib/editor/history';
 import { useAgentUI } from '@/lib/agent/ui-store';
+import { CanvasActivity } from '@/components/Agent/CanvasActivity';
 import {
 	alignSelection,
 	distributeSelection,
@@ -582,6 +583,9 @@ export const Editor: React.FC = () => {
 								</Suspense>
 							</ResizablePanelGroup>
 						</div>
+
+						{/* Agent or an MCP client is using the canvas */}
+						<CanvasActivity />
 					</div>
 				</ResizablePanel>
 			</ResizablePanelGroup>
