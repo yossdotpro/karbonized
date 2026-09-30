@@ -31,15 +31,19 @@ export const TitleBar: React.FC = () => {
 				e.preventDefault();
 			}}
 		>
-			{/* Menu Bar */}
-			<div className='not-draggable flex max-w-[80%] items-center gap-2 overflow-x-hidden pl-3'>
+			{/* Menu Bar. Only its controls take clicks (TitleBar.css), so the
+			    gaps around them still move the window */}
+			<div className='flex min-w-0 items-center gap-2 overflow-x-hidden pl-3'>
 				<KarbonizedLogoFlat className='size-4 min-w-4 text-foreground dark:text-white' />
 
 				<ContextualMenuBar></ContextualMenuBar>
 			</div>
 
+			{/* Always some room to drag the window, however many tabs are open */}
+			<div className='min-w-24 flex-1' />
+
 			{/* Actions */}
-			<div className='not-draggable pointer-events-auto z-10 ml-auto flex items-stretch'>
+			<div className='not-draggable pointer-events-auto z-10 flex shrink-0 items-stretch'>
 				<CommandPaletteTrigger className='my-auto mr-2' />
 
 				<Button

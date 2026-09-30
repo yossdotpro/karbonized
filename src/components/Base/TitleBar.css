@@ -9,3 +9,11 @@
 .not-draggable {
 	-webkit-app-region: no-drag;
 }
+
+/* The controls of the title bar take clicks; the space between them moves the
+   window */
+#titlebar button,
+#titlebar input,
+#titlebar [data-slot='menubar'] {
+	-webkit-app-region: no-drag;
+}
