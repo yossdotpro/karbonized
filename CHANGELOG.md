@@ -1,5 +1,23 @@
 # Changelog
 
+## v 2.2.0 - Release (September 30th, 2026)
+
+### 🚀 Features
+
+- **See when Agent or an MCP client is using the canvas**: while one works, a ring of the accent runs around the canvas area, a soft glow breathes inside it and a pill at the top says who is working and which tool it runs ("Add block", "Look at the canvas"…). It stays a moment between calls so it does not blink, takes no clicks, never shows in exports and holds still with reduced motion
+- **`.kproject` and `.kbrand` files have their own icons** in Explorer, Finder and Linux file managers: a dark page with the logo and a PROJECT or BRAND tab. `yarn file-icons` renders them for every platform
+- **Open projects and brand kits with a double click**: the installers register both extensions, so a file opens in Karbonized, in the running window when it is already open. A project opens next to the ones already open; a brand kit replaces the current one, with **Undo** in the notice
+- On the desktop, saving a brand kit opens a real "Save as" dialog, and importing one (from the panel or a double click) can be undone
+- **The app changelog follows every release**: it now lives in `src/lib/changelog.ts`, and a test fails while the version in `package.json` is missing from it or from `CHANGELOG.md`
+
+### 🐛 Fixes
+
+- Phone mockups could grow but not shrink: the device kept its 320×620 layout size inside the block, so a smaller block cut it instead of scaling it down. It now scales to any size in both directions
+- With many workspace tabs open there was no room left to drag the window: the menu and the tabs were one area that took clicks, up to 80% of the title bar. Only the controls take clicks now, and there is always a gap before the window buttons to drag it by
+- `add_brand_logo` said the brand kit had no logo when it was called right after launch, before the kit had loaded; it now says the kit is still loading
+- MCP clients that drop `anyOf` from tool schemas saw the fonts of `update_brand_kit` as empty objects; its description now gives their shape
+- The app changelog stopped at v2.0.0
+
 ## v 2.1.0 - Release (September 29th, 2026)
 
 ### 🚀 Features

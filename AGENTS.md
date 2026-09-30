@@ -60,6 +60,7 @@ The app includes **Agent**, an in-app AI assistant, and a local **MCP server** i
 - `docs/plugin_system.md`: functional documentation for the plugin system
 - `docs/icon-packs.md`: icon packs (`.kcomponent` files with `type: icon-pack`): format, SVG rules, `yarn icon-pack` (build one from a folder of SVGs) and using pack icons in components
 - `src-electron/`: main process/preload for the Vite-based Electron variant, including `agent/` (API keys, provider requests), `mcp/` (MCP server and stdio bridge) and `files.ts` (native "Save as", exposed as `window.karbonized.files`; the renderer would otherwise download a `blob:` URL and Electron's dialog would suggest the blob id as the file name)
+- `src-electron/open-files.ts`: `.kproject` and `.kbrand` files opened from the file manager (launch arguments, `second-instance`, macOS `open-file`); the renderer takes them in `src/components/Base/OpenedFiles.tsx`. The installers register both extensions (`fileAssociations` in `electron-builder.json`) with the icons `yarn file-icons` renders (`scripts/build-file-icons.cjs`, run by Electron) into `src-electron/assets/file-*.{ico,icns,png,svg}`
 - `scripts/install-electron.cjs`: postinstall that downloads the Electron binary (Yarn 4 skips dependency install scripts)
 - `scripts/update-google-fonts.mjs`: regenerates `src/lib/fonts/google-fonts.ts` from the public Google Fonts catalog (no key). Run it to refresh the families the text block offers
 - `electron/`: additional/legacy Electron implementation based on Capacitor; do not assume both runtime paths are equally active without checking
@@ -106,6 +107,7 @@ That means duplicating, importing, or deleting controls usually requires touchin
 
 Agent (assistant panel, `Mod+L`) and the MCP server share one set of tools. Full user and contributor docs: `docs/agent.md`.
 
+- **Canvas activity** (`src/lib/agent/activity.ts`): `executeTool` reports the start and end of every call by source; `CanvasActivity` (`src/components/Agent/`) shows the ring, the glow and the pill over the canvas area while one runs and a moment after.
 - **Tools** (`src/lib/agent/tools/`): `defineTool` with a zod schema (validation + JSON Schema for providers and MCP). `executeTool` runs mutating tools synchronously inside `useHistoryStore.getState().transaction()`, waits for the canvas to re-render, then folds every step recorded during the call into one undo step.
 - **Editor actions** (`src/lib/editor/actions.ts`): add/update/delete/select/align blocks, HTML block code, canvas settings, workspaces. Use them instead of touching stores from tools or new UI. Blocks that have not mounted yet receive properties through `initialProperties`; mounted blocks through `ControlProperties` plus a history batch.
 - **History**: batch entries can mix property changes, `workspace-structure-*` snapshots and `workspace-settings-*` snapshots. Apply undo/redo with `undo()`/`redo()` from `src/lib/editor/history.ts`, which handles all of them.
@@ -184,6 +186,7 @@ Before refactoring platform integration, verify which runtime path is actually u
 - `yarn test`: run the Vitest unit tests
 - `yarn lint`: lint `src` (should report 0 errors)
 - `yarn format`: run Prettier on `src`
+- Changelogs: every release goes in both `CHANGELOG.md` (detailed) and `src/lib/changelog.ts` (the short one shown in the app, first entry = newest). `src/lib/changelog.test.ts` fails while the version in `package.json` is missing from either
 - Releases: push a `vX.Y.Z` tag (or `vX.Y.Z-beta1`) matching `package.json`. `.github/workflows/release.yml` drafts the GitHub release with the `## v X.Y.Z - …` section of `CHANGELOG.md` (`scripts/release-notes.mjs`, which fails if the section is missing), builds the Electron app for Linux, macOS and Windows into it and publishes it when all three pass. Pull requests that touch the desktop build run the same builds without publishing. The Tauri workflow (`build.yml`, `karbonized-v*` tags) is legacy
 
 ## Practical Editing Conventions
