@@ -1,17 +1,14 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+// Through Vite, so the app's tsconfig (no Node types) checks this file too.
+import changelog from '../../CHANGELOG.md?raw';
+import packageJson from '../../package.json?raw';
 import { APP_CHANGELOG } from './changelog';
 
-const root = join(__dirname, '..', '..');
-const { version } = JSON.parse(
-	readFileSync(join(root, 'package.json'), 'utf8'),
-) as { version: string };
+const { version } = JSON.parse(packageJson) as { version: string };
 const [release] = version.split('-');
 
 describe('changelogs', () => {
 	it('CHANGELOG.md has a section for the version in package.json', () => {
-		const changelog = readFileSync(join(root, 'CHANGELOG.md'), 'utf8');
 		expect(changelog).toContain(`\n## v ${release} - `);
 	});
 
